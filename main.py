@@ -1,10 +1,10 @@
-# main.py
-
-from model.text_model import TextModel
-from model.tag_model import TagModel
-from view.main_frame import Frame
-from controller.controller import Controller
+# from model.text_model import TextModel
+# from model.tag_model import TagModel
+from view.main_frame import MainFrame
+# from controller.controller import Controller
 import tkinter as tk
+from mockclasses.mock_models import MockTagModel,MockTextModel
+from mockclasses.mock_controller import MockController
 
 def main():
     #Initialize the tk window
@@ -12,12 +12,12 @@ def main():
     root.title("Text Annotation Tool")
 
     # Initialize model and controller
-    text_model = TextModel()
-    tag_model = TagModel()
-    controller = Controller(text_model, tag_model)
+    text_model = MockTextModel()
+    tag_model = MockTagModel()
+    controller = MockController(text_model, tag_model)
 
     # Initialize view
-    main_frame = Frame(root, controller)
+    main_frame = MainFrame(root, controller)
     main_frame.pack()
 
     # Start the main loop

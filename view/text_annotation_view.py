@@ -1,50 +1,41 @@
 import tkinter as tk
-from tkinter import ttk
-from view.interfaces import ITextAnnotationView, IPDFExtractionView, ITextDisplayView, ITextComparisonView
+from view.interfaces import ITextAnnotationView
+from controller.interfaces import IController
+# from view.text_display_frame import TextDisplayFrame  
+# from view.tagging_menu_frame import TaggingMenuFrame  
+from mockclasses.mock_tagging_menu_frame import MockTaggingMenuFrame
+from mockclasses.mock_text_display_frame import MockTextDisplayFrame
 
-class TextAnnotationView(ITextAnnotationView):
-    def __init__(self, parent_frame: tk.Frame, 
-                 pdf_view: IPDFExtractionView, 
-                 text_display_view: ITextDisplayView, 
-                 text_comparison_view: ITextComparisonView) -> None:
+class TextAnnotationView(tk.Frame,ITextAnnotationView):
+    def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
-        Initializes the TextAnnotationView with its dependencies for each notebook page
-        and renders the notebook immediately.
-        
-        Args:
-            parent_frame (tk.Frame): The parent frame where this view will be placed.
-            pdf_view (IPDFExtractionView): The view for PDF extraction.
-            text_display_view (ITextDisplayView): The view for text annotation.
-            text_comparison_view (ITextComparisonView): The view for text comparison.
-        """
-        super().__init__(parent_frame)
-        self._pdf_view = pdf_view
-        self._text_display_view = text_display_view
-        self._text_comparison_view = text_comparison_view
-        self._render(parent_frame)  # Call _render to set up the UI
-    
-    def _render(self, parent_frame: tk.Frame) -> None:
-        """
-        Renders the TextAnnotationView, organizing the PDF extraction, text annotation, 
-        and text comparison views in a notebook.
+        Initializes the TextAnnotationView with a reference to the parent widget and controller.
 
         Args:
-            parent_frame (tk.Frame): The parent frame where this view will be placed.
+            parent (tk.Widget): The parent widget where this frame will be placed.
+            controller (IController): The controller managing actions for this view.
         """
-        notebook = ttk.Notebook(parent_frame)
-        notebook.pack(fill="both", expand=True)
+        super().__init__(parent)
+        self._controller = controller
 
-        # Add the PDF Extraction tab
-        pdf_frame = tk.Frame(notebook)
-        self._pdf_view.render(pdf_frame)
-        notebook.add(pdf_frame, text="PDF Extraction")
 
-        # Add the Text Annotation tab
-        text_annotation_frame = tk.Frame(notebook)
-        self._text_display_view.render(text_annotation_frame)
-        notebook.add(text_annotation_frame, text="Text Annotation")
+    def _render(self) -> None:
+        """
+        Sets up the layout for the TextAnnotationView, adding the text display 
+        and tagging menu frames within itself.
+        """
+        # Instantiate and pack the text display frame on the left side
+        self._text_display_frame = MockTextDisplayFrame(self)
+        self._text_display_frame.pack(side="left", fill="both", expand=True)
 
-        # Add the Text Comparison tab
-        text_comparison_frame = tk.Frame(notebook)
-        self._text_comparison_view.render(text_comparison_frame)
-        notebook.add(text_comparison_frame, text="Text Comparison")
+        # Instantiate and pack the tagging menu frame on the right side
+        self._tagging_menu_frame = MockTaggingMenuFrame(self)
+        self._tagging_menu_frame.pack(side="right", fill="y")
+
+    def update(self) -> None:
+        """
+        Updates the view in response to notifications from the observed object.
+        This method could refresh the text display or tagging menu if necessary.
+        """
+        # Placeholder for update logic based on model changes
+        print("TextAnnotationView has been updated based on model changes.")

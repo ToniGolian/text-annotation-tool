@@ -2,10 +2,10 @@
 
 import tkinter as tk
 from view.interfaces import ITextDisplayFrame
-from controller.controller import Controller
+from controller.controller import IController
 
 class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
-    def __init__(self, parent: tk.Widget, controller: Controller) -> None:
+    def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the TextDisplayFrame with a reference to the controller.
         Registers itself as an observer of the model via the controller.
@@ -17,9 +17,9 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
         super().__init__(parent)
         self.controller = controller
         self.controller.register_observer(self)  # Register as observer through the controller
-        self.render()
+        self._render()
     
-    def render(self) -> None:
+    def _render(self) -> None:
         """
         Sets up the text display widget within the frame. This is where the tk.Text widget is created
         and packed to fill the frame.

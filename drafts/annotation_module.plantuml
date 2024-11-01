@@ -1,0 +1,123 @@
+@startuml
+
+' ----------------------
+' Model Classes
+' ----------------------
+class TextModel {
+    - text: str
+    - marked_text: str
+    - tags: List<Tag>
+    + add_tag(tag: Tag): void
+    + remove_tag(tag: Tag): void
+    + change_tag(old_tag: Tag, new_tag: Tag): void
+}
+
+class TagModel {
+    - tags: List<Tag>
+    + add_tag(tag: Tag): void
+    + remove_tag(tag: Tag): void
+    + change_tag(old_tag: Tag, new_tag: Tag): void
+}
+
+class Tag {
+    - id: int
+    - name: str
+    - attributes: Dict[str, str]
+}
+
+' ----------------------
+' Command Pattern Classes
+' ----------------------
+interface Command {
+    + execute(): void
+    + undo(): void
+    + redo(): void
+}
+
+class AddTagCommand implements Command {
+    - text_model: TextModel
+    - tag: Tag
+    + execute(): void
+    + undo(): void
+    + redo(): void
+}
+
+class RemoveTagCommand implements Command {
+    - text_model: TextModel
+    - tag: Tag
+    + execute(): void
+    + undo(): void
+    + redo(): void
+}
+
+class ChangeTagCommand implements Command {
+    - text_model: TextModel
+    - old_tag: Tag
+    - new_tag: Tag
+    + execute(): void
+    + undo(): void
+    + redo(): void
+}
+
+' ----------------------
+' Controller
+' ----------------------
+class Controller {
+    - text_model: TextModel
+    - command_history: List<Command>
+    + execute_command(command: Command): void
+    + undo(): void
+    + redo(): void
+}
+
+' ----------------------
+' Observer Pattern Classes
+' ----------------------
+interface Observer {
+    + update(): void
+}
+
+class TextDisplayWidget implements Observer {
+    - text_model: TextModel
+    + update(): void
+}
+
+class TaggingMenuWidget implements Observer {
+    - marked_text: str
+    + update(): void
+}
+
+' ----------------------
+' View Classes
+' ----------------------
+class Frame {
+    - left_frame: TextDisplayWidget
+    - right_frame: Notebook
+}
+
+class Notebook {
+    - pages: List<TaggingMenuWidget>
+}
+
+' ----------------------
+' Relationships
+' ----------------------
+Controller --> TextModel
+Controller --> Command
+Controller "1" --> "*" Command : command_history
+
+TextModel "1" --> "*" Tag : tags
+TextModel "1" o--> "1" TextDisplayWidget : observed_by
+
+Notebook "1" o--> "*" TaggingMenuWidget : pages
+TaggingMenuWidget --> Observer
+TextDisplayWidget --> Observer
+
+Observer <|-- TextDisplayWidget
+Observer <|-- TaggingMenuWidget
+
+Command <|-- AddTagCommand
+Command <|-- RemoveTagCommand
+Command <|-- ChangeTagCommand
+
+@enduml

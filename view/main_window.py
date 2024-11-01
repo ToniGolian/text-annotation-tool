@@ -3,8 +3,9 @@ import tkinter as tk
 from tkinter import ttk
 from view.pdf_extraction_view import PDFExtractionView
 from view.text_annotation_view import TextAnnotationView
-from view.text_comparison_view import TextComparisonView  
+from view.text_comparison_view import TextComparisonView
 from controller.interfaces import IController
+
 
 class MainWindow(tk.Tk):
     def __init__(self, controller: IController) -> None:
@@ -16,7 +17,7 @@ class MainWindow(tk.Tk):
             controller (IController): The controller managing actions for the main application.
         """
         super().__init__()
-        
+
         # Set window size
         if platform.system() == "Windows":
             self.state('zoomed')
@@ -30,7 +31,7 @@ class MainWindow(tk.Tk):
 
         # Render the notebook structure
         self._render()
-    
+
         # Set the protocol for handling window close event
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
 
@@ -44,22 +45,19 @@ class MainWindow(tk.Tk):
         notebook.pack(fill="both", expand=True)
 
         # Add the PDF Extraction tab
-        pdf_frame = tk.Frame(notebook)
-        pdf_view = PDFExtractionView(parent=pdf_frame, controller=self.controller)  # Instantiate PDF extraction view
-        pdf_view._render()  
-        notebook.add(pdf_frame, text="PDF Extraction")
+        pdf_view = PDFExtractionView(
+            parent=notebook, controller=self.controller)
+        notebook.add(pdf_view, text="PDF Extraction")
 
         # Add the Text Annotation tab
-        text_annotation_frame = tk.Frame(notebook)
-        text_annotation_view = TextAnnotationView(parent=text_annotation_frame, controller=self.controller)  # Instantiate text annotation view
-        text_annotation_view._render()
-        notebook.add(text_annotation_frame, text="Text Annotation")
+        text_annotation_view = TextAnnotationView(
+            parent=notebook, controller=self.controller)  # Instantiate text annotation view
+        notebook.add(text_annotation_view, text="Text Annotation")
 
         # Add the Text Comparison tab
-        text_comparison_frame = tk.Frame(notebook)
-        text_comparison_view = TextComparisonView(parent=text_comparison_frame, controller=self.controller)  # Instantiate text comparison view
-        text_comparison_view._render()
-        notebook.add(text_comparison_frame, text="Text Comparison")
+        text_comparison_view = TextComparisonView(
+            parent=notebook, controller=self.controller)  # Instantiate text comparison view
+        notebook.add(text_comparison_view, text="Text Comparison")
 
     def _on_closing(self):
         """

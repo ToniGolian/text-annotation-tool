@@ -1,10 +1,11 @@
 import tkinter as tk
 from view.interfaces import ITextComparisonView
 from controller.interfaces import IController
-# from view.comparison_display_frame import ComparisonDisplayFrame  
-# from view.tagging_menu_frame import TaggingMenuFrame  
+# from view.comparison_display_frame import ComparisonDisplayFrame
+# from view.tagging_menu_frame import TaggingMenuFrame
 from mockclasses.mock_tagging_menu_frame import MockTaggingMenuFrame
 from mockclasses.mock_text_display_frame import MockTextDisplayFrame
+
 
 class TextComparisonView(tk.Frame, ITextComparisonView):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
@@ -18,14 +19,17 @@ class TextComparisonView(tk.Frame, ITextComparisonView):
         super().__init__(parent)
         self._controller = controller
 
-    def _render(self) -> None:
+        self.render()
+
+    def render(self) -> None:
         """
         Sets up the layout for the TextComparisonView, adding the comparison display 
         and control frames within itself.
         """
         # Instantiate and pack the comparison display frame on the top
         self._comparison_display_frame = MockTextDisplayFrame(self)
-        self._comparison_display_frame.pack(side="top", fill="both", expand=True)
+        self._comparison_display_frame.pack(
+            side="top", fill="both", expand=True)
 
         # Instantiate and pack the comparison control frame on the bottom
         self._comparison_control_frame = MockTaggingMenuFrame(self)

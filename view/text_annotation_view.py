@@ -1,12 +1,13 @@
 import tkinter as tk
 from view.interfaces import ITextAnnotationView
 from controller.interfaces import IController
-# from view.text_display_frame import TextDisplayFrame  
-# from view.tagging_menu_frame import TaggingMenuFrame  
+# from view.text_display_frame import TextDisplayFrame
+# from view.tagging_menu_frame import TaggingMenuFrame
 from mockclasses.mock_tagging_menu_frame import MockTaggingMenuFrame
 from mockclasses.mock_text_display_frame import MockTextDisplayFrame
 
-class TextAnnotationView(tk.Frame,ITextAnnotationView):
+
+class TextAnnotationView(tk.Frame, ITextAnnotationView):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the TextAnnotationView with a reference to the parent widget and controller.
@@ -17,9 +18,11 @@ class TextAnnotationView(tk.Frame,ITextAnnotationView):
         """
         super().__init__(parent)
         self._controller = controller
+        self.config(bg="red")
 
+        self.render()
 
-    def _render(self) -> None:
+    def render(self) -> None:
         """
         Sets up the layout for the TextAnnotationView, adding the text display 
         and tagging menu frames within itself.

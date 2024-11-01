@@ -3,12 +3,11 @@
 from view.main_window import MainWindow
 # from controller.controller import Controller
 import tkinter as tk
-from mockclasses.mock_models import MockTagModel,MockTextModel
+from mockclasses.mock_models import MockTagModel, MockTextModel
 from mockclasses.mock_controller import MockController
 
-def main():
-    #Initialize the tk window
 
+def main():
     # Initialize model and controller
     text_model = MockTextModel()
     tag_model = MockTagModel()
@@ -16,6 +15,7 @@ def main():
 
     app = MainWindow(controller=controller)
     app.mainloop()
+
 
 # Entrypoint
 if __name__ == "__main__":

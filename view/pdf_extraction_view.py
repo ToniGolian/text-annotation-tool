@@ -2,7 +2,8 @@ import tkinter as tk
 from view.interfaces import IPDFExtractionView
 from controller.interfaces import IController
 
-class PDFExtractionView(tk.Frame,IPDFExtractionView):
+
+class PDFExtractionView(tk.Frame, IPDFExtractionView):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the PDFExtractionView with a reference to the parent widget and controller.
@@ -14,7 +15,9 @@ class PDFExtractionView(tk.Frame,IPDFExtractionView):
         super().__init__(parent)
         self._controller = controller
 
-    def _render(self) -> None:
+        self.render()
+
+    def render(self) -> None:
         """
         Sets up the layout for the PDFExtractionView, creating the main frame 
         and adding all necessary widgets.
@@ -26,7 +29,8 @@ class PDFExtractionView(tk.Frame,IPDFExtractionView):
             tk.Frame: The main frame for PDF extraction view.
         """
         # Add PDF extraction widgets here (e.g., buttons, labels, text boxes)
-        extract_button = tk.Button(self, text="Extract PDF", command=self._on_extract)
+        extract_button = tk.Button(
+            self, text="Extract PDF", command=self._on_extract)
         extract_button.pack(pady=10)
 
         self.pack(fill="both", expand=True)
@@ -46,4 +50,5 @@ class PDFExtractionView(tk.Frame,IPDFExtractionView):
         execute the PDF extraction.
         """
         # Example command: Call a method on the controller to start PDF extraction
-        self._controller.execute_command("extract_pdf")  # This would actually be a command object or method call
+        # This would actually be a command object or method call
+        self._controller.execute_command("extract_pdf")

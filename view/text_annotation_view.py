@@ -1,10 +1,12 @@
 import tkinter as tk
+from tkinter import ttk
 from view.interfaces import ITextAnnotationView
 from controller.interfaces import IController
-# from view.text_display_frame import TextDisplayFrame
+from view.meta_tag_frame import MetaTagsFrame
+from view.text_display_frame import TextDisplayFrame
 # from view.tagging_menu_frame import TaggingMenuFrame
 from mockclasses.mock_tagging_menu_frame import MockTaggingMenuFrame
-from mockclasses.mock_text_display_frame import MockTextDisplayFrame
+# from mockclasses.mock_text_display_frame import MockTextDisplayFrame
 
 
 class TextAnnotationView(tk.Frame, ITextAnnotationView):
@@ -17,7 +19,7 @@ class TextAnnotationView(tk.Frame, ITextAnnotationView):
             controller (IController): The controller managing actions for this view.
         """
         super().__init__(parent)
-        self._controller = controller
+        self.controller = controller
         self.config(bg="red")
 
         self.render()
@@ -28,8 +30,13 @@ class TextAnnotationView(tk.Frame, ITextAnnotationView):
         and tagging menu frames within itself.
         """
         # Instantiate and pack the text display frame on the left side
-        self._text_display_frame = MockTextDisplayFrame(self)
-        self._text_display_frame.pack(side="left", fill="both", expand=True)
+        paned_window = ttk.PanedWindow(self, orient=tk.VERTICAL)
+        paned_window.pack(fill=tk.BOTH, expand=True)
+        upper_frame = MetaTagsFrame(self, controller=self.controller)
+        lower_frame = TextDisplayFrame(self, controller=self.controller)
+        paned_window.add(upper_frame)
+        paned_window.add(lower_frame)
+        paned_window.pack(side="left", fill="both", expand=True)
 
         # Instantiate and pack the tagging menu frame on the right side
         self._tagging_menu_frame = MockTaggingMenuFrame(self)

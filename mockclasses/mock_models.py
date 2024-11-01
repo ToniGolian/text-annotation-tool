@@ -1,7 +1,8 @@
-from model.interfaces import ITextModel,ITagModel
+from model.interfaces import IDocumentModel, ITagModel
 from utils.interfaces import IObserver
 
-class MockTextModel(ITextModel):
+
+class MockDocumentModel(IDocumentModel):
     def add_observer(self, observer: IObserver) -> None:
         """Adds an observer to be notified of changes."""
         pass
@@ -13,6 +14,7 @@ class MockTextModel(ITextModel):
     def notify_observers(self) -> None:
         """Notifies all registered observers of changes."""
         pass
+
 
 class MockTagModel(ITagModel):
     def add_observer(self, observer: IObserver) -> None:

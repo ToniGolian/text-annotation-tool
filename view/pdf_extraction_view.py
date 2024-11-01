@@ -13,7 +13,7 @@ class PDFExtractionView(tk.Frame, IPDFExtractionView):
             controller (IController): The controller managing actions for this view.
         """
         super().__init__(parent)
-        self._controller = controller
+        self.controller = controller
 
         self.render()
 
@@ -51,4 +51,4 @@ class PDFExtractionView(tk.Frame, IPDFExtractionView):
         """
         # Example command: Call a method on the controller to start PDF extraction
         # This would actually be a command object or method call
-        self._controller.execute_command("extract_pdf")
+        self.controller.execute_command("extract_pdf")

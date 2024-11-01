@@ -11,9 +11,9 @@ class MockTextDisplayFrame(tk.Frame, ITextDisplayFrame):
             parent (tk.Widget): The parent widget where this frame will be placed.
         """
         super().__init__(parent)
-        self.render(parent)
+        self.render()
 
-    def render(self, parent: tk.Widget) -> None:
+    def render(self) -> None:
         """
         Renders the text display frame layout with example content.
 

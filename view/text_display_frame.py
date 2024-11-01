@@ -1,39 +1,50 @@
-# view/text_display_frame.py
-
 import tkinter as tk
-from view.interfaces import ITextDisplayFrame
-from controller.controller import IController
+from tkinter import ttk
+from utils.interfaces import IObserver
+from controller.interfaces import IController
 
-class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
-    def __init__(self, parent: tk.Widget, controller: IController) -> None:
-        """
-        Initializes the TextDisplayFrame with a reference to the controller.
-        Registers itself as an observer of the model via the controller.
-        
-        Args:
-            parent (tk.Widget): The parent widget in which this frame will be displayed.
-            controller (Controller): The controller managing the interaction between the view and model.
-        """
+
+class TextDisplayFrame(ttk.Frame, IObserver):
+    def __init__(self, parent, controller: IController):
         super().__init__(parent)
+
+        # Controller reference for interaction
         self.controller = controller
-        self.controller.register_observer(self)  # Register as observer through the controller
-        self._render()
-    
-    def _render(self) -> None:
-        """
-        Sets up the text display widget within the frame. This is where the tk.Text widget is created
-        and packed to fill the frame.
-        """
-        self.text_widget = tk.Text(self)
-        self.text_widget.pack(fill="both", expand=True)
 
-    def update(self, text: str) -> None:
-        """
-        Called when the model notifies observers of a change.
-        Updates the text content in the text_widget based on the provided text.
+        # Initialize widget placeholders
+        self.text_widget = None
 
-        Args:
-            text (str): The new text content from the model to display in the text_widget.
-        """
-        self.text_widget.delete("1.0", tk.END)
-        self.text_widget.insert("1.0", text)
+        # Render the GUI components
+        self.render()
+
+    def render(self):
+        """Sets up and arranges all widgets within the frame."""
+
+        # Frame for text widget and scrollbar
+        lower_frame = ttk.Frame(self)
+
+        # Scrollbar initialization
+        scrollbar = tk.Scrollbar(lower_frame)
+
+        # Text widget initialization with scrollbar
+        self.text_widget = tk.Text(
+            lower_frame, yscrollcommand=scrollbar.set, state='disabled')
+        scrollbar.config(command=self.text_widget.yview)
+
+        # Bind selection event to on_selection method
+        self.text_widget.bind("<ButtonRelease-1>", self.on_selection)
+
+        # Pack text widget and scrollbar within lower_frame
+        self.text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Pack lower_frame in the main frame
+        lower_frame.pack(fill=tk.BOTH, expand=True)
+
+    def on_selection(self, event):
+        """Handles text selection events."""
+        pass
+
+    def update(self, data):
+        """Observer method to handle updates from subjects."""
+        pass

@@ -59,6 +59,9 @@ class MainWindow(tk.Tk):
             parent=notebook, controller=self.controller)  # Instantiate text comparison view
         notebook.add(text_comparison_view, text="Text Comparison")
 
+        # Chose the second page as default
+        notebook.select(1)
+
     def _on_closing(self):
         """
         Handles the window close event.

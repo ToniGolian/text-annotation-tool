@@ -1,12 +1,14 @@
 from controller.interfaces import IController
 from commands.interfaces import ICommand
-from model.interfaces import ITextModel,ITagModel
+from model.interfaces import IModel, IDocumentModel, ITagModel
+from utils.interfaces import IObserver
+
 
 class MockController(IController):
-    def __init__(self,text_model:ITextModel,tag_model:ITagModel):
-        self.text_model=text_model
-        self.tag_model=tag_model
-        
+    def __init__(self, text_model: IDocumentModel, tag_model: ITagModel):
+        self.text_model = text_model
+        self.tag_model = tag_model
+
     def execute_command(self, command: ICommand) -> None:
         """Executes the specified command."""
         print("Controller execute command")
@@ -18,3 +20,9 @@ class MockController(IController):
     def redo(self, command: ICommand) -> None:
         """Reapplies the actions of the specified command."""
         print("Controller redo command")
+
+    def register_observer(self, observer: IObserver) -> None:
+        print("Observer registered")
+
+    def remove_observer(self, observer: IObserver) -> None:
+        print("observer removed")

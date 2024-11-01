@@ -17,7 +17,7 @@ class TextComparisonView(tk.Frame, ITextComparisonView):
             controller (IController): The controller managing actions for this view.
         """
         super().__init__(parent)
-        self._controller = controller
+        self.controller = controller
 
         self.render()
 

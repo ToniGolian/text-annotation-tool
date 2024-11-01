@@ -13,8 +13,9 @@ def main():
     tag_model = MockTagModel()
     controller = MockController(text_model, tag_model)
 
-    app = MainWindow(controller=controller)
-    app.mainloop()
+    app_view = MainWindow(controller)
+    # Start the App
+    app_view.mainloop()
 
 
 # Entrypoint

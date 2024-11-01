@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from commands.interfaces import ICommand
-from model.interfaces import IModel, ITagModel, IDocumentModel
+from model.interfaces import IModel
 from utils.interfaces import IObserver
 
 
 class IController(ABC):
     @abstractmethod
-    def __init__(self, text_model: IDocumentModel, tag_model: ITagModel) -> None:
+    def __init__(self, text_model: IModel, tag_model: IModel) -> None:
         """
         Initializes the controller with text and tag model dependencies.
 

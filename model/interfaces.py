@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from utils.interfaces import IObserver
-from controller.interfaces import IController
 
 
 from abc import ABC, abstractmethod
@@ -42,9 +41,7 @@ class IModel(ABC):
 
 
 class IDocumentModel(IModel):
-    @abstractmethod
-    def __init__(self, controller: IController):
-        pass
+    pass
 
 
 class ITagModel(IModel):

@@ -1,13 +1,10 @@
 from typing import List, Dict
 from model.interfaces import IDocumentModel
-from controller.interfaces import IController
 from model.interfaces import ITagModel
 
 
 class DocumentModel(IDocumentModel):
-    def __init__(self, controller: IController):
-        self._controller = controller
-
+    def __init__(self):
         self._file_name: str = ""
         self._metatags: Dict = {}
         self._text: str = ""

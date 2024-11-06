@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from commands.interfaces import ICommand
 from model.interfaces import IModel
 from utils.interfaces import IObserver
-
+from typing import Sequence
 
 class IController(ABC):
     @abstractmethod
@@ -40,3 +40,7 @@ class IController(ABC):
     def remove_observer(self, observer: IObserver) -> None:
         """Remove observer from Model"""
         pass
+
+    @abstractmethod
+    def get_template_groupt(self)-> Sequence:
+        """Returns the Groups of templates for the dynamic creation of Tagging menu frames """

@@ -4,6 +4,7 @@ from model.interfaces import IModel
 from utils.interfaces import IObserver
 from typing import Sequence
 
+
 class IController(ABC):
     @abstractmethod
     def __init__(self, text_model: IModel, tag_model: IModel) -> None:
@@ -42,5 +43,5 @@ class IController(ABC):
         pass
 
     @abstractmethod
-    def get_template_groupt(self)-> Sequence:
+    def get_template_groups(self) -> Sequence:
         """Returns the Groups of templates for the dynamic creation of Tagging menu frames """

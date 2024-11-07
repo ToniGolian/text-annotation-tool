@@ -37,7 +37,7 @@ class IModel(ABC):
         Each observer in the list is notified of changes in the model.
         """
         for observer in self._observers:
-            observer.update()
+            observer.update(self)
 
 
 class IDocumentModel(IModel):

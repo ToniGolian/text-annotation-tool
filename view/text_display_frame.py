@@ -17,29 +17,31 @@ class TextDisplayFrame(ttk.Frame, IObserver):
         # Render the GUI components
         self.render()
 
+        # Register as Observer
+        self.controller.register_observer(self)
+
     def render(self):
         """Sets up and arranges all widgets within the frame."""
 
-        # Frame for text widget and scrollbar
-        lower_frame = ttk.Frame(self)
-
         # Scrollbar initialization
-        scrollbar = tk.Scrollbar(lower_frame)
+        scrollbar = tk.Scrollbar(self)
 
         # Text widget initialization with scrollbar
         self.text_widget = tk.Text(
-            lower_frame, yscrollcommand=scrollbar.set, state='disabled')
+            self, yscrollcommand=scrollbar.set, state='disabled'
+        )
         scrollbar.config(command=self.text_widget.yview)
 
         # Bind selection event to on_selection method
         self.text_widget.bind("<ButtonRelease-1>", self.on_selection)
 
-        # Pack text widget and scrollbar within lower_frame
-        self.text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Pack text widget with padding on the left and bottom
+        self.text_widget.pack(side=tk.LEFT, fill=tk.BOTH,
+                              expand=True, padx=(10, 0), pady=(0, 10))
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Pack lower_frame in the main frame
-        lower_frame.pack(fill=tk.BOTH, expand=True)
+        self.pack(fill=tk.BOTH, expand=True)
 
     def on_selection(self, event):
         """Handles text selection events."""

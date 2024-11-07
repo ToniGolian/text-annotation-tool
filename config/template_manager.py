@@ -1,6 +1,7 @@
 import os
 from typing import List, Dict
-from ..io.file_handler import FileHandler
+from io.file_handler import FileHandler
+
 
 class TemplateManager:
     """
@@ -12,7 +13,7 @@ class TemplateManager:
         _file_handler (FileHandler): Instance of FileHandler to manage file operations.
     """
 
-    def __init__(self, path: str = "m/app_data/tag_templates") -> None:
+    def __init__(self, path: str = "/app_data/tag_templates") -> None:
         """
         Initializes the TemplateManager with a given path and loads JSON templates.
 
@@ -21,7 +22,7 @@ class TemplateManager:
         """
         self._path: str = path
         self._templates: List[Dict] = []
-        self._file_handler = FileHandler()  # Create a single FileHandler instance
+        self._file_handler = FileHandler()
         self._load_templates()
 
     def _load_templates(self) -> None:
@@ -42,7 +43,8 @@ class TemplateManager:
                     template_data = self._file_handler.read_file(file_path)
                     self._templates.append(template_data)
                 except ValueError as e:
-                    raise ValueError(f"Error parsing JSON in file '{file_path}': {e}")
+                    raise ValueError(
+                        f"Error parsing JSON in file '{file_path}': {e}")
 
     def get_template(self, tag_type: str) -> Dict:
         """

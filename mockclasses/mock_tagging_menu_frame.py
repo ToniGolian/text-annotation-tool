@@ -1,56 +1,122 @@
 import tkinter as tk
-from view.interfaces import ITaggingMenuFrame
+from tkinter import ttk
+from controller.interfaces import IController
 
 
-class MockTaggingMenuFrame(tk.Frame, ITaggingMenuFrame):
-    def __init__(self, parent: tk.Widget) -> None:
+class MockTaggingMenuFrame(tk.Frame):
+    """
+    A mock tkinter Frame that contains a Notebook with two pages:
+    one with five alternating colored frames, and one empty.
+    """
+
+    def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
-        Initializes the TaggingMenuFrame with a reference to the parent widget.
+        Initializes the MockTaggingMenuFrame with a Notebook containing two pages.
 
         Args:
-            parent (tk.Widget): The parent widget where this frame will be placed.
+            parent (tk.Widget): The parent tkinter container (e.g., Tk, Frame) for this MockTaggingMenuFrame.
+            controller (IController): The controller interface for accessing data.
         """
         super().__init__(parent)
-        self.render(parent)
 
-    def render(self, parent: tk.Widget) -> None:
+        # Create the internal notebook
+        self._controller = controller
+        self._notebook = ttk.Notebook(self)
+        self._notebook.pack(fill="both", expand=True)
+
+        # Render the scrollable pages in the notebook
+        self._render_pages()
+
+    def _render_pages(self) -> None:
         """
-        Renders the tagging menu frame layout with example widgets.
+        Renders two pages in the notebook: one with alternating colored frames and one empty green page.
+        """
+        # Add the yellow page with alternating colored frames
+        yellow_page = self._render_scrollable_page_with_frames("yellow")
+        self._notebook.add(yellow_page, text="Yellow Page")
+
+        # Add an empty green page
+        green_page = self._render_scrollable_page("green")
+        self._notebook.add(green_page, text="Green Page")
+
+    def _render_scrollable_page_with_frames(self, color: str) -> tk.Frame:
+        """
+        Renders a scrollable page with five alternating orange and green frames.
 
         Args:
-            parent (tk.Widget): The parent widget where this frame will be placed.
+            color (str): Background color for the page.
+
+        Returns:
+            tk.Frame: A scrollable frame with alternating colored frames.
         """
-        # Create a label and a few example tagging buttons
-        label = tk.Label(self, text="Tagging Menu")
-        label.pack(pady=5)
+        # Create a container frame to contain the canvas and scrollbar
+        container_frame = tk.Frame(self)
 
-        # Example buttons for tagging options
-        add_tag_button = tk.Button(
-            self, text="Add Tag", command=self._on_add_tag)
-        add_tag_button.pack(fill="x", padx=10, pady=5)
+        # Create the canvas and scrollbar
+        canvas = tk.Canvas(container_frame, bg=color)
+        scrollbar = ttk.Scrollbar(
+            container_frame, orient="vertical", command=canvas.yview)
 
-        remove_tag_button = tk.Button(
-            self, text="Remove Tag", command=self._on_remove_tag)
-        remove_tag_button.pack(fill="x", padx=10, pady=5)
+        # Configure the canvas to work with the scrollbar
+        canvas.configure(yscrollcommand=scrollbar.set)
 
-        edit_tag_button = tk.Button(
-            self, text="Edit Tag", command=self._on_edit_tag)
-        edit_tag_button.pack(fill="x", padx=10, pady=5)
+        # Create a frame inside the canvas that will be scrollable
+        scrollable_frame = tk.Frame(canvas, bg=color)
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
 
-    def update(self) -> None:
+        # Add the scrollable frame to the canvas
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+
+        # Add five alternating colored square frames
+        colors = ["orange", "green"]
+        for i in range(5):
+            frame_color = colors[i % 2]  # Alternate between orange and green
+            square_frame = tk.Frame(
+                scrollable_frame, bg=frame_color, width=200, height=200)
+            square_frame.pack(fill="both", expand=True)
+
+        # Pack the canvas and scrollbar inside the container frame
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        return container_frame
+
+    def _render_scrollable_page(self, color: str) -> tk.Frame:
         """
-        Updates the tagging menu in response to notifications from the observed object.
+        Renders a scrollable page with a specified background color.
+
+        Args:
+            color (str): Background color for the page.
+
+        Returns:
+            tk.Frame: A scrollable frame with the specified background color.
         """
-        print("TaggingMenuFrame has been updated based on model changes.")
+        # Create a container frame to contain the canvas and scrollbar
+        container_frame = tk.Frame(self)
 
-    def _on_add_tag(self) -> None:
-        """Mock action for adding a tag."""
-        print("Add Tag button clicked.")
+        # Create the canvas and scrollbar
+        canvas = tk.Canvas(container_frame, bg=color)
+        scrollbar = ttk.Scrollbar(
+            container_frame, orient="vertical", command=canvas.yview)
 
-    def _on_remove_tag(self) -> None:
-        """Mock action for removing a tag."""
-        print("Remove Tag button clicked.")
+        # Configure the canvas to work with the scrollbar
+        canvas.configure(yscrollcommand=scrollbar.set)
 
-    def _on_edit_tag(self) -> None:
-        """Mock action for editing a tag."""
-        print("Edit Tag button clicked.")
+        # Create a frame inside the canvas that will be scrollable
+        scrollable_frame = tk.Frame(canvas, bg=color)
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        # Add the scrollable frame to the canvas
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+
+        # Pack the canvas and scrollbar inside the container frame
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        return container_frame

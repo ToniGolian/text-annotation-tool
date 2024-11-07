@@ -37,6 +37,13 @@ class ITextDisplayFrame(IObserver):
         pass
 
 
+class IMetaTagFrame(IObserver):
+    @abstractmethod
+    def render(self, parent):
+        """Render the text display frame in the specified parent frame."""
+        pass
+
+
 class ITaggingMenuFrame(IObserver):
     @abstractmethod
     def render(self, parent):

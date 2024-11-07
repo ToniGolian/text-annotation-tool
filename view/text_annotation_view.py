@@ -4,8 +4,8 @@ from view.interfaces import ITextAnnotationView
 from controller.interfaces import IController
 from view.meta_tag_frame import MetaTagsFrame
 from view.text_display_frame import TextDisplayFrame
-# from view.tagging_menu_frame import TaggingMenuFrame
-from mockclasses.mock_tagging_menu_frame import MockTaggingMenuFrame
+from view.tagging_menu_frame import TaggingMenuFrame
+# from mockclasses.mock_tagging_menu_frame import MockTaggingMenuFrame
 # from mockclasses.mock_text_display_frame import MockTextDisplayFrame
 
 
@@ -26,21 +26,39 @@ class TextAnnotationView(tk.Frame, ITextAnnotationView):
 
     def render(self) -> None:
         """
-        Sets up the layout for the TextAnnotationView, adding the text display 
-        and tagging menu frames within itself.
+        Sets up the layout for the TextAnnotationView, allowing resizing between 
+        the text display frames on the left, a center frame, and the tagging menu frame on the right.
         """
-        # Instantiate and pack the text display frame on the left side
-        paned_window = ttk.PanedWindow(self, orient=tk.VERTICAL)
-        paned_window.pack(fill=tk.BOTH, expand=True)
-        upper_frame = MetaTagsFrame(self, controller=self.controller)
-        lower_frame = TextDisplayFrame(self, controller=self.controller)
-        paned_window.add(upper_frame)
-        paned_window.add(lower_frame)
-        paned_window.pack(side="left", fill="both", expand=True)
+        # Create the main horizontal PanedWindow for the layout
+        self.paned_window = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
+        self.paned_window.pack(fill=tk.BOTH, expand=True)
 
-        # Instantiate and pack the tagging menu frame on the right side
-        self._tagging_menu_frame = MockTaggingMenuFrame(self)
-        self._tagging_menu_frame.pack(side="right", fill="y")
+        # Center frame containing upper and lower frames for text and metadata display
+        self.left_frame = tk.Frame(self.paned_window)
+
+        # Pack the upper_frame at the top of left_frame
+        self.upper_frame = MetaTagsFrame(
+            self.left_frame, controller=self.controller)
+        self.upper_frame.pack(fill="x", expand=False, side="top")
+
+        # Pack the lower_frame below the upper_frame
+        self.lower_frame = TextDisplayFrame(
+            self.left_frame, controller=self.controller)
+        self.lower_frame.pack(fill="both", expand=True, side="top")
+
+        # Now pack left_frame itself in the paned_window
+        self.left_frame.pack(fill="both", expand=True)
+
+        # Right frame for the tagging menu
+        self.right_frame = TaggingMenuFrame(
+            self, controller=self.controller)
+
+        # Add frames to the PanedWindow with weights
+        self.paned_window.add(self.left_frame, weight=6)
+        self.paned_window.add(self.right_frame, weight=1)
+
+        # Set initial sash positions
+        self.old_sash = self.paned_window.sashpos(0)
 
     def update(self) -> None:
         """

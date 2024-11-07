@@ -1,78 +1,98 @@
 import tkinter as tk
 from tkinter import ttk
-from utils.interfaces import IObserver
+from view.interfaces import IMetaTagFrame
 from controller.interfaces import IController
+from typing import List, Dict
 
 
-class MetaTagsFrame(tk.Frame, IObserver):
-    def __init__(self, parent, controller: IController):
+class MetaTagsFrame(tk.Frame, IMetaTagFrame):
+    """
+    A tkinter Frame that displays meta tag information and provides options to save data.
+
+    Attributes:
+        _meta_tag_labels (List[str]): A list of labels for meta tags.
+        controller (IController): The controller managing interactions with this frame.
+    """
+
+    def __init__(self, parent: tk.Widget, controller: IController) -> None:
+        """
+        Initializes the MetaTagsFrame with a controller and meta tag labels.
+
+        Args:
+            parent (tk.Widget): The parent tkinter container for this frame.
+            controller (IController): The controller for handling interactions.
+            meta_tag_labels (List[str]): A list of labels for meta tags to display.
+        """
         super().__init__(parent)
 
-        # Controller reference for interaction
         self.controller = controller
 
-        # Filename label placeholder
+        #!test list needs to be empty
+        # self._meta_tag_labels = []
+        self._meta_tag_labels = [
+            "a-Tag laaaaaaaaaaaaaaaaang", "b-Tag", "c-Tag", "d-tag"]
+
         self._filename_label = None
 
-        # Render the GUI components
         self.render()
+        self.controller.register_observer(self)
 
-    def render(self):
-        """Sets up and arranges all widgets within the frame."""
+    def render(self) -> None:
+        """
+        Sets up and arranges all widgets within the frame, including labels, entries, and buttons.
+        """
+        self.config(padx=10, pady=10)
 
-        # Left frame for labels and entries
-        left_frame = ttk.Frame(self)
-        labels_text = ["Filename:", "Semantic Tags:", "Geo Tags:", "Time Tags"]
+        # Static label for the filename
+        label = ttk.Label(self, text="Filename:", font=("Helvetica", 16))
+        label.grid(row=0, column=0, sticky="w", padx=5, pady=2)
 
-        # Create labels and entries dynamically
-        for index, text in enumerate(labels_text):
-            # Create and position label
-            label = ttk.Label(left_frame, text=text)
+        # Placeholder for filename display
+        self._filename_label = ttk.Label(self, text="")
+        self._filename_label.grid(row=0, column=1, sticky="w", padx=5, pady=2)
+
+        # Create additional labels and entries based on meta_tag_labels
+        for index, text in enumerate(self._meta_tag_labels, start=1):
+            label = ttk.Label(self, text=text)
             label.grid(row=index, column=0, sticky="w", padx=5, pady=2)
 
-            # Styling for the filename label
-            if index == 0:
-                label.configure(font=("Helvetica", 16))
-                self._filename_label = ttk.Label(left_frame, text="")
-                self._filename_label.grid(
-                    row=index, column=1, sticky="w", padx=5, pady=2)
-            else:
-                # Create entry fields for the other labels
-                entry = tk.Entry(left_frame)
-                entry.grid(row=index, column=1, sticky="ew", padx=5, pady=2)
+            # Create entry fields for each label
+            entry = tk.Entry(self)
+            entry.grid(row=index, column=1, sticky="ew", padx=5, pady=2)
 
-        # Pack left_frame to expand and adjust with window resizing
-        left_frame.pack(side=tk.LEFT, fill=tk.BOTH,
-                        expand=True, padx=10, pady=10)
-        # Entries expand horizontally with window
-        left_frame.grid_columnconfigure(1, weight=1)
+        # Configure grid columns: left column (labels) to fit contents, right column (entries) to expand
+        # Left column for labels, no expansion
+        self.grid_columnconfigure(0, weight=0)
+        # Right column for entries, expands to fill space
+        self.grid_columnconfigure(1, weight=1)
 
-        # Right frame for buttons
-        right_frame = ttk.Frame(self)
-        save_button = ttk.Button(right_frame, text="Save", command=self.save)
-        save_as_button = ttk.Button(
-            right_frame, text="Save as...", command=self.save_as)
+    def get_meta_tag_labels(self) -> List[str]:
+        """
+        Retrieves the current meta tag labels.
 
-        # Pack buttons at the bottom of right_frame
-        save_as_button.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        save_button.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
+        Returns:
+            List[str]: A list of meta tag label names.
+        """
+        return self._meta_tag_labels
 
-        # Position right_frame in this main frame, allowing window resizing
-        right_frame.pack(side=tk.RIGHT, fill=tk.Y,
-                         padx=10, pady=10, anchor='s')
+    def set_meta_tag_labels(self, labels: List[str]) -> None:
+        """
+        Sets the meta tag labels to a new list of labels and re-renders the frame.
 
-        # Set column weights for flexible resizing between left and right frames
-        self.grid_columnconfigure(0, weight=3)  # Left side takes more space
-        self.grid_columnconfigure(1, weight=1)  # Right side takes less space
+        Args:
+            labels (List[str]): A list of new meta tag label names to display.
+        """
+        self._meta_tag_labels = labels
+        # Re-render components if labels are updated
+        for widget in self.winfo_children():
+            widget.destroy()
+        self.render()
 
-    def save(self):
-        # TODO Implement save functionality
-        pass
+    def update(self, data: Dict) -> None:
+        """
+        Placeholder method for updating the frame based on observed data changes.
 
-    def save_as(self):
-        # TODO Implement save as functionality
-        pass
-
-    def update(self, data):
-        # TODO Implement observer update functionality if needed
+        Args:
+            data (Dict): The data to update the frame with.
+        """
         pass

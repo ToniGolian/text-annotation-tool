@@ -32,7 +32,8 @@ class TextComparisonView(tk.Frame, ITextComparisonView):
             side="top", fill="both", expand=True)
 
         # Instantiate and pack the comparison control frame on the bottom
-        self._comparison_control_frame = MockTaggingMenuFrame(self)
+        self._comparison_control_frame = MockTaggingMenuFrame(
+            self, controller=self.controller)
         self._comparison_control_frame.pack(side="bottom", fill="x")
 
     def update(self) -> None:

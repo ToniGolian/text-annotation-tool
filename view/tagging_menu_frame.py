@@ -30,9 +30,9 @@ class TaggingMenuFrame(tk.Frame):
         self._notebook.pack(fill="both", expand=True)
 
         # Render the initial pages in the notebook
-        self._render_pages()
+        self._render()
 
-    def _render_pages(self) -> None:
+    def _render(self) -> None:
         """
         Renders pages in the notebook for each template group.
         """

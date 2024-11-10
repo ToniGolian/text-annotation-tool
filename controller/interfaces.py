@@ -1,13 +1,12 @@
 from abc import ABC, abstractmethod
 from commands.interfaces import ICommand
-from model.interfaces import IModel
-from utils.interfaces import IObserver
-from typing import Sequence
+from utils.interfaces import IObserver, IPublisher
+from typing import List, Sequence
 
 
 class IController(ABC):
     @abstractmethod
-    def __init__(self, text_model: IModel, tag_model: IModel) -> None:
+    def __init__(self, text_model: IPublisher, tag_model: IPublisher) -> None:
         """
         Initializes the controller with text and tag model dependencies.
 
@@ -45,3 +44,19 @@ class IController(ABC):
     @abstractmethod
     def get_template_groups(self) -> Sequence:
         """Returns the Groups of templates for the dynamic creation of Tagging menu frames """
+        pass
+
+    @abstractmethod
+    def perform_text_selected(self, text: str) -> None:
+        """Performs the action if a text is selected in the main text display"""
+        pass
+
+    @abstractmethod
+    def get_comparison_sentences(self) -> List[str]:
+        """Retrieves the list of comparison sentences"""
+        pass
+
+    @abstractmethod
+    def get_update_data(self, publisher: IPublisher):
+        """Retrieves the data from observed publisher"""
+        pass

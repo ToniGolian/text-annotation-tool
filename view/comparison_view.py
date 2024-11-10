@@ -1,14 +1,14 @@
+from controller.interfaces import IController
 import tkinter as tk
 from tkinter import ttk
-from controller.interfaces import IController
-from view.meta_tag_frame import MetaTagsFrame
-from view.text_display_frame import TextDisplayFrame
+
 from view.tagging_menu_frame import TaggingMenuFrame
-# from mockclasses.mock_tagging_menu_frame import MockTaggingMenuFrame
-# from mockclasses.mock_text_display_frame import MockTextDisplayFrame
+from view.comparison_io_frame import ComparisonIOFrame
+from view.comparison_controls_frame import ComparisonControlsFrame
+from view.comparison_text_displays import ComparisonTextDisplays
 
 
-class TextAnnotationView(tk.Frame):
+class ComparisonView(tk.Frame):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the TextAnnotationView with a reference to the parent widget and controller.
@@ -22,9 +22,9 @@ class TextAnnotationView(tk.Frame):
 
         self._render()
 
-    def _render(self) -> None:
+    def _render(self):
         """
-        Sets up the layout for the TextAnnotationView, allowing resizing between 
+        Sets up the layout for the ComparisonView, allowing resizing between 
         the text display frames on the left, a center frame, and the tagging menu frame on the right.
         """
         # Create the main horizontal PanedWindow for the layout
@@ -34,18 +34,19 @@ class TextAnnotationView(tk.Frame):
         # Center frame containing upper and lower frames for text and metadata display
         self.left_frame = tk.Frame(self.paned_window)
 
-        # Pack the upper_frame at the top of left_frame
-        self.upper_frame = MetaTagsFrame(
-            self.left_frame, controller=self._controller)
-        self.upper_frame.pack(fill=tk.X, expand=False, side="top")
+        io_frame = ComparisonIOFrame(self.left_frame)
+        io_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
-        # Pack the lower_frame below the upper_frame
-        self.lower_frame = TextDisplayFrame(
-            self.left_frame, controller=self._controller)
-        self.lower_frame.pack(fill=tk.BOTH, expand=True, side="top")
+        controls_frame = ComparisonControlsFrame(self.left_frame)
+        controls_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
+
+        text_displays = ComparisonTextDisplays(
+            self.left_frame, self._controller)
+        text_displays.pack(side=tk.TOP, fill=tk.BOTH,
+                           expand=True, padx=10, pady=5)
 
         # Now pack left_frame itself in the paned_window
-        self.left_frame.pack(fill=tk.BOTH, expand=True)
+        self.left_frame.pack(fill="both", expand=True)
 
         # Right frame for the tagging menu
         self.right_frame = TaggingMenuFrame(
@@ -57,11 +58,3 @@ class TextAnnotationView(tk.Frame):
 
         # Set initial sash positions
         self.old_sash = self.paned_window.sashpos(0)
-
-    def update(self) -> None:
-        """
-        Updates the view in response to notifications from the observed object.
-        This method could refresh the text display or tagging menu if necessary.
-        """
-        # Placeholder for update logic based on model changes
-        print("TextAnnotationView has been updated based on model changes.")

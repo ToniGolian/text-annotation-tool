@@ -1,9 +1,8 @@
 import tkinter as tk
-from view.interfaces import IPDFExtractionView
 from controller.interfaces import IController
 
 
-class PDFExtractionView(tk.Frame, IPDFExtractionView):
+class PDFExtractionView(tk.Frame):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the PDFExtractionView with a reference to the parent widget and controller.
@@ -15,9 +14,9 @@ class PDFExtractionView(tk.Frame, IPDFExtractionView):
         super().__init__(parent)
         self.controller = controller
 
-        self.render()
+        self._render()
 
-    def render(self) -> None:
+    def _render(self) -> None:
         """
         Sets up the layout for the PDFExtractionView, creating the main frame 
         and adding all necessary widgets.

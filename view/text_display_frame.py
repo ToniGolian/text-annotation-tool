@@ -1,52 +1,77 @@
 import tkinter as tk
-from tkinter import ttk
-from utils.interfaces import IObserver
+from utils.interfaces import IObserver, IPublisher
 from controller.interfaces import IController
 
 
-class TextDisplayFrame(ttk.Frame, IObserver):
-    def __init__(self, parent, controller: IController):
+class TextDisplayFrame(tk.Frame, IObserver):
+    """
+    A frame that displays text and integrates with an observer pattern.
+    Includes a scrollbar for the text widget.
+    """
+
+    def __init__(self, parent: tk.Widget, controller: IController, selectable: bool = False) -> None:
+        """
+        Initializes the TextDisplayFrame with a text widget, scrollbar, and observer registration.
+
+        Args:
+            parent (tk.Widget): The parent tkinter container for this frame.
+            controller (IController): The controller managing interactions.
+            selectable (bool): Whether text selection events should trigger actions.
+        """
         super().__init__(parent)
 
-        # Controller reference for interaction
-        self.controller = controller
-
-        # Initialize widget placeholders
-        self.text_widget = None
+        self._controller = controller
+        self._selectable = selectable
+        self.text_widget: tk.Text = None
 
         # Render the GUI components
-        self.render()
+        self._render()
 
-        # Register as Observer
-        self.controller.register_observer(self)
+        # Register as an observer
+        self._controller.register_observer(self)
 
-    def render(self):
-        """Sets up and arranges all widgets within the frame."""
+    def _render(self) -> None:
+        """
+        Sets up and arranges the text widget and scrollbar within the frame.
+        """
+        # Create a scrollbar
+        scrollbar = tk.Scrollbar(self, orient="vertical")
 
-        # Scrollbar initialization
-        scrollbar = tk.Scrollbar(self)
-
-        # Text widget initialization with scrollbar
+        # Initialize the text widget and configure the scrollbar
         self.text_widget = tk.Text(
-            self, yscrollcommand=scrollbar.set, state='disabled'
-        )
+            self, wrap="word", yscrollcommand=scrollbar.set, state="disabled")
         scrollbar.config(command=self.text_widget.yview)
+        # Insert initial text content for testing
 
-        # Bind selection event to on_selection method
-        self.text_widget.bind("<ButtonRelease-1>", self.on_selection)
+        # Bind selection event if selectable
+        if self._selectable:
+            self.text_widget.bind("<ButtonRelease-1>", self._on_selection)
 
-        # Pack text widget with padding on the left and bottom
+        # Pack the text widget and scrollbar to fill the frame
         self.text_widget.pack(side=tk.LEFT, fill=tk.BOTH,
                               expand=True, padx=(10, 0), pady=(0, 10))
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Pack lower_frame in the main frame
-        self.pack(fill=tk.BOTH, expand=True)
+    def _on_selection(self, event: tk.Event) -> None:
+        """
+        Handles text selection events.
 
-    def on_selection(self, event):
-        """Handles text selection events."""
-        pass
+        Args:
+            event (tk.Event): The event triggered by text selection.
+        """
+        selected_text = self.text_widget.selection_get()
+        self._controller.perform_text_selected(selected_text)
 
-    def update(self, data):
-        """Observer method to handle updates from subjects."""
-        pass
+    def update(self, publisher: IPublisher) -> None:
+        """
+        Observer method to handle updates from subjects.
+
+        Args:
+            data (dict): Data passed from the observed subject.
+        """
+        # Implement any necessary updates based on the data
+        text = self._controller.get_update_data(publisher)
+        self.text_widget.config(state="normal")
+        self.text_widget.delete("1.0", tk.END)
+        self.text_widget.insert("1.0", text)
+        self.text_widget.config(state="disabled")

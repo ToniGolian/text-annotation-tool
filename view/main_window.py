@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from view.pdf_extraction_view import PDFExtractionView
 from view.text_annotation_view import TextAnnotationView
-from view.text_comparison_view import TextComparisonView
+from view.comparison_view import ComparisonView
 from controller.interfaces import IController
 
 
@@ -55,9 +55,9 @@ class MainWindow(tk.Tk):
         notebook.add(text_annotation_view, text="Text Annotation")
 
         # Add the Text Comparison tab
-        text_comparison_view = TextComparisonView(
+        comparison_view = ComparisonView(
             parent=notebook, controller=self.controller)  # Instantiate text comparison view
-        notebook.add(text_comparison_view, text="Text Comparison")
+        notebook.add(comparison_view, text="Text Comparison")
 
         # Chose the second page as default
         notebook.select(1)

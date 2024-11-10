@@ -1,11 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
-from view.interfaces import IMetaTagFrame
 from controller.interfaces import IController
 from typing import List, Dict
 
 
-class MetaTagsFrame(tk.Frame, IMetaTagFrame):
+class MetaTagsFrame(tk.Frame):
     """
     A tkinter Frame that displays meta tag information and provides options to save data.
 
@@ -29,15 +28,14 @@ class MetaTagsFrame(tk.Frame, IMetaTagFrame):
 
         #!test list needs to be empty
         # self._meta_tag_labels = []
-        self._meta_tag_labels = [
-            "a-Tag laaaaaaaaaaaaaaaaang", "b-Tag", "c-Tag", "d-tag"]
+        self._meta_tag_labels = self.controller.get_meta_tag_labels()
 
         self._filename_label = None
 
-        self.render()
+        self._render()
         self.controller.register_observer(self)
 
-    def render(self) -> None:
+    def _render(self) -> None:
         """
         Sets up and arranges all widgets within the frame, including labels, entries, and buttons.
         """
@@ -86,7 +84,7 @@ class MetaTagsFrame(tk.Frame, IMetaTagFrame):
         # Re-render components if labels are updated
         for widget in self.winfo_children():
             widget.destroy()
-        self.render()
+        self._render()
 
     def update(self, data: Dict) -> None:
         """

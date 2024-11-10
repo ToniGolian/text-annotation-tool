@@ -1,12 +1,12 @@
 from controller.interfaces import IController
 from commands.interfaces import ICommand
-from model.interfaces import IModel, IDocumentModel, ITagModel
-from utils.interfaces import IObserver
-from typing import Sequence
+from model.interfaces import IComparisonModel, IDocumentModel
+from utils.interfaces import IObserver, IPublisher
+from typing import List, Sequence
 
 
 class MockController(IController):
-    def __init__(self, text_model: IDocumentModel, tag_model: ITagModel):
+    def __init__(self, text_model: IPublisher, tag_model: IPublisher):
         self.text_model = text_model
         self.tag_model = tag_model
 
@@ -27,6 +27,9 @@ class MockController(IController):
 
     def remove_observer(self, observer: IObserver) -> None:
         print("observer removed")
+
+    def perform_text_selected(self, text: str) -> None:
+        print(f"Text: {text} selected.")
 
     def get_template_groups(self) -> Sequence:
         """Returns the Groups of templates for the dynamic creation of Tagging menu frames """
@@ -104,5 +107,17 @@ class MockController(IController):
             }
         ]}]
 
-    def get_meta_tag_labes(self):
+    def get_meta_tag_labels(self):
         return ["a-Tag", "b-Tag", "c-Tag"]
+
+    def get_comparison_sentences(self) -> List[str]:
+        """Retrieves the list of comparison sentences"""
+        return ["Sentence 1", "sentence "]
+
+    def get_update_data(self, publisher: IPublisher) -> None:
+        if isinstance(publisher, IComparisonModel):
+            return [f"This comes from {i+1}. comparison model" for i in range(3)]
+        elif isinstance(publisher, IDocumentModel):
+            return "This comes from document model\n"*100
+        else:
+            raise TypeError("Unsupported publisher type")

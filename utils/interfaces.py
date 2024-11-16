@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Dict, List
 
 
 class IObserver(ABC):
@@ -41,3 +41,8 @@ class IPublisher(ABC):
         """
         for observer in self._observers:
             observer.update(self)
+
+    @abstractmethod
+    def get_data(self) -> Dict:
+        """Retrieves the models data in a dictionary"""
+        pass

@@ -33,7 +33,7 @@ class MetaTagsFrame(tk.Frame):
         self._filename_label = None
 
         self._render()
-        self.controller.register_observer(self)
+        self.controller.add_observer(self)
 
     def _render(self) -> None:
         """

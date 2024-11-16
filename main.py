@@ -3,7 +3,7 @@
 from view.main_window import MainWindow
 # from controller.controller import Controller
 import tkinter as tk
-from mockclasses.mock_models import MockTagModel, MockDocumentModel
+from mockclasses.mock_models import MockTagModel, MockDocumentModel, MockComparisonModel
 from mockclasses.mock_controller import MockController
 
 
@@ -11,9 +11,11 @@ def main():
     # Initialize model and controller
     text_model = MockDocumentModel()
     tag_model = MockTagModel()
-    controller = MockController(text_model, tag_model)
-
+    comparison_model = MockComparisonModel()
+    controller = MockController(text_model, tag_model, comparison_model)
     app_view = MainWindow(controller)
+    controller.finalize_views()
+
     # Start the App
     app_view.mainloop()
 

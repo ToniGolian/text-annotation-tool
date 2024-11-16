@@ -16,6 +16,7 @@ class IController(ABC):
         """
         pass
 
+    # command pattern
     @abstractmethod
     def execute_command(self, command: ICommand) -> None:
         """Executes the specified command."""
@@ -31,8 +32,9 @@ class IController(ABC):
         """Reapplies the actions of the specified command."""
         pass
 
+    # observer pattern
     @abstractmethod
-    def register_observer(self, observer: IObserver) -> None:
+    def add_observer(self, observer: IObserver) -> None:
         """Register observer to Model"""
         pass
 
@@ -42,21 +44,20 @@ class IController(ABC):
         pass
 
     @abstractmethod
-    def get_template_groups(self) -> Sequence:
-        """Returns the Groups of templates for the dynamic creation of Tagging menu frames """
+    def get_update_data(self, publisher: IPublisher):
+        """Retrieves the data from observed publisher"""
         pass
 
+    # initializiations
+    @abstractmethod
+    def finalize_views(self) -> None:
+        """
+        Finalizes the initialization of all views that were previously 
+        not fully initialized."""
+        pass
+
+    # performances
     @abstractmethod
     def perform_text_selected(self, text: str) -> None:
         """Performs the action if a text is selected in the main text display"""
-        pass
-
-    @abstractmethod
-    def get_comparison_sentences(self) -> List[str]:
-        """Retrieves the list of comparison sentences"""
-        pass
-
-    @abstractmethod
-    def get_update_data(self, publisher: IPublisher):
-        """Retrieves the data from observed publisher"""
         pass

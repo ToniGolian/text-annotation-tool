@@ -60,7 +60,8 @@ class MainWindow(tk.Tk):
         notebook.add(comparison_view, text="Text Comparison")
 
         # Chose the second page as default
-        notebook.select(1)
+        #! change back to 1
+        notebook.select(2)
 
     def _on_closing(self):
         """

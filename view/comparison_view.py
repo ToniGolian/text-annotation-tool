@@ -3,8 +3,9 @@ import tkinter as tk
 from tkinter import ttk
 
 from view.tagging_menu_frame import TaggingMenuFrame
-from view.comparison_io_frame import ComparisonIOFrame
-from view.comparison_controls_frame import ComparisonControlsFrame
+# from view.comparison_io_frame import ComparisonIOFrame
+# from view.comparison_controls_frame import ComparisonControlsFrame
+from view.comparison_header_frame import ComparisonHeaderFrame
 from view.comparison_text_displays import ComparisonTextDisplays
 
 
@@ -34,11 +35,15 @@ class ComparisonView(tk.Frame):
         # Center frame containing upper and lower frames for text and metadata display
         self.left_frame = tk.Frame(self.paned_window)
 
-        io_frame = ComparisonIOFrame(self.left_frame)
-        io_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
+        header_frame = ComparisonHeaderFrame(
+            self.left_frame, controller=self._controller)
+        header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
-        controls_frame = ComparisonControlsFrame(self.left_frame)
-        controls_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
+        # io_frame = ComparisonIOFrame(self.left_frame)
+        # io_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
+
+        # controls_frame = ComparisonControlsFrame(self.left_frame)
+        # controls_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
         text_displays = ComparisonTextDisplays(
             self.left_frame, self._controller)

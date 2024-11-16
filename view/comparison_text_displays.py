@@ -1,11 +1,11 @@
-from typing import Dict, List
-from utils.interfaces import IObserver, IPublisher
+from tkinter import ttk
+from typing import List
 from controller.interfaces import IController
-from view.text_display_frame import TextDisplayFrame
+from view.comparison_text_display_frame import ComparisonTextDisplayFrame
 import tkinter as tk
 
 
-class ComparisonTextDisplays(tk.Frame, IObserver):
+class ComparisonTextDisplays(tk.Frame):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the ComparisonTextDisplays with a reference to the parent widget and controller.
@@ -17,86 +17,102 @@ class ComparisonTextDisplays(tk.Frame, IObserver):
         super().__init__(parent)
         self._controller: IController = controller
 
-        self._different_documents: List = []
+        self._file_names: List = []
         self._widget_structure = []
 
-        self._controller.register_observer(self)
+        # Add observer
+        self._controller.add_observer(self)
 
-        self._render()
+        # Create the canvas and scrollbar
+        canvas = tk.Canvas(self)
+        scrollbar = ttk.Scrollbar(
+            self, orient="vertical", command=canvas.yview)
+
+        # Configure the canvas to work with the scrollbar
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Create a frame inside the canvas that will be scrollable
+        self.scrollable_frame = tk.Frame(canvas)
+
+        # Update the scrollable frame width to match the canvas width
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        # Force the canvas width to match the container_frame's width
+        canvas.bind(
+            "<Configure>",
+            lambda e: canvas.itemconfig(
+                "scrollable_window", width=canvas.winfo_width())
+        )
+
+        # Add the scrollable frame to the canvas
+        canvas.create_window((0, 0), window=self.scrollable_frame,
+                             anchor="nw", tags="scrollable_window")
+
+        # Pack canvas and scrollbar
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+
+        # Configure grid weights
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
     def _render(self) -> None:
         """
-        Clears all existing widgets (except the first label and TextDisplayFrame pair),
-        reconfigures the widgets according to self._different_documents,
+        Clears all existing widgets, reconfigures the layout with the scrollable frame,
         and updates the layout with the new widgets.
         """
-        # Remove all existing widgets from the frame, except the first pair
-        for widgets in self._widget_structure:
-            for widget in widgets:
-                widget.destroy()
+        # Remove all existing widgets in the scrollable frame
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
 
-        # Clear the old widget structure and reconfigure widgets based on updated data
+        # Reconfigure the widgets
         self._reconfigure_widgets()
 
-        # First Label and TextDisplayFrame for "Original Text:"
-        self.original_label = tk.Label(self, text="Original Text:")
-        self.original_text_display = TextDisplayFrame(self, self._controller)
-        self.original_label.pack(anchor="w", pady=(5, 2))
-        self.original_text_display.pack(fill="both", expand=True, pady=(0, 10))
+        # Add subsequent labels and text displays
+        for index, (label, text_display_frame) in enumerate(self._widget_structure):
+            row = (index) * 2  # Alternate rows for label and text display
+            label.grid(row=row, column=0, sticky="w", pady=(5, 2))
+            text_display_frame.grid(
+                row=row + 1, column=0, sticky="nsew", pady=(5, 2)
+            )
 
-        # Add the new widgets to the layout
-        for label, text_display_frame in self._widget_structure:
-            label.pack(anchor="w", pady=(5, 2))
-            text_display_frame.pack(fill="both", expand=True, pady=(0, 10))
+        # Expand horizontally
+        self.scrollable_frame.grid_columnconfigure(0, weight=1)
 
     def _reconfigure_widgets(self) -> None:
         """
-        Reconfigures the widgets based on the current state of self._different_documents.
+        Reconfigures the widgets based on the current state of self._file_names.
         Creates a new Label and TextDisplayFrame pair for each document and updates self._widget_structure.
         """
         self._widget_structure = []
 
-        for doc in self._different_documents:
+        original_label = tk.Label(
+            self.scrollable_frame, text="Original Text:"
+        )
+        original_text_display = ComparisonTextDisplayFrame(
+            self.scrollable_frame, self._controller, selectable=True
+        )
+        self._widget_structure.append((original_label, original_text_display))
+
+        for file_name in self._file_names:
             # Create a label with the document's filename
-            label = tk.Label(self, text=doc["filename"])
+            label = tk.Label(self.scrollable_frame,
+                             text=f"Filename: {file_name}")
 
             # Create a TextDisplayFrame for displaying the document's content
-            text_display_frame = TextDisplayFrame(self)
+            text_display_frame = ComparisonTextDisplayFrame(
+                self.scrollable_frame, self._controller, selectable=False
+            )
 
             # Add the label and text display frame as a pair in the widget structure
             self._widget_structure.append((label, text_display_frame))
 
-    # todo unify the updates
-    def update(self, publisher: IPublisher) -> None:
+    def update(self) -> None:
         """
-        Updates the text displays with new content from the specified publisher.
-
-        Args:
-            publisher (IPublisher): The publisher providing the updated data. The data is retrieved
-                from the controller, which interacts with the publisher to get relevant content.
-
-        Note:
-            The method assumes that the number of sentences returned by the controller matches
-            the number of text displays in self._text_displays.
+        Sets the names of compared documents and triggers rerendering of the GUI.
         """
-        sentences = self._controller.get_update_data(publisher)
-        for index, text_display in enumerate(self._text_displays):
-            text_display.delete("1.0", tk.END)
-            text_display.insert("1.0", sentences[index])
-
-    def set_different_documents(self, documents: List[Dict]) -> None:
-        """
-        Sets multiple documents and their associated filenames from a list of dictionaries.
-
-        Args:
-            text_dicts (List[Dict]): A list of dictionaries, each containing keys "text" and "filename".
-                - "text" (str): The text content to be set.
-                - "filename" (str): The filename associated with the text.
-
-        Updates:
-            - self._different_texts: A list of text contents extracted from each dictionary in text_dicts.
-            - self._filenames: A list of filenames associated with each text.
-            - self._num_different_texts: The total count of different texts set.
-        """
-        self._different_documents = documents
+        self._file_names = self._controller.get_update_data(self)["data"]
         self._render()

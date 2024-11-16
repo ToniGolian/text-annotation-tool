@@ -1,5 +1,5 @@
 import tkinter as tk
-from utils.interfaces import IObserver, IPublisher
+from utils.interfaces import IObserver
 from controller.interfaces import IController
 
 
@@ -9,7 +9,7 @@ class TextDisplayFrame(tk.Frame, IObserver):
     Includes a scrollbar for the text widget.
     """
 
-    def __init__(self, parent: tk.Widget, controller: IController, selectable: bool = False) -> None:
+    def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the TextDisplayFrame with a text widget, scrollbar, and observer registration.
 
@@ -21,14 +21,13 @@ class TextDisplayFrame(tk.Frame, IObserver):
         super().__init__(parent)
 
         self._controller = controller
-        self._selectable = selectable
         self.text_widget: tk.Text = None
 
         # Render the GUI components
         self._render()
 
         # Register as an observer
-        self._controller.register_observer(self)
+        self._controller.add_observer(self)
 
     def _render(self) -> None:
         """
@@ -43,9 +42,7 @@ class TextDisplayFrame(tk.Frame, IObserver):
         scrollbar.config(command=self.text_widget.yview)
         # Insert initial text content for testing
 
-        # Bind selection event if selectable
-        if self._selectable:
-            self.text_widget.bind("<ButtonRelease-1>", self._on_selection)
+        self.text_widget.bind("<ButtonRelease-1>", self._on_selection)
 
         # Pack the text widget and scrollbar to fill the frame
         self.text_widget.pack(side=tk.LEFT, fill=tk.BOTH,
@@ -62,7 +59,7 @@ class TextDisplayFrame(tk.Frame, IObserver):
         selected_text = self.text_widget.selection_get()
         self._controller.perform_text_selected(selected_text)
 
-    def update(self, publisher: IPublisher) -> None:
+    def update(self) -> None:
         """
         Observer method to handle updates from subjects.
 
@@ -70,7 +67,7 @@ class TextDisplayFrame(tk.Frame, IObserver):
             data (dict): Data passed from the observed subject.
         """
         # Implement any necessary updates based on the data
-        text = self._controller.get_update_data(publisher)
+        text = self._controller.get_update_data(self)
         self.text_widget.config(state="normal")
         self.text_widget.delete("1.0", tk.END)
         self.text_widget.insert("1.0", text)

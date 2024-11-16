@@ -23,26 +23,30 @@ class ComparisonHeaderFrame(tk.Frame, IObserver):
         self._controller = controller
         # todo system independent path's
         self._default_directory: str = "resources/comparison"
-        self._num_annotators: int = 0
+        self._num_annotators: int = 10
+        self._radio_var = tk.IntVar()  # Shared variable for the radio buttons
+        self._buttons_per_row = 8  # Maximum number of buttons per row
+
         self._render()
 
     def _render(self):
         """Sets up and arranges all widgets in a single grid layout."""
 
-        # Directory Label, Entry, and Button (Row 0 and 1)
+        # Directory Label, Entry, and Button (Row 0)
         self.dir_label = tk.Label(self, text="Directory:")
         self.dir_label.grid(row=0, column=0, sticky="w", padx=5, pady=5)
 
         self.dir_entry = tk.Entry(self)
-        self.dir_entry.insert(0, self.default_directory)
+        self.dir_entry.insert(0, self._default_directory)
         self.dir_entry.grid(row=0, column=1, columnspan=3,
                             sticky="ew", padx=5, pady=5)
 
         self.dir_button = ttk.Button(
-            self, text="Select Directory", command=self.on_button_pressed_select_directory)
+            self, text="Select Directory", command=self.on_button_pressed_select_directory
+        )
         self.dir_button.grid(row=0, column=4, sticky="ew", padx=5, pady=5)
 
-        # Filter Label, Combobox, and Start Button (Row 2)
+        # Filter Label, Combobox, and Start Button (Row 1)
         self.filter_label = tk.Label(self, text="Filter:")
         self.filter_label.grid(row=1, column=0, sticky="w", padx=5, pady=5)
 
@@ -54,35 +58,51 @@ class ComparisonHeaderFrame(tk.Frame, IObserver):
             row=1, column=1, columnspan=3, sticky="ew", padx=5, pady=5)
 
         self.start_button = ttk.Button(
-            self, text="Start Comparison", command=self.on_button_pressed_start_comparison)
+            self, text="Start Comparison", command=self.on_button_pressed_start_comparison
+        )
         self.start_button.grid(row=1, column=4, sticky="ew", padx=5, pady=5)
 
-        # Radio Buttons and Overwrite Button (Row 3 and below)
+        # Radio Buttons Label (Row 2)
         self.radio_label = tk.Label(self, text="Choose preferred annotation:")
         self.radio_label.grid(row=2, column=0, columnspan=5,
                               sticky="w", padx=5, pady=5)
 
-        self.radio_var = tk.IntVar()
+        # Frame for Radio Buttons (Row 3)
+        radio_frame = tk.Frame(self)
+        radio_frame.grid(row=3, column=0, columnspan=4,
+                         sticky="ew", padx=5, pady=5)
+
         # Manual Annotation Radio Button
         manual_radio = tk.Radiobutton(
-            self, text="Manual Annotation", variable=self.radio_var, value=0)
-        manual_radio.grid(row=3, column=0, sticky="w", padx=5, pady=5)
+            radio_frame, text="Manual Annotation", variable=self._radio_var, value=0
+        )
+        manual_radio.grid(row=0, column=0, padx=5, pady=5, sticky="w")
 
-        # Annotator Radio Buttons
+        # Annotator Radio Buttons in multiple rows using grid
         for i in range(self._num_annotators):
-            radio_button = tk.Radiobutton(
-                self, text=f"Annotator {i + 1}", variable=self.radio_var, value=i + 1)
-            radio_button.grid(row=3, column=i + 1, sticky="w", padx=5, pady=5)
+            row = ((i+1) // self._buttons_per_row)  # Calculate the row index
+            col = ((i+1) % self._buttons_per_row)  # Calculate the column index
 
-        # Overwrite Button
+            radio_button = tk.Radiobutton(
+                radio_frame, text=f"Annotator {i + 1}", variable=self._radio_var, value=i + 1
+            )
+            radio_button.grid(row=row, column=col,
+                              padx=5, pady=5, sticky="w")
+
+        # Overwrite Button (Row 3, Column 4)
         self.overwrite_button = ttk.Button(
-            self, text="Overwrite", command=self.on_button_pressed_overwrite)
+            self, text="Overwrite", command=self.on_button_pressed_overwrite
+        )
         self.overwrite_button.grid(
-            row=3, column=self._num_annotators + 1, sticky="ew", padx=5, pady=5)
+            row=3, column=4, sticky="ew", padx=5, pady=5)
 
         # Configure column resizing
-        for col in range(5):
-            self.grid_columnconfigure(col, weight=1)
+        # Make column 1 expand horizontally
+        self.grid_columnconfigure(1, weight=1)
+        # Prevent column 0 from expanding
+        self.grid_columnconfigure(0, weight=0)
+        # Prevent column 4 from expanding
+        self.grid_columnconfigure(4, weight=0)
 
     def update(self):
         """

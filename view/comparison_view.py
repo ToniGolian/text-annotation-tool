@@ -39,12 +39,6 @@ class ComparisonView(tk.Frame):
             self.left_frame, controller=self._controller)
         header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
-        # io_frame = ComparisonIOFrame(self.left_frame)
-        # io_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
-
-        # controls_frame = ComparisonControlsFrame(self.left_frame)
-        # controls_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
-
         text_displays = ComparisonTextDisplays(
             self.left_frame, self._controller)
         text_displays.pack(side=tk.TOP, fill=tk.BOTH,

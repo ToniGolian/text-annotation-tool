@@ -29,11 +29,37 @@ class MainWindow(tk.Tk):
         # Store controller reference
         self.controller = controller
 
+        # Render the menu bar
+        self._create_menu()
+
         # Render the notebook structure
         self._render()
 
         # Set the protocol for handling window close event
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
+
+    def _create_menu(self) -> None:
+        """
+        Creates a menu bar with dropdown menus for "File" and "Settings".
+        """
+        menu_bar = tk.Menu(self)
+
+        # File menu
+        file_menu = tk.Menu(menu_bar, tearoff=0)
+        file_menu.add_command(label="Open", command=self._on_open)
+        file_menu.add_command(label="Save", command=self._on_save)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self._on_closing)
+        menu_bar.add_cascade(label="File", menu=file_menu)
+
+        # Settings menu
+        settings_menu = tk.Menu(menu_bar, tearoff=0)
+        settings_menu.add_command(
+            label="Preferences", command=self._on_preferences)
+        menu_bar.add_cascade(label="Settings", menu=settings_menu)
+
+        # Attach the menu bar to the main window
+        self.config(menu=menu_bar)
 
     def _render(self) -> None:
         """
@@ -59,14 +85,25 @@ class MainWindow(tk.Tk):
             parent=notebook, controller=self.controller)  # Instantiate text comparison view
         notebook.add(comparison_view, text="Text Comparison")
 
-        # Chose the second page as default
-        #! change back to 1
+        # Choose the second page as default
+        #! change
         notebook.select(2)
+
+    def _on_open(self):
+        """Handles the 'Open' action from the File menu."""
+        print("Open file dialog not implemented yet.")
+
+    def _on_save(self):
+        """Handles the 'Save' action from the File menu."""
+        print("Save file dialog not implemented yet.")
+
+    def _on_preferences(self):
+        """Handles the 'Preferences' action from the Settings menu."""
+        print("Preferences dialog not implemented yet.")
 
     def _on_closing(self):
         """
         Handles the window close event.
-
         """
         # TODO ask for save changes
         # if self.controller and self.controller.document_is_modified():

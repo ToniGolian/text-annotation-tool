@@ -74,9 +74,9 @@ class ComparisonTextDisplays(tk.Frame):
         # Add subsequent labels and text displays
         for index, (label, text_display_frame) in enumerate(self._widget_structure):
             row = (index) * 2  # Alternate rows for label and text display
-            label.grid(row=row, column=0, sticky="w", pady=(5, 2))
+            label.grid(row=row, column=0, sticky="w", pady=(2, 0))
             text_display_frame.grid(
-                row=row + 1, column=0, sticky="nsew", pady=(5, 2)
+                row=row + 1, column=0, sticky="nsew", pady=(0, 0)
             )
 
         # Expand horizontally

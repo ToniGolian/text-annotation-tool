@@ -38,8 +38,10 @@ class MockComparisonModel(IComparisonModel):
 
     def get_data(self) -> Dict:
         """Retrieves the models data in a dictionary"""
-        return {"comparison_sentences": ["Plain Comparison Sentence", "Tagged Comparison <Tag> Sentence 01", "Tagged <Tag> Comparison Sentence 02"],
-                "file_names": ["File a", "File b", "File c", "File d"]}
+        return {"comparison_sentences": [["Plain Comparison Sentence", "Tagged Comparison <Tag> Sentence 01", "Tagged <Tag> Comparison Sentence 02"], ["2Plain Comparison Sentence", "2Tagged Comparison <Tag> Sentence 01", "2Tagged <Tag> Comparison Sentence 02"]],
+                "file_names": ["File a", "File b", "File c", "File d"],
+                "current_sentence_index": 1
+                }
 
 
 class MockTagModel(IPublisher):

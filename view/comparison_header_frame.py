@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from controller.interfaces import IController
 from utils.interfaces import IObserver
 
 
@@ -20,31 +21,33 @@ class ComparisonHeaderFrame(tk.Frame, IObserver):
             num_annotators (int): Number of annotators for radio buttons.
         """
         super().__init__(parent)
-        self._controller = controller
-        # todo system independent path's
-        self._default_directory: str = "resources/comparison"
-        self._num_annotators: int = 10
+        self._controller: IController = controller
+        self._num_annotators: int = None
         self._radio_var = tk.IntVar()  # Shared variable for the radio buttons
-        self._buttons_per_row = 8  # Maximum number of buttons per row
+        self.MAX_BUTTONS_PER_ROW = 8
+        self._current_sentence_index: int = 0
+        self._num_sentences: int = 0
 
-        self._render()
+        self._controller.add_observer(self)
+
+        # self._render()
 
     def _render(self):
         """Sets up and arranges all widgets in a single grid layout."""
 
-        # Directory Label, Entry, and Button (Row 0)
-        self.dir_label = tk.Label(self, text="Directory:")
-        self.dir_label.grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        # # Directory Label, Entry, and Button (Row 0)
+        # self.dir_label = tk.Label(self, text="Directory:")
+        # self.dir_label.grid(row=0, column=0, sticky="w", padx=5, pady=5)
 
-        self.dir_entry = tk.Entry(self)
-        self.dir_entry.insert(0, self._default_directory)
-        self.dir_entry.grid(row=0, column=1, columnspan=3,
-                            sticky="ew", padx=5, pady=5)
+        # self.dir_entry = tk.Entry(self)
+        # self.dir_entry.insert(0, self._default_directory)
+        # self.dir_entry.grid(row=0, column=1, columnspan=3,
+        #                     sticky="ew", padx=5, pady=5)
 
-        self.dir_button = ttk.Button(
-            self, text="Select Directory", command=self.on_button_pressed_select_directory
-        )
-        self.dir_button.grid(row=0, column=4, sticky="ew", padx=5, pady=5)
+        # self.dir_button = ttk.Button(
+        #     self, text="Select Directory", command=self.on_button_pressed_select_directory
+        # )
+        # self.dir_button.grid(row=0, column=4, sticky="ew", padx=5, pady=5)
 
         # Filter Label, Combobox, and Start Button (Row 1)
         self.filter_label = tk.Label(self, text="Filter:")
@@ -55,46 +58,64 @@ class ComparisonHeaderFrame(tk.Frame, IObserver):
         self.filter_combobox['values'] = ("No Filter", "Timex3", "Geo")
         self.filter_combobox.current(0)
         self.filter_combobox.grid(
-            row=1, column=1, columnspan=3, sticky="ew", padx=5, pady=5)
+            row=1, column=1, columnspan=3, sticky="ew", padx=5, pady=0)
 
         self.start_button = ttk.Button(
-            self, text="Start Comparison", command=self.on_button_pressed_start_comparison
+            self, text="Start Comparison", command=self._on_button_pressed_start_comparison
         )
-        self.start_button.grid(row=1, column=4, sticky="ew", padx=5, pady=5)
+        self.start_button.grid(row=1, column=4, sticky="ew", padx=5, pady=0)
 
         # Radio Buttons Label (Row 2)
         self.radio_label = tk.Label(self, text="Choose preferred annotation:")
         self.radio_label.grid(row=2, column=0, columnspan=5,
-                              sticky="w", padx=5, pady=5)
+                              sticky="w", padx=5, pady=0)
 
         # Frame for Radio Buttons (Row 3)
         radio_frame = tk.Frame(self)
         radio_frame.grid(row=3, column=0, columnspan=4,
-                         sticky="ew", padx=5, pady=5)
+                         sticky="ew", padx=5, pady=0)
 
         # Manual Annotation Radio Button
         manual_radio = tk.Radiobutton(
             radio_frame, text="Manual Annotation", variable=self._radio_var, value=0
         )
-        manual_radio.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        manual_radio.grid(row=0, column=0, padx=5, pady=0, sticky="w")
 
         # Annotator Radio Buttons in multiple rows using grid
         for i in range(self._num_annotators):
-            row = ((i+1) // self._buttons_per_row)  # Calculate the row index
-            col = ((i+1) % self._buttons_per_row)  # Calculate the column index
+            # Calculate the row index
+            row = ((i+1) // self.MAX_BUTTONS_PER_ROW)
+            # Calculate the column index
+            col = ((i+1) % self.MAX_BUTTONS_PER_ROW)
 
             radio_button = tk.Radiobutton(
                 radio_frame, text=f"Annotator {i + 1}", variable=self._radio_var, value=i + 1
             )
             radio_button.grid(row=row, column=col,
-                              padx=5, pady=5, sticky="w")
+                              padx=5, pady=0, sticky="w")
 
         # Overwrite Button (Row 3, Column 4)
         self.overwrite_button = ttk.Button(
-            self, text="Overwrite", command=self.on_button_pressed_overwrite
+            self, text="Overwrite", command=self._on_button_pressed_overwrite
         )
         self.overwrite_button.grid(
-            row=3, column=4, sticky="ew", padx=5, pady=5)
+            row=2, column=4, sticky="ew", padx=5, pady=(5, 0))
+
+        # Frame for current sentence and navigation
+        nav_frame = tk.Frame(self)
+        nav_frame.grid(row=3, column=4, padx=5, pady=(5, 0), sticky="ew")
+
+        self.sentence_label = tk.Label(
+            nav_frame, text=f"Current Sentence: {self._current_sentence_index}/{self._num_sentences}")
+        self.sentence_label.pack(side=tk.LEFT, pady=0)
+
+        self.prev_button = ttk.Button(
+            nav_frame, text="<", command=self._on_button_pressed_prev_sentence)
+        self.prev_button.pack(side=tk.LEFT, padx=0)
+
+        self.next_button = ttk.Button(
+            nav_frame, text=">", command=self._on_button_pressed_next_sentence)
+        self.next_button.pack(side=tk.LEFT, padx=0)
 
         # Configure column resizing
         # Make column 1 expand horizontally
@@ -109,17 +130,28 @@ class ComparisonHeaderFrame(tk.Frame, IObserver):
         Implements the update method from the IObserver interface.
         Placeholder for responding to updates from the observed object.
         """
-        self._num_annotators = self._controller.get_update_data(self)["data"]
+        self._num_annotators = self._controller.get_update_data(
+            self)["data"]["num_annotators"]
+        self._num_sentences = self._controller.get_update_data(self)[
+            "data"]["num_sentences"]
+        self._current_sentence_index = self._controller.get_update_data(self)[
+            "data"]["current_sentence_index"]
         self._render()
 
-    def on_button_pressed_select_directory(self):
+    def _on_button_pressed_select_directory(self):
         """Placeholder for directory selection logic."""
         pass
 
-    def on_button_pressed_start_comparison(self):
+    def _on_button_pressed_start_comparison(self):
         """Placeholder for start comparison logic."""
         pass
 
-    def on_button_pressed_overwrite(self):
+    def _on_button_pressed_overwrite(self):
         """Placeholder for overwrite logic."""
+        pass
+
+    def _on_button_pressed_prev_sentence(self):
+        pass
+
+    def _on_button_pressed_next_sentence(self):
         pass

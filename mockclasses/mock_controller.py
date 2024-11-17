@@ -5,6 +5,7 @@ from utils.interfaces import IObserver, IPublisher
 from typing import Dict, List, Sequence
 import tkinter as tk
 
+from view.comparison_header_frame import ComparisonHeaderFrame
 from view.comparison_text_display_frame import ComparisonTextDisplayFrame
 from view.comparison_text_displays import ComparisonTextDisplays
 from view.text_display_frame import TextDisplayFrame
@@ -45,6 +46,15 @@ class MockController(IController):
                 "data": self._comparison_model.get_data()["file_names"]}
             self._observers_to_finalize.append(observer)
 
+        elif isinstance(observer, ComparisonHeaderFrame):
+            data = len(self._comparison_model.get_data()["file_names"])
+            print(data)
+            self._observer_data_map[observer] = lambda: {
+                "data": {"num_annotators": len(self._comparison_model.get_data()["file_names"]),
+                         "num_sentences": len(self._comparison_model.get_data()["comparison_sentences"]),
+                         "current_sentence_index": self._comparison_model.get_data()["current_sentence_index"]}}
+            self._observers_to_finalize.append(observer)
+
         elif isinstance(observer, ComparisonTextDisplayFrame):
             self._observer_data_map[observer] = lambda: {
                 "data": self._comparison_model.get_data()["comparison_sentences"][self._dynamic_observer_index]}
@@ -52,6 +62,7 @@ class MockController(IController):
             self._comparison_model.add_observer(observer)
             print(
                 f"Comparison Observer {self._dynamic_observer_index} registered")
+
         else:
             print("Other Observer registered")
 
@@ -83,16 +94,16 @@ class MockController(IController):
     # initialization
     def finalize_views(self) -> None:
         """
-        Finalizes the initialization of all views that were previously 
+        Finalizes the initialization of all views that were previously
         not fully initialized.
 
-        This method iterates over all registered views (observers) and 
-        triggers their `update` method to provide the necessary data 
-        for completing their initialization. It ensures that all views 
+        This method iterates over all registered views (observers) and
+        triggers their `update` method to provide the necessary data
+        for completing their initialization. It ensures that all views
         are in a fully operational state after this method is called.
 
         Note:
-            This method assumes that all views requiring finalization 
+            This method assumes that all views requiring finalization
             have already been registered with the controller.
         """
         for observer in self._observers_to_finalize:

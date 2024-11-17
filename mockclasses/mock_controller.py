@@ -53,32 +53,42 @@ class MockController(IController):
             observer (IDataObserver): The data observer to be added.
         """
         if isinstance(observer, ITextDisplayFrame):
-            self._observer_data_map[observer] = lambda: {
-                "data": self._text_model.get_data_state()["text"]}
+            keys = ["text"]
+            sources = [self._text_model]
+            self._set_observer_mapping(observer, keys, sources, "data")
             self._text_model.add_data_observer(observer)
 
         elif isinstance(observer, IMetaTagsFrame):
-            self._observer_data_map[observer] = lambda: {
-                "data": self._comparison_model.get_data_state()["file_names"]}
+            keys = ["file_names"]
+            sources = [self._comparison_model]
+            self._set_observer_mapping(observer, keys, sources, "data")
+            self._comparison_model.add_data_observer(observer)
             self._observers_to_finalize.append(observer)
         elif isinstance(observer, IComparisonTextDisplays):
-            self._observer_data_map[observer] = lambda: {
-                "data": self._comparison_model.get_data_state()["file_names"]}
+            keys = ["file_names"]
+            sources = [self._comparison_model]
+            self._set_observer_mapping(observer, keys, sources, "data")
+            self._comparison_model.add_data_observer(observer)
             self._observers_to_finalize.append(observer)
 
         elif isinstance(observer, IComparisonHeaderFrame):
-            self._observer_data_map[observer] = lambda: {
-                "data": {"num_sentences": len(self._comparison_model.get_data_state()["comparison_sentences"]),
-                         "current_sentence_index": self._comparison_model.get_data_state()["current_sentence_index"]}}
+            keys = ["num_sentences", "current_sentence_index"]
+            sources = [self._comparison_model]
+            self._set_observer_mapping(observer, keys, sources, "data")
+            self._comparison_model.add_data_observer(observer)
             self._observers_to_finalize.append(observer)
 
         elif isinstance(observer, IComparisonTextDisplayFrame):
-            self._observer_data_map[observer] = lambda: {
-                "data": self._comparison_model.get_data_state()["comparison_sentences"][self._dynamic_observer_index]}
+            # Dynamically map the observer to a specific sentence in the list
+            index = self._dynamic_observer_index  # Use the current dynamic observer index
             self._dynamic_observer_index += 1
+
+            # Use a lambda to extract the specific sentence based on the index
+            self._observer_data_map[observer] = lambda index=index: {
+                "sentence": self._comparison_model.get_data_state()["comparison_sentences"][index]
+            }
+
             self._comparison_model.add_data_observer(observer)
-            print(
-                f"Comparison Observer {self._dynamic_observer_index} registered")
 
         else:
             print(f"Unknown Data Observer {type(observer)} registered")
@@ -91,7 +101,7 @@ class MockController(IController):
             observer (ILayoutObserver): The layout observer to be added.
         """
         if isinstance(observer, (IComparisonTextDisplays, IComparisonHeaderFrame)):
-            keys = []
+            keys = ["num_annotators"]
             sources = [self._comparison_model]
             self._set_observer_mapping(observer, keys, sources, "layout")
             self._comparison_model.add_layout_observer(observer)

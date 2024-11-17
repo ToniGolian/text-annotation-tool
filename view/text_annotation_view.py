@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from controller.interfaces import IController
-from view.meta_tag_frame import MetaTagsFrame
+from view.meta_tags_frame import MetaTagsFrame
 from view.text_display_frame import TextDisplayFrame
 from view.tagging_menu_frame import TaggingMenuFrame
 # from mockclasses.mock_tagging_menu_frame import MockTaggingMenuFrame

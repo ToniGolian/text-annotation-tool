@@ -1,9 +1,9 @@
 import tkinter as tk
-from utils.interfaces import IObserver
 from controller.interfaces import IController
+from view.interfaces import ITextDisplayFrame
 
 
-class TextDisplayFrame(tk.Frame, IObserver):
+class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
     """
     A frame that displays text and integrates with an observer pattern.
     Includes a scrollbar for the text widget.
@@ -20,9 +20,9 @@ class TextDisplayFrame(tk.Frame, IObserver):
         """
         super().__init__(parent)
 
-        self._controller = controller
+        self._controller: IController = controller
         self.text_widget: tk.Text = None
-        self._editable = editable
+        self._editable: bool = editable
 
         # Render the GUI components
         self._render()
@@ -61,7 +61,7 @@ class TextDisplayFrame(tk.Frame, IObserver):
         selected_text = self.text_widget.selection_get()
         self._controller.perform_text_selected(selected_text)
 
-    def update(self) -> None:
+    def update_data(self) -> None:
         """
         Observer method to handle updates from subjects.
 

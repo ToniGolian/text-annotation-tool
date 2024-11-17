@@ -9,7 +9,7 @@ class ComparisonTextDisplayFrame(TextDisplayFrame):
     Includes a scrollbar for the text widget.
     """
 
-    def __init__(self, parent: tk.Widget, controller: IController, selectable: bool = False) -> None:
+    def __init__(self, parent: tk.Widget, controller: IController, editable=False, selectable: bool = False) -> None:
         """
         Initializes the TextDisplayFrame with a text widget, scrollbar, and observer registration.
 
@@ -19,7 +19,7 @@ class ComparisonTextDisplayFrame(TextDisplayFrame):
             selectable (bool): Whether text selection events should trigger actions.
         """
         self._selectable = selectable
-        super().__init__(parent=parent, controller=controller)
+        super().__init__(parent=parent, controller=controller, editable=editable)
 
     def _render(self) -> None:
         super()._render()

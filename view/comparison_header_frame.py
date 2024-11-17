@@ -1,10 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import List
 from controller.interfaces import IController
-from utils.interfaces import IObserver
+from view.interfaces import IComparisonHeaderFrame
 
 
-class ComparisonHeaderFrame(tk.Frame, IObserver):
+class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
     """
     A tkinter Frame that combines IO and Control widgets in a single grid layout.
     Includes directory selection, filter controls, action buttons, and annotation options.
@@ -28,7 +29,8 @@ class ComparisonHeaderFrame(tk.Frame, IObserver):
         self._current_sentence_index: int = 0
         self._num_sentences: int = 0
 
-        self._controller.add_observer(self)
+        self._controller.add_data_observer(self)
+        self._controller.add_layout_observer(self)
 
         # self._render()
 
@@ -125,18 +127,41 @@ class ComparisonHeaderFrame(tk.Frame, IObserver):
         # Prevent column 4 from expanding
         self.grid_columnconfigure(4, weight=0)
 
-    def update(self):
+    def update_data(self) -> None:
         """
-        Implements the update method from the IObserver interface.
-        Placeholder for responding to updates from the observed object.
+        Retrieves updated data from the controller and updates the view accordingly.
+
+        This method fetches data associated with this observer from the controller
+        and processes it to refresh the displayed information.
         """
-        self._num_annotators = self._controller.get_update_data(
-            self)["data"]["num_annotators"]
-        self._num_sentences = self._controller.get_update_data(self)[
-            "data"]["num_sentences"]
-        self._current_sentence_index = self._controller.get_update_data(self)[
-            "data"]["current_sentence_index"]
+        data = self._controller.get_data(self)
+        self._num_sentences = data["num_sentences"]
+        self._current_sentence_index = data["current_sentence_index"]
         self._render()
+
+    def update_layout(self) -> None:
+        """
+        Retrieves updated layout information from the controller and updates the view accordingly.
+
+        This method fetches layout data associated with this observer from the controller
+        and processes it to adjust the layout of the view.
+        """
+        layout = self._controller.get_layout(self)
+        self._num_annotators = layout["num_annotators"]
+        self._render()
+
+    # def update(self):
+    #     """
+    #     Implements the update method from the IObserver interface.
+    #     Placeholder for responding to updates from the observed object.
+    #     """
+    #     self._num_annotators = self._controller.get_update_data(
+    #         self)["layout_data"]["num_annotators"]
+    #     self._num_sentences = self._controller.get_update_data(self)[
+    #         "data"]["num_sentences"]
+    #     self._current_sentence_index = self._controller.get_update_data(self)[
+    #         "data"]["current_sentence_index"]
+    #     self._render()
 
     def _on_button_pressed_select_directory(self):
         """Placeholder for directory selection logic."""

@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from commands.interfaces import ICommand
-from utils.interfaces import IObserver, IPublisher
+from utils.interfaces import IDataObserver, ILayoutObserver, IObserver, IPublisher
 from typing import List, Sequence
 
 
 class IController(ABC):
     @abstractmethod
-    def __init__(self, text_model: IPublisher, tag_model: IPublisher) -> None:
+    def __init__(self, text_model: IPublisher, ) -> None:
         """
         Initializes the controller with text and tag model dependencies.
 
@@ -34,18 +34,33 @@ class IController(ABC):
 
     # observer pattern
     @abstractmethod
-    def add_observer(self, observer: IObserver) -> None:
+    def add_data_observer(self, observer: IObserver, variables: List[str]) -> None:
         """Register observer to Model"""
         pass
 
     @abstractmethod
-    def remove_observer(self, observer: IObserver) -> None:
+    def remove_data_observer(self, observer: IObserver) -> None:
         """Remove observer from Model"""
         pass
 
     @abstractmethod
-    def get_update_data(self, publisher: IPublisher):
+    def add_layout_observer(self, observer: IObserver, variables: List[str]) -> None:
+        """Register observer to Model"""
+        pass
+
+    @abstractmethod
+    def remove_layout_observer(self, observer: IObserver) -> None:
+        """Remove observer from Model"""
+        pass
+
+    @abstractmethod
+    def get_data_state(self, observer: IDataObserver):
         """Retrieves the data from observed publisher"""
+        pass
+
+    @abstractmethod
+    def get_layout_state(self, observer: ILayoutObserver):
+        """Retrieves the layout data from observed publisher"""
         pass
 
     # initializiations

@@ -1,11 +1,12 @@
 from tkinter import ttk
 from typing import List
 from controller.interfaces import IController
+from view.interfaces import IComparisonTextDisplays
 from view.comparison_text_display_frame import ComparisonTextDisplayFrame
 import tkinter as tk
 
 
-class ComparisonTextDisplays(tk.Frame):
+class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the ComparisonTextDisplays with a reference to the parent widget and controller.
@@ -17,11 +18,13 @@ class ComparisonTextDisplays(tk.Frame):
         super().__init__(parent)
         self._controller: IController = controller
 
-        self._file_names: List = []
-        self._widget_structure = []
+        self._file_names: List[str] = []
+        self._widget_structure: List[tk.Widget] = []
+        self._num_annotators: int = 0
 
         # Add observer
-        self._controller.add_observer(self)
+        self._controller.add_data_observer(self)
+        self._controller.add_layout_observer(self)
 
         # Create the canvas and scrollbar
         canvas = tk.Canvas(self)
@@ -97,10 +100,10 @@ class ComparisonTextDisplays(tk.Frame):
         )
         self._widget_structure.append((original_label, original_text_display))
 
-        for file_name in self._file_names:
+        for index in range(self._num_annotators):
             # Create a label with the document's filename
             label = tk.Label(self.scrollable_frame,
-                             text=f"Filename: {file_name}")
+                             text=f"Filename: {self._file_names[index]}")
 
             # Create a TextDisplayFrame for displaying the document's content
             text_display_frame = ComparisonTextDisplayFrame(
@@ -110,9 +113,30 @@ class ComparisonTextDisplays(tk.Frame):
             # Add the label and text display frame as a pair in the widget structure
             self._widget_structure.append((label, text_display_frame))
 
-    def update(self) -> None:
+    def update_data(self) -> None:
         """
-        Sets the names of compared documents and triggers rerendering of the GUI.
+        Retrieves updated data from the controller and updates the view accordingly.
+
+        This method fetches data associated with this observer from the controller
+        and processes it to refresh the displayed information.
         """
-        self._file_names = self._controller.get_update_data(self)["data"]
+        data = self._controller.get_data_state(self)
+        self._file_names = data["file_names"]
         self._render()
+
+    def update_layout(self) -> None:
+        """
+        Retrieves updated layout information from the controller and updates the view accordingly.
+
+        This method fetches layout data associated with this observer from the controller
+        and processes it to adjust the layout of the view.
+        """
+        layout = self._controller.get_layout_state(self)
+        self._num_annotators = layout["num_annotators"]
+        self._render()
+
+    # def update(self) -> None:
+    #     """
+    #     Sets the names of compared documents and triggers rerendering of the GUI.
+    #     """
+    #     self._render()

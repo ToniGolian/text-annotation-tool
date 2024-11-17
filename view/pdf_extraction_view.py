@@ -42,7 +42,7 @@ class PDFExtractionView(tk.Frame):
         filename_label = tk.Label(
             label_frame, text="Filename:", font=("Helvetica", 16), anchor="w"
         )
-        filename_label.pack(side=tk.LEFT, padx=(5, 5))
+        filename_label.pack(side=tk.LEFT, padx=(0, 5))
 
         # Create the dynamic label for the filename
         self.file_name_display = tk.Label(
@@ -52,7 +52,7 @@ class PDFExtractionView(tk.Frame):
 
         # Add the lower frame for the text display
         self.lower_frame = TextDisplayFrame(
-            self.left_frame, controller=self._controller
+            self.left_frame, controller=self._controller, editable=True
         )
         self.lower_frame.pack(fill=tk.BOTH, expand=True, side="top")
 

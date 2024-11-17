@@ -3,8 +3,10 @@ from tkinter import ttk
 from controller.interfaces import IController
 from typing import List, Dict
 
+from view.interfaces import IMetaTagsFrame
 
-class MetaTagsFrame(tk.Frame):
+
+class MetaTagsFrame(tk.Frame, IMetaTagsFrame):
     """
     A tkinter Frame that displays meta tag information and provides options to save data.
 
@@ -26,14 +28,14 @@ class MetaTagsFrame(tk.Frame):
 
         self.controller = controller
 
-        #!test list needs to be empty
-        # self._meta_tag_labels = []
-        self._meta_tag_labels = self.controller.get_meta_tag_labels()
+        self._meta_tags = []
+        self._meta_tag_types = []
 
         self._filename_label = None
 
         self._render()
-        self.controller.add_observer(self)
+        self.controller.add_data_observer(self)
+        self.controller.add_layout_observer(self)
 
     def _render(self) -> None:
         """
@@ -50,7 +52,7 @@ class MetaTagsFrame(tk.Frame):
         self._filename_label.grid(row=0, column=1, sticky="w", padx=5, pady=2)
 
         # Create additional labels and entries based on meta_tag_labels
-        for index, text in enumerate(self._meta_tag_labels, start=1):
+        for index, text in enumerate(self._meta_tag_types, start=1):
             label = ttk.Label(self, text=text)
             label.grid(row=index, column=0, sticky="w", padx=5, pady=2)
 
@@ -71,7 +73,7 @@ class MetaTagsFrame(tk.Frame):
         Returns:
             List[str]: A list of meta tag label names.
         """
-        return self._meta_tag_labels
+        return self._meta_tag_types
 
     def set_meta_tag_labels(self, labels: List[str]) -> None:
         """
@@ -80,17 +82,30 @@ class MetaTagsFrame(tk.Frame):
         Args:
             labels (List[str]): A list of new meta tag label names to display.
         """
-        self._meta_tag_labels = labels
+        self._meta_tag_types = labels
         # Re-render components if labels are updated
         for widget in self.winfo_children():
             widget.destroy()
         self._render()
 
-    def update(self, data: Dict) -> None:
+    def update_data(self) -> None:
         """
-        Placeholder method for updating the frame based on observed data changes.
+        Retrieves updated data from the controller and updates the view accordingly.
 
-        Args:
-            data (Dict): The data to update the frame with.
+        This method fetches data associated with this observer from the controller
+        and processes it to refresh the displayed information.
         """
-        pass
+        data = self._controller.get_data(self)
+        # todo: Process and update the view with the retrieved data
+        self._render()
+
+    def update_layout(self) -> None:
+        """
+        Retrieves updated layout information from the controller and updates the view accordingly.
+
+        This method fetches layout data associated with this observer from the controller
+        and processes it to adjust the layout of the view.
+        """
+        layout = self._controller.get_layout(self)
+        # todo: Process and update the layout with the retrieved information
+        self._render()

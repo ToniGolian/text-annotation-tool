@@ -85,17 +85,11 @@ class TaggingMenuFrame(tk.Frame):
                              anchor="nw", tags="scrollable_window")
 
         # Add TagFrames for each template in the group
-        j = 0
-        for _ in range(3):
-            for template in templates:
-                tag_frame = TagFrame(scrollable_frame, template)
-                if j % 2 == 0:
-                    tag_frame.config(bg="red")
-                else:
-                    tag_frame.config(bg="green")
-                j += 1
-                tag_frame.pack(fill="x", padx=5, pady=5,
-                               anchor="n", expand=True)
+        for template in templates:
+            tag_frame = TagFrame(scrollable_frame, template)
+
+            tag_frame.pack(fill="x", padx=5, pady=5,
+                           anchor="n", expand=True)
 
         # Pack the canvas and scrollbar inside the container frame
         canvas.pack(side="left", fill="both", expand=True)

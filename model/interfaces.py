@@ -1,9 +1,5 @@
-from utils.interfaces import IPublisher
+from utils.interfaces import IDataPublisher, ILayoutPublisher
 
 
-class IComparisonModel(IPublisher):
-    pass
-
-
-class IDocumentModel(IPublisher):
+class IComparisonModel(IDataPublisher, ILayoutPublisher):
     pass

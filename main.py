@@ -12,7 +12,7 @@ def main():
     text_model = MockDocumentModel()
     tag_model = MockTagModel()
     comparison_model = MockComparisonModel()
-    controller = MockController(text_model, tag_model, comparison_model)
+    controller = MockController(text_model, comparison_model)
     app_view = MainWindow(controller)
     controller.finalize_views()
 

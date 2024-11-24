@@ -7,3 +7,7 @@ class IComparisonModel(IDataPublisher, ILayoutPublisher):
 
 class IConfigurationModel(ILayoutPublisher):
     pass
+
+
+class ITagModel(IDataPublisher):
+    pass

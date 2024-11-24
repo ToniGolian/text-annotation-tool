@@ -1,0 +1,34 @@
+{
+    "type": "SLINK",
+    "attributes": {
+        "lid": {
+            "type": "ID"
+        },
+        "eventInstanceID": {
+            "type": "IDREF"
+        },
+        "signalID": {
+            "type": "IDREF"
+        },
+        "subordinatedEventInstance": {
+            "type": "IDREF"
+        },
+        "relType": {
+            "type": "string",
+            "allowedValues": [
+                "MODAL",
+                "EVIDENTIAL",
+                "NEG_EVIDENTIAL",
+                "FACTIVE",
+                "COUNTER_FACTIVE",
+                "CONDITIONAL"
+            ]
+        },
+        "comment": {
+            "type": "CDATA"
+        },
+        "syntax": {
+            "type": "CDATA"
+        }
+    }
+}

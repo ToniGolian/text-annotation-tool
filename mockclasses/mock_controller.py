@@ -5,7 +5,7 @@ from model.interfaces import IComparisonModel
 from utils.interfaces import IDataObserver, IDataPublisher, ILayoutObserver, ILayoutPublisher,  IObserver, IPublisher
 from typing import Dict, List, Any, Sequence
 
-from view.interfaces import IComparisonHeaderFrame, IComparisonTextDisplayFrame, IComparisonTextDisplays, IMetaTagsFrame, ITextDisplayFrame
+from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplayFrame, IComparisonTextDisplays, IMetaTagsFrame, ITextDisplayFrame
 
 
 class MockController(IController):
@@ -96,16 +96,17 @@ class MockController(IController):
         Args:
             observer (ILayoutObserver): The layout observer to be added.
         """
+        # standard source. observers can add additional sources
+        sources = [self._configuration_manager]
+
         if isinstance(observer, (IComparisonTextDisplays, IComparisonHeaderFrame)):
             keys = ["filenames", "num_files"]
-            # sources = [self._comparison_model]
-            sources = [self._configuration_manager]
         elif isinstance(observer, IMetaTagsFrame):
             keys = ["tag_types"]
-            sources = [self._configuration_manager]
+        elif isinstance(observer, IAnnotationMenuFrame):
+            keys = ["template_groups"]
         else:
             keys = []
-            sources = []
             print(f"Unknown Layout Observer {type(observer)} registered")
 
         self._set_observer_mapping(observer, keys, sources, "layout")

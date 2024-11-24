@@ -40,22 +40,20 @@ class AnnotationTagFrame(tk.Frame):
 
         # Iterate over each attribute in the template
         row = 1  # Start placing widgets from row 1
-        for attr_name, attr_data in self.template.get("attributes", {}).items():
+        for attr_name, attr_data in self.template["attributes"].items():
+            # todo reactivate when configuration menu is implemented
             # Check if the attribute is active
-            if not attr_data.get("active", False):
-                continue
+            # if not attr_data.get("active", False):
+            #     continue
 
             # Create label for the attribute
             label = tk.Label(self, text=attr_name)
             label.grid(row=row, column=0, sticky="w", padx=5, pady=5)
 
             # Choose widget based on the type
-            if attr_data.get("type") == "CDATA":
+            if attr_data["type"].upper() in ["CDATA", "ID"]:
                 # Entry widget for CDATA type
                 widget = tk.Entry(self)
-                default_value = attr_data.get("default")
-                if default_value:
-                    widget.insert(0, default_value)
 
             else:
                 # Combobox for other types
@@ -64,6 +62,8 @@ class AnnotationTagFrame(tk.Frame):
                 default_value = attr_data.get("default")
                 if default_value and default_value in allowed_values:
                     widget.set(default_value)
+                elif allowed_values:
+                    widget.set(allowed_values[0])
 
             # Place the widget in the grid, making it expand in the horizontal direction
             widget.grid(row=row, column=1, sticky="ew", padx=5, pady=5)

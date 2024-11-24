@@ -1,0 +1,62 @@
+{
+    "type": "makeinstance",
+    "attributes": {
+        "eiid": {
+            "type": "ID"
+        },
+        "eventID": {
+            "type": "IDREF"
+        },
+        "signalID": {
+            "type": "IDREF"
+        },
+        "pos": {
+            "type": "string",
+            "allowedValues": [
+                "ADJECTIVE",
+                "NOUN",
+                "VERB",
+                "PREPOSITION",
+                "OTHER"
+            ]
+        },
+        "tense": {
+            "type": "string",
+            "allowedValues": [
+                "FUTURE",
+                "INFINITIVE",
+                "PAST",
+                "PASTPART",
+                "PRESENT",
+                "PRESPART",
+                "NONE"
+            ]
+        },
+        "aspect": {
+            "type": "string",
+            "allowedValues": [
+                "PROGRESSIVE",
+                "PERFECTIVE",
+                "PERFECTIVE_PROGRESSIVE",
+                "NONE"
+            ]
+        },
+        "cardinality": {
+            "type": "CDATA"
+        },
+        "polarity": {
+            "type": "string",
+            "allowedValues": [
+                "NEG",
+                "POS"
+            ],
+            "default": "POS"
+        },
+        "modality": {
+            "type": "CDATA"
+        },
+        "comment": {
+            "type": "CDATA"
+        }
+    }
+}

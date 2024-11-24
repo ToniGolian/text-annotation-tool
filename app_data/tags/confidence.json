@@ -1,0 +1,23 @@
+{
+    "type": "confidence",
+    "attributes": {
+        "tagType": {
+            "type": "CDATA"
+        },
+        "tagID": {
+            "type": "IDREF"
+        },
+        "attributeName": {
+            "type": "CDATA"
+        },
+        "confidenceValue": {
+            "type": "CDATA",
+            "constraints": {
+                "range": "0 < x < 1"
+            }
+        },
+        "comment": {
+            "type": "CDATA"
+        }
+    }
+}

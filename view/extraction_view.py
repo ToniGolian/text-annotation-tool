@@ -18,7 +18,7 @@ class ExtractionView(tk.Frame):
         """
         super().__init__(parent)
         self._controller = controller
-        self._file_name = ""  # Initialize file name as an empty string
+        self._filename = ""  # Initialize file name as an empty string
 
         self._render()
 
@@ -31,32 +31,20 @@ class ExtractionView(tk.Frame):
         self.paned_window = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
         self.paned_window.pack(fill=tk.BOTH, expand=True)
 
-        # Left frame containing a label and a text display
+        # Center frame containing upper and lower frames for text and metadata display
         self.left_frame = tk.Frame(self.paned_window)
 
-        # Create a sub-frame for the labels
-        label_frame = tk.Frame(self.left_frame)
-        label_frame.pack(fill=tk.X, padx=5, pady=5)
+        # Pack the upper_frame at the top of left_frame
+        self.upper_frame = MetaTagsFrame(
+            self.left_frame, controller=self._controller)
+        self.upper_frame.pack(fill=tk.X, expand=False, side="top")
 
-        # Create the "Filename:" label
-        filename_label = tk.Label(
-            label_frame, text="Filename:", font=("Helvetica", 16), anchor="w"
-        )
-        filename_label.pack(side=tk.LEFT, padx=(0, 5))
-
-        # Create the dynamic label for the filename
-        self.file_name_display = tk.Label(
-            label_frame, text=self._file_name, font=("Helvetica", 16), anchor="w"
-        )
-        self.file_name_display.pack(side=tk.LEFT)
-
-        # Add the lower frame for the text display
+        # Pack the lower_frame below the upper_frame
         self.lower_frame = TextDisplayFrame(
-            self.left_frame, controller=self._controller, editable=True
-        )
+            self.left_frame, controller=self._controller)
         self.lower_frame.pack(fill=tk.BOTH, expand=True, side="top")
 
-        # Pack the left frame itself in the paned window
+        # Now pack left_frame itself in the paned_window
         self.left_frame.pack(fill=tk.BOTH, expand=True)
 
         # Right frame for the tagging menu
@@ -70,19 +58,9 @@ class ExtractionView(tk.Frame):
         # Set initial sash positions
         self.old_sash = self.paned_window.sashpos(0)
 
-    def update(self) -> None:
+    def update_layout(self) -> None:
         """
         Updates the view in response to notifications from the observed object.
         This method could refresh the text display or tagging menu if necessary.
         """
-        print("PDFExtractionView has been updated based on model changes.")
-
-    def set_file_name(self, file_name: str) -> None:
-        """
-        Sets the file name and updates the display label text.
-
-        Args:
-            file_name (str): The name of the file to display.
-        """
-        self._file_name = file_name
-        self.file_name_display.config(text=self._file_name)
+        print("ExtractionView has been updated based on model changes.")

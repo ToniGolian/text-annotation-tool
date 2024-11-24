@@ -3,9 +3,10 @@ from tkinter import ttk
 from typing import Dict, List
 from controller.interfaces import IController
 from view.annotation_tag_frame import AnnotationTagFrame
+from view.interfaces import IAnnotationMenuFrame
 
 
-class AnnotationMenuFrame(tk.Frame):
+class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
     """
     A tkinter Frame that contains a Notebook with pages representing template groups.
     """
@@ -22,15 +23,15 @@ class AnnotationMenuFrame(tk.Frame):
 
         # Store controller and retrieve template groups
         self._controller = controller
-        self._template_groups: List[Dict] = self._controller.get_template_groups(
-        )
+        self._template_groups: List[Dict] = []
 
         # Create the internal notebook
         self._notebook = ttk.Notebook(self)
         self._notebook.pack(fill="both", expand=True)
 
-        # Render the initial pages in the notebook
-        self._render()
+        # todo further data registration
+        self._controller.add_data_observer(self)
+        self._controller.add_layout_observer(self)
 
     def _render(self) -> None:
         """
@@ -96,3 +97,12 @@ class AnnotationMenuFrame(tk.Frame):
         scrollbar.pack(side="right", fill="y")
 
         return container_frame
+
+    def update_data(self):
+        data = self._controller.get_data_state(self)
+        # todo update data in widgets
+
+    def update_layout(self):
+        layout = self._controller.get_layout_state(self)
+        self._template_groups = layout["template_groups"]
+        self._render()

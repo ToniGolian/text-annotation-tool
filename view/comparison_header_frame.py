@@ -150,19 +150,6 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         self._num_files = layout["num_files"]
         self._render()
 
-    # def update(self):
-    #     """
-    #     Implements the update method from the IObserver interface.
-    #     Placeholder for responding to updates from the observed object.
-    #     """
-    #     self._num_annotators = self._controller.get_update_data(
-    #         self)["layout_data"]["num_annotators"]
-    #     self._num_sentences = self._controller.get_update_data(self)[
-    #         "data"]["num_sentences"]
-    #     self._current_sentence_index = self._controller.get_update_data(self)[
-    #         "data"]["current_sentence_index"]
-    #     self._render()
-
     def _on_button_pressed_select_directory(self):
         """Placeholder for directory selection logic."""
         pass

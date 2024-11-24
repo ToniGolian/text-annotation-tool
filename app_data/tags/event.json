@@ -1,0 +1,23 @@
+{
+    "type": "event",
+    "attributes": {
+        "eid": {
+            "type": "ID"
+        },
+        "class": {
+            "type": "string",
+            "allowedValues": [
+                "OCCURRENCE",
+                "PERCEPTION",
+                "REPORTING",
+                "ASPECTUAL",
+                "STATE",
+                "I_STATE",
+                "I_ACTION"
+            ]
+        },
+        "comment": {
+            "type": "CDATA"
+        }
+    }
+}

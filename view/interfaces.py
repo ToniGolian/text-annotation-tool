@@ -13,6 +13,10 @@ class IComparisonTextDisplays(IDataObserver, ILayoutObserver):
     pass
 
 
+class IAnnotationMenuFrame(IDataObserver, ILayoutObserver):
+    pass
+
+
 class ITextDisplayFrame(IDataObserver):
     pass
 

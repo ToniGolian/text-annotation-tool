@@ -1,0 +1,11 @@
+{
+    "type": "signal",
+    "attributes": {
+        "sid": {
+            "type": "ID"
+        },
+        "comment": {
+            "type": "CDATA"
+        }
+    }
+}

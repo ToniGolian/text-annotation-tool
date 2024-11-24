@@ -20,7 +20,7 @@ class ConfigurationModel(ILayoutPublisher):
         Initializes the ConfigurationManager, setting up meta_tag_names and template_groups
         using the TemplateManager to retrieve templates.
         """
-        self._template_loader = MockTemplateLoader()
+        self._template_loader = TemplateLoader()
         self._filehandler = FileHandler()
 
         # load default app paths

@@ -39,12 +39,13 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         """
         # Add a page for each template group
         for group in self._template_groups:
-            group_name = group.get("group_name")
-            templates = group.get("templates")
-            page_frame = self._render_single_page(templates)
+            group_name = group["group_name"]
+            group_name = group_name[0].upper()+group_name[1:]
+            group_templates = group["templates"]
+            page_frame = self._render_single_page(group_templates)
             self._notebook.add(page_frame, text=group_name)
 
-    def _render_single_page(self, templates: List[Dict]) -> tk.Frame:
+    def _render_single_page(self, group_templates: List[Dict]) -> tk.Frame:
         """
         Renders a scrollable page with TagFrames based on the provided templates.
 
@@ -86,7 +87,7 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
                              anchor="nw", tags="scrollable_window")
 
         # Add TagFrames for each template in the group
-        for template in templates:
+        for template in group_templates:
             tag_frame = AnnotationTagFrame(scrollable_frame, template)
 
             tag_frame.pack(fill="x", padx=5, pady=5,

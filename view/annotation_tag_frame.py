@@ -35,8 +35,9 @@ class AnnotationTagFrame(tk.Frame):
         # Display header label
         tag_type = self.template.get("type", "Tag")
         header_label = tk.Label(
-            self, text=f"{tag_type} Tag", font=("Helvetica", 16))
-        header_label.grid(row=0, column=0, columnspan=2, pady=(0, 10))
+            self, text=f"{tag_type[0].upper()+tag_type[1:]}-Tag", font=("Helvetica", 16))
+        header_label.grid(row=0, column=0, columnspan=2, padx=10,
+                          pady=(0, 10), sticky="w")
 
         # Iterate over each attribute in the template
         row = 1  # Start placing widgets from row 1
@@ -48,7 +49,7 @@ class AnnotationTagFrame(tk.Frame):
 
             # Create label for the attribute
             label = tk.Label(self, text=attr_name)
-            label.grid(row=row, column=0, sticky="w", padx=5, pady=5)
+            label.grid(row=row, column=0, sticky="w", padx=(15, 5), pady=5)
 
             # Choose widget based on the type
             if attr_data["type"].upper() in ["CDATA", "ID"]:
@@ -57,13 +58,16 @@ class AnnotationTagFrame(tk.Frame):
 
             else:
                 # Combobox for other types
-                allowed_values = attr_data.get("allowedValues", [])
+                allowed_values = [""]
+                if "allowedValues" in attr_data:
+                    allowed_values = [""]+attr_data["allowedValues"]
                 widget = ttk.Combobox(self, values=allowed_values)
-                default_value = attr_data.get("default")
-                if default_value and default_value in allowed_values:
-                    widget.set(default_value)
-                elif allowed_values:
-                    widget.set(allowed_values[0])
+                widget.set(allowed_values[0])
+
+                if "default" in attr_data:
+                    default_value = attr_data["default"]
+                    if default_value and default_value in allowed_values:
+                        widget.set(default_value)
 
             # Place the widget in the grid, making it expand in the horizontal direction
             widget.grid(row=row, column=1, sticky="ew", padx=5, pady=5)

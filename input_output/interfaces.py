@@ -53,4 +53,6 @@ class IReadWriteStrategy(ABC):
 
 
 class ITemplateLoader(ABC):
-    pass
+    @abstractmethod
+    def load_template_groups(self, project_path: str):
+        pass

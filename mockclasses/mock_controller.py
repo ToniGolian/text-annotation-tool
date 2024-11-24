@@ -9,7 +9,7 @@ from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, ICompa
 
 
 class MockController(IController):
-    def __init__(self, text_model: IDataPublisher, comparison_model: IComparisonModel, configuration_manager: ILayoutPublisher):
+    def __init__(self, text_model: IDataPublisher, comparison_model: IComparisonModel, configuration_model: ILayoutPublisher):
         """
         Initializes the MockController with models and observer management.
 
@@ -20,7 +20,7 @@ class MockController(IController):
         """
         self._text_model: IDataPublisher = text_model
         self._comparison_model: IComparisonModel = comparison_model
-        self._configuration_manager: ILayoutPublisher = configuration_manager
+        self._configuration_manager: ILayoutPublisher = configuration_model
 
         self._dynamic_observer_index: int = 0
         self._observer_data_map: Dict[IDataObserver, Dict] = {}

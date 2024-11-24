@@ -1,5 +1,5 @@
 from typing import Dict
-from io.interfaces import IProcessorStrategy
+from input_output.interfaces import IProcessorStrategy
 
 
 class PdfProcessor(IProcessorStrategy):

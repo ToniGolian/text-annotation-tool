@@ -50,3 +50,7 @@ class IReadWriteStrategy(ABC):
             data (Dict): Data to be written.
         """
         pass
+
+
+class ITemplateLoader(ABC):
+    pass

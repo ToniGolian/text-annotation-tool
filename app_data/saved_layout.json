@@ -1,0 +1,16 @@
+{
+    "project": "time_ml",
+    "tag_types": [
+        "TagType A",
+        "TagType B",
+        "TagType C"
+    ],
+    "filenames": [
+        "file a",
+        "file b",
+        "file c",
+        "file d",
+        "file e"
+    ],
+    "num_files": 5
+}

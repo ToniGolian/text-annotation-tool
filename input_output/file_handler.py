@@ -1,6 +1,7 @@
+import os
 from typing import Dict, Type
-from io.interfaces import ReadWriteStrategy
-from io.file_handler_strategies import JsonReadWriteStrategy, CsvReadWriteStrategy, TxtReadWriteStrategy
+from input_output.interfaces import IReadWriteStrategy
+from input_output.file_handler_strategies import JsonReadWriteStrategy, CsvReadWriteStrategy, TxtReadWriteStrategy
 
 
 class FileHandler:
@@ -20,7 +21,7 @@ class FileHandler:
             '.txt': TxtReadWriteStrategy(encoding=self.encoding)
         }
 
-    def _get_strategy(self, file_extension: str) -> Type[ReadWriteStrategy]:
+    def _get_strategy(self, file_extension: str) -> IReadWriteStrategy:
         """
         Selects the appropriate strategy based on file extension.
 
@@ -49,6 +50,7 @@ class FileHandler:
         Returns:
             Dict: The content of the file as a dictionary.
         """
+        file_path = self._convert_path_to_os_specific(file_path)
         file_extension = f".{file_path.split('.')[-1]}"
         strategy = self._get_strategy(file_extension)
         return strategy.read(file_path)
@@ -61,6 +63,19 @@ class FileHandler:
             file_path (str): Path to the file to be written.
             data (Dict): Data to be written to the file.
         """
+        file_path = self._convert_path_to_os_specific(file_path)
         file_extension = f".{file_path.split('.')[-1]}"
         strategy = self._get_strategy(file_extension)
         strategy.write(file_path, data)
+
+    def _convert_path_to_os_specific(self, path: str) -> str:
+        """
+        Converts a given path to a system-specific format.
+
+        Args:
+            path (str): The original path in a neutral format (e.g., "folder/folder/filename.filetype").
+
+        Returns:
+            str: The path converted to the system-specific format.
+        """
+        return os.path.normpath(path)

@@ -1,5 +1,6 @@
+from model.configuration_model import ConfigurationModel
 from view.main_window import MainWindow
-from mockclasses.mock_configuration_manager import MockConfigurationManager
+from mockclasses.mock_configuration_model import MockConfigurationModel
 from mockclasses.mock_models import MockTagModel, MockDocumentModel, MockComparisonModel
 from mockclasses.mock_controller import MockController
 
@@ -9,9 +10,9 @@ def main():
     text_model = MockDocumentModel()
     tag_model = MockTagModel()
     comparison_model = MockComparisonModel()
-    configuration_manager = MockConfigurationManager()
+    configuration_model = ConfigurationModel()
     controller = MockController(
-        text_model=text_model, comparison_model=comparison_model, configuration_manager=configuration_manager)
+        text_model=text_model, comparison_model=comparison_model, configuration_model=configuration_model)
     app_view = MainWindow(controller)
     controller.finalize_views()
 

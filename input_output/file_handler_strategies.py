@@ -1,7 +1,7 @@
 import json
 import csv
 from typing import Dict
-from io.interfaces import IReadWriteStrategy
+from input_output.interfaces import IReadWriteStrategy
 
 
 class JsonReadWriteStrategy(IReadWriteStrategy):

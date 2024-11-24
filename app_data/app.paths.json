@@ -1,0 +1,7 @@
+{
+    "saved_layout": "app_data/saved_layout.json",
+    "default_project_config": "app_data/project_config/",
+    "default_pdf_folder": "data/pdf/",
+    "default_annotation_folder": "data/annotation/",
+    "default_comparison_folder": "data/comparison/"
+}

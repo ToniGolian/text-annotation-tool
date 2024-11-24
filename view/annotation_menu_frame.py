@@ -88,7 +88,8 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
 
         # Add TagFrames for each template in the group
         for template in group_templates:
-            tag_frame = AnnotationTagFrame(scrollable_frame, template)
+            tag_frame = AnnotationTagFrame(
+                parent=scrollable_frame, controller=self._controller, template=template)
 
             tag_frame.pack(fill="x", padx=5, pady=5,
                            anchor="n", expand=True)

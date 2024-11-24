@@ -18,17 +18,17 @@ class IController(ABC):
 
     # command pattern
     @abstractmethod
-    def execute_command(self, command: ICommand) -> None:
+    def _execute_command(self, command: ICommand) -> None:
         """Executes the specified command."""
         pass
 
     @abstractmethod
-    def undo(self, command: ICommand) -> None:
+    def _undo(self, command: ICommand) -> None:
         """Reverses the actions of the specified command."""
         pass
 
     @abstractmethod
-    def redo(self, command: ICommand) -> None:
+    def _redo(self, command: ICommand) -> None:
         """Reapplies the actions of the specified command."""
         pass
 

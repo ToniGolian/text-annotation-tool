@@ -1,5 +1,7 @@
 from controller.interfaces import IController
 from commands.interfaces import ICommand
+from mockclasses.mock_commands import MockAddTagCommand, MockDeleteTagCommand, MockEditTagCommand
+from mockclasses.mock_tag_manager import MockTagManager
 from model.interfaces import IComparisonModel, IDocumentModel
 from utils.interfaces import IObserver, IPublisher
 from typing import Dict, List, Sequence
@@ -98,11 +100,8 @@ class MockController(IController):
         """
         return self._observer_data_map[observer]()
 
-    # performances
-    def perform_text_selected(self, text: str) -> None:
-        print(f"Text: {text} selected.")
-
     # initialization
+
     def finalize_views(self) -> None:
         """
         Finalizes the initialization of all views that were previously 
@@ -150,3 +149,7 @@ class MockController(IController):
         """
         command = DeleteTagCommand(self._tag_manager, tag_id)
         self._execute_command(command)
+
+    # performances
+    def perform_text_selected(self, text: str) -> None:
+        print(f"Text: {text} selected.")

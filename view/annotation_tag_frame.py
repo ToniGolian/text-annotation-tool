@@ -80,10 +80,10 @@ class AnnotationTagFrame(tk.Frame):
             row += 1
 
         # Add "Add Tag" button
-        add_tag_button = tk.Button(
+        add_tag_button = ttk.Button(
             self, text="Add Tag", command=self._button_pressed_add_tag)
-        add_tag_button.grid(row=row, column=0, columnspan=2,
-                            sticky="ew", padx=15, pady=5)
+        add_tag_button.grid(row=row, column=1,
+                            sticky="ew", padx=5, pady=5)
         row += 1
 
         # Add label and combobox for "Id to edit"
@@ -96,10 +96,10 @@ class AnnotationTagFrame(tk.Frame):
         row += 1
 
         # Add "Edit Tag" button
-        edit_tag_button = tk.Button(
+        edit_tag_button = ttk.Button(
             self, text="Edit Tag", command=self._button_pressed_edit_tag)
-        edit_tag_button.grid(row=row, column=0, columnspan=2,
-                             sticky="ew", padx=15, pady=5)
+        edit_tag_button.grid(row=row, column=1,
+                             sticky="ew", padx=5, pady=5)
         row += 1
 
         # Add label and combobox for "Id to delete"
@@ -112,10 +112,10 @@ class AnnotationTagFrame(tk.Frame):
         row += 1
 
         # Add "Delete Tag" button
-        delete_tag_button = tk.Button(
+        delete_tag_button = ttk.Button(
             self, text="Delete Tag", command=self._button_pressed_delete_tag)
         delete_tag_button.grid(
-            row=row, column=0, columnspan=2, sticky="ew", padx=15, pady=5)
+            row=row, column=1, sticky="ew", padx=5, pady=5)
         row += 1
 
     def _button_pressed_add_tag(self) -> None:

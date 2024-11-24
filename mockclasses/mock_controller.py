@@ -1,6 +1,8 @@
 
 from controller.interfaces import IController
 from commands.interfaces import ICommand
+from mockclasses.mock_commands import MockAddTagCommand, MockDeleteTagCommand, MockEditTagCommand
+from mockclasses.mock_tag_manager import MockTagManager
 from model.interfaces import IComparisonModel
 from utils.interfaces import IDataObserver, IDataPublisher, ILayoutObserver, ILayoutPublisher,  IObserver, IPublisher
 from typing import Dict, List, Any, Sequence
@@ -9,7 +11,7 @@ from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, ICompa
 
 
 class MockController(IController):
-    def __init__(self, text_model: IDataPublisher, comparison_model: IComparisonModel, configuration_model: ILayoutPublisher):
+    def __init__(self, document_model: IDataPublisher, comparison_model: IComparisonModel, configuration_model: ILayoutPublisher):
         """
         Initializes the MockController with models and observer management.
 
@@ -18,9 +20,11 @@ class MockController(IController):
             comparison_model (IDataPublisher & ILayoutPublisher): The model responsible for managing and publishing 
                 both data and layout updates for comparisons.
         """
-        self._text_model: IDataPublisher = text_model
+        self._document_model: IDataPublisher = document_model
         self._comparison_model: IComparisonModel = comparison_model
         self._configuration_manager: ILayoutPublisher = configuration_model
+
+        self._tag_manager = MockTagManager(self._document_model)
 
         self._dynamic_observer_index: int = 0
         self._observer_data_map: Dict[IDataObserver, Dict] = {}
@@ -28,17 +32,17 @@ class MockController(IController):
         self._observers_to_finalize: List[IObserver] = []
 
     # command pattern
-    def execute_command(self, command: ICommand) -> None:
+    def _execute_command(self, command: ICommand) -> None:
         """Executes the specified command."""
-        print("Controller execute command")
+        print(f"Controller execute {command}")
 
-    def undo(self, command: ICommand) -> None:
+    def _undo(self, command: ICommand) -> None:
         """Reverses the actions of the specified command."""
-        print("Controller undo command")
+        print(f"Controller undo {command}")
 
-    def redo(self, command: ICommand) -> None:
+    def _redo(self, command: ICommand) -> None:
         """Reapplies the actions of the specified command."""
-        print("Controller redo command")
+        print(f"Controller redo {command}")
 
     # observer pattern
     def add_data_observer(self, observer: IDataObserver) -> None:
@@ -50,9 +54,9 @@ class MockController(IController):
         """
         if isinstance(observer, ITextDisplayFrame):
             keys = ["text"]
-            sources = [self._text_model]
+            sources = [self._document_model]
             self._set_observer_mapping(observer, keys, sources, "data")
-            self._text_model.add_data_observer(observer)
+            self._document_model.add_data_observer(observer)
 
         elif isinstance(observer, IMetaTagsFrame):
             keys = ["file_names"]
@@ -219,83 +223,33 @@ class MockController(IController):
         else:
             raise ValueError("Invalid mapping type. Use 'data' or 'layout'.")
 
-    #!depr
+    def perform_add_tag(self, tag_data: dict) -> None:
+        """
+        Creates and executes an AddTagCommand to add a new tag.
 
-    def get_template_groups(self) -> Sequence:
-        """Returns the Groups of templates for the dynamic creation of Tagging menu frames """
-        return [{"group_name": "Group1", "templates": [{
-            "type": "TIMEX1",
-            "attributes": {
-                "tid": {
-                    "active": True,
-                    "type": "ID"
-                },
-                "type": {
-                    "active": True,
-                    "type": "string",
-                    "allowedValues": ["DATE", "TIME", "DURATION", "SET"]
-                },
-                "functionInDocument": {
-                    "active": True,
-                    "type": "string",
-                    "allowedValues": ["CREATION_TIME", "EXPIRATION_TIME", "MODIFICATION_TIME", "PUBLICATION_TIME", "RELEASE_TIME", "RECEPTION_TIME", "NONE"],
-                    "default": "NONE"
-                },
-                "endPoint": {
-                    "active": True,
-                    "type": "IDREF"
-                }
-            }
-        },
-            {
-            "type": "TIMEX2",
-            "attributes": {
-                "tid": {
-                    "active": True,
-                    "type": "ID"
-                },
-                "type": {
-                    "active": True,
-                    "type": "string",
-                    "allowedValues": ["DATE", "TIME", "DURATION", "SET"]
-                },
-                "functionInDocument": {
-                    "active": True,
-                    "type": "string",
-                    "allowedValues": ["CREATION_TIME", "EXPIRATION_TIME", "MODIFICATION_TIME", "PUBLICATION_TIME", "RELEASE_TIME", "RECEPTION_TIME", "NONE"],
-                    "default": "NONE"
-                },
-                "beginPoint": {
-                    "active": True,
-                    "type": "IDREF"
-                }
-            }
-        }]}, {"group_name": "Group2", "templates": [
-            {
-                "type": "TIMEX3",
-                "attributes": {
-                    "tid": {
-                        "active": True,
-                        "type": "ID"
-                    },
-                    "type": {
-                        "active": True,
-                        "type": "string",
-                        "allowedValues": ["DATE", "TIME", "DURATION", "SET"]
-                    },
-                    "functionInDocument": {
-                        "active": True,
-                        "type": "string",
-                        "allowedValues": ["A", "B", "C", "D", "E", "F", "G"],
-                        "default": "NONE"
-                    },
-                    "anchorPoint": {
-                        "active": True,
-                        "type": "IDREF"
-                    }
-                }
-            }
-        ]}]
+        Args:
+            tag_data (dict): Data for the tag to be added.
+        """
+        command = MockAddTagCommand(self._tag_manager, tag_data)
+        self._execute_command(command)
 
-    def get_meta_tag_labels(self):
-        return ["a-Tag", "b-Tag", "c-Tag"]
+    def perform_edit_tag(self, tag_id: str, tag_data: dict) -> None:
+        """
+        Creates and executes an EditTagCommand to edit an existing tag.
+
+        Args:
+            tag_id (str): The ID of the tag to edit.
+            tag_data (dict): The new data for the tag.
+        """
+        command = MockEditTagCommand(self._tag_manager, tag_id, tag_data)
+        self._execute_command(command)
+
+    def perform_delete_tag(self, tag_id: str) -> None:
+        """
+        Creates and executes a DeleteTagCommand to delete a tag.
+
+        Args:
+            tag_id (str): The ID of the tag to delete.
+        """
+        command = MockDeleteTagCommand(self._tag_manager, tag_id)
+        self._execute_command(command)

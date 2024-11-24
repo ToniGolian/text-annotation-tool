@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Dict
 
+from controller.interfaces import IController
+
 
 class AnnotationTagFrame(tk.Frame):
     """
@@ -11,7 +13,7 @@ class AnnotationTagFrame(tk.Frame):
         template (Dict): The template dictionary defining the structure and attributes for the tag.
     """
 
-    def __init__(self, parent: tk.Widget, template: Dict) -> None:
+    def __init__(self, parent: tk.Widget, controller: IController, template: Dict) -> None:
         """
         Initializes the TagFrame and creates widgets based on the template.
 
@@ -20,7 +22,9 @@ class AnnotationTagFrame(tk.Frame):
             template (Dict): The template dictionary defining the tag type and attributes.
         """
         super().__init__(parent)
-        self.template = template
+        self._controller = controller
+        self._template = template
+        self._data_widgets = {}
         self._render()
 
     def _render(self) -> None:
@@ -33,7 +37,7 @@ class AnnotationTagFrame(tk.Frame):
         self.grid_columnconfigure(1, weight=1)
 
         # Display header label
-        tag_type = self.template.get("type", "Tag")
+        tag_type = self._template.get("type", "Tag")
         header_label = tk.Label(
             self, text=f"{tag_type[0].upper()+tag_type[1:]}-Tag", font=("Helvetica", 16))
         header_label.grid(row=0, column=0, columnspan=2, padx=10,
@@ -41,7 +45,7 @@ class AnnotationTagFrame(tk.Frame):
 
         # Iterate over each attribute in the template
         row = 1  # Start placing widgets from row 1
-        for attr_name, attr_data in self.template["attributes"].items():
+        for attr_name, attr_data in self._template["attributes"].items():
             # todo reactivate when configuration menu is implemented
             # Check if the attribute is active
             # if not attr_data.get("active", False):
@@ -69,6 +73,82 @@ class AnnotationTagFrame(tk.Frame):
                     if default_value and default_value in allowed_values:
                         widget.set(default_value)
 
-            # Place the widget in the grid, making it expand in the horizontal direction
+            # Place the widget in the grid
             widget.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
+            # Store reference to the widget
+            self._data_widgets[attr_name] = widget
             row += 1
+
+        # Add "Add Tag" button
+        add_tag_button = tk.Button(
+            self, text="Add Tag", command=self._button_pressed_add_tag)
+        add_tag_button.grid(row=row, column=0, columnspan=2,
+                            sticky="ew", padx=15, pady=5)
+        row += 1
+
+        # Add label and combobox for "Id to edit"
+        edit_label = tk.Label(self, text="ID to Edit")
+        edit_label.grid(row=row, column=0, sticky="w", padx=(15, 5), pady=5)
+
+        self.edit_id_combobox = ttk.Combobox(self, values=[""])
+        self.edit_id_combobox.grid(
+            row=row, column=1, sticky="ew", padx=5, pady=5)
+        row += 1
+
+        # Add "Edit Tag" button
+        edit_tag_button = tk.Button(
+            self, text="Edit Tag", command=self._button_pressed_edit_tag)
+        edit_tag_button.grid(row=row, column=0, columnspan=2,
+                             sticky="ew", padx=15, pady=5)
+        row += 1
+
+        # Add label and combobox for "Id to delete"
+        delete_label = tk.Label(self, text="ID to Delete")
+        delete_label.grid(row=row, column=0, sticky="w", padx=(15, 5), pady=5)
+
+        self.delete_id_combobox = ttk.Combobox(self, values=[""])
+        self.delete_id_combobox.grid(
+            row=row, column=1, sticky="ew", padx=5, pady=5)
+        row += 1
+
+        # Add "Delete Tag" button
+        delete_tag_button = tk.Button(
+            self, text="Delete Tag", command=self._button_pressed_delete_tag)
+        delete_tag_button.grid(
+            row=row, column=0, columnspan=2, sticky="ew", padx=15, pady=5)
+        row += 1
+
+    def _button_pressed_add_tag(self) -> None:
+        """
+        Handles the action when the 'Add Tag' button is pressed.
+        """
+        tag_data = self._collect_tag_data()
+        self._controller.perform_add_tag(tag_data)
+
+    def _button_pressed_edit_tag(self) -> None:
+        """
+        Handles the action when the 'Edit Tag' button is pressed.
+        """
+        tag_data = self._collect_tag_data()
+        self._controller.perform_edit_tag(
+            id=self.edit_id_combobox.get(), tag_data=tag_data)
+
+    def _button_pressed_delete_tag(self) -> None:
+        """
+        Handles the action when the 'Delete Tag' button is pressed.
+        """
+        self._controller.perform_delete_tag(id=self.delete_id_combobox.get())
+
+    def _collect_tag_data(self) -> dict:
+        """
+        Collects data from the widgets in self._data_widgets and returns it as a dictionary.
+        Only includes non-empty values.
+
+        Returns:
+            dict: A dictionary containing the collected data.
+        """
+        return {
+            attr_name: widget.get().strip()
+            for attr_name, widget in self._data_widgets.items()
+            if widget.get().strip()
+        }

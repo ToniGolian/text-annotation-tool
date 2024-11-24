@@ -5,24 +5,24 @@ from model.interfaces import ITagModel
 
 class DocumentModel(IDocumentModel):
     def __init__(self):
-        self._file_name: str = ""
-        self._metatags: Dict = {}
+        self._filename: str = ""
+        self._meta_tags: Dict = {}
         self._text: str = ""
         self._tags: List[ITagModel] = []
 
     # Getters and Setters
 
-    def get_file_name(self) -> str:
-        return self._file_name
+    def get_filename(self) -> str:
+        return self._filename
 
-    def set_file_name(self, file_name: str) -> None:
-        self._file_name = file_name
+    def set_filename(self, file_name: str) -> None:
+        self._filename = file_name
 
-    def get_metatags(self) -> dict:
-        return self._metatags
+    def get_meta_tags(self) -> dict:
+        return self._meta_tags
 
-    def set_metatags(self, metatags: dict) -> None:
-        self._metatags = metatags
+    def set_meta_tags(self, metatags: dict) -> None:
+        self._meta_tags = metatags
 
     def get_text(self) -> str:
         return self._text

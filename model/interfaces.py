@@ -11,3 +11,7 @@ class IConfigurationModel(ILayoutPublisher):
 
 class ITagModel(IDataPublisher):
     pass
+
+
+class IDocumentModel(IDataPublisher):
+    pass

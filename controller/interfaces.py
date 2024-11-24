@@ -76,3 +76,34 @@ class IController(ABC):
     def perform_text_selected(self, text: str) -> None:
         """Performs the action if a text is selected in the main text display"""
         pass
+
+    @abstractmethod
+    def perform_add_tag(self, tag_data: dict) -> None:
+        """
+        Perform the action of adding a new tag with the provided data.
+
+        Args:
+            tag_data (dict): The data of the tag to be added.
+        """
+        pass
+
+    @abstractmethod
+    def perform_edit_tag(self, tag_id: str, tag_data: dict) -> None:
+        """
+        Perform the action of editing an existing tag with the given ID and data.
+
+        Args:
+            tag_id (str): The ID of the tag to edit.
+            tag_data (dict): The new data for the tag.
+        """
+        pass
+
+    @abstractmethod
+    def perform_delete_tag(self, tag_id: str) -> None:
+        """
+        Perform the action of deleting a tag with the given ID.
+
+        Args:
+            tag_id (str): The ID of the tag to delete.
+        """
+        pass

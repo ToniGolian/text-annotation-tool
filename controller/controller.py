@@ -11,34 +11,56 @@ from view.text_display_frame import TextDisplayFrame
 
 
 class MockController(IController):
-    def __init__(self, text_model: IPublisher, tag_model: IPublisher, comparison_model: IPublisher):
-        self._text_model = text_model
-        self.tag_model = tag_model
+    def __init__(self, document_model: IPublisher, tag_model: IPublisher, comparison_model: IPublisher):
+        self._document_model = document_model
         self._comparison_model = comparison_model
+        self._tag_manager = TagManager(self._document_model)
 
         self._dynamic_observer_index: int = 0
         self._observer_data_map: Dict[IObserver:Dict] = {}
         self._observers_to_finalize: List = []
 
+        self._undo_stack = []  # Stack to store commands for undo operations
+        self._redo_stack = []  # Stack to store commands for redo operations
+
     # command pattern
-    def execute_command(self, command: ICommand) -> None:
-        """Executes the specified command."""
-        print("Controller execute command")
+    def _execute_command(self, command) -> None:
+        """
+        Executes a command, adds it to the redo stack, and clears the undo stack.
 
-    def undo(self, command: ICommand) -> None:
-        """Reverses the actions of the specified command."""
-        print("Controller undo command")
+        Args:
+            command: The command object to execute.
+        """
+        self._redo_stack.append(command)
+        command.execute()
 
-    def redo(self, command: ICommand) -> None:
-        """Reapplies the actions of the specified command."""
-        print("Controller redo command")
+    def _undo_command(self) -> None:
+        """
+        Undoes the last command by moving it from the redo stack to the undo stack 
+        and calling its undo method.
+        """
+        if self._redo_stack:
+            command = self._redo_stack.pop()
+            self._undo_stack.append(command)
+            command.undo()
+
+    def _redo_command(self) -> None:
+        """
+        Redoes the last undone command by moving it from the undo stack to the redo stack 
+        and calling its redo method.
+        """
+        if self._undo_stack:
+            command = self._undo_stack.pop()
+            self._redo_stack.append(command)
+            command.redo()
 
     # observer pattern
+
     def add_observer(self, observer: IObserver) -> None:
         if isinstance(observer, TextDisplayFrame):
             self._observer_data_map[observer] = lambda: {
-                "data": self._text_model.get_data()["text"]}
-            self._text_model.add_observer(observer=observer)
+                "data": self._document_model.get_data()["text"]}
+            self._document_model.add_observer(observer=observer)
 
         elif isinstance(observer, ComparisonTextDisplays):
             self._observer_data_map[observer] = lambda: {
@@ -98,83 +120,33 @@ class MockController(IController):
         for observer in self._observers_to_finalize:
             observer.update()
 
-    #!depr
+    def perform_add_tag(self, tag_data: dict) -> None:
+        """
+        Creates and executes an AddTagCommand to add a new tag.
 
-    def get_template_groups(self) -> Sequence:
-        """Returns the Groups of templates for the dynamic creation of Tagging menu frames """
-        return [{"group_name": "Group1", "templates": [{
-            "type": "TIMEX1",
-            "attributes": {
-                "tid": {
-                    "active": True,
-                    "type": "ID"
-                },
-                "type": {
-                    "active": True,
-                    "type": "string",
-                    "allowedValues": ["DATE", "TIME", "DURATION", "SET"]
-                },
-                "functionInDocument": {
-                    "active": True,
-                    "type": "string",
-                    "allowedValues": ["CREATION_TIME", "EXPIRATION_TIME", "MODIFICATION_TIME", "PUBLICATION_TIME", "RELEASE_TIME", "RECEPTION_TIME", "NONE"],
-                    "default": "NONE"
-                },
-                "endPoint": {
-                    "active": True,
-                    "type": "IDREF"
-                }
-            }
-        },
-            {
-            "type": "TIMEX2",
-            "attributes": {
-                "tid": {
-                    "active": True,
-                    "type": "ID"
-                },
-                "type": {
-                    "active": True,
-                    "type": "string",
-                    "allowedValues": ["DATE", "TIME", "DURATION", "SET"]
-                },
-                "functionInDocument": {
-                    "active": True,
-                    "type": "string",
-                    "allowedValues": ["CREATION_TIME", "EXPIRATION_TIME", "MODIFICATION_TIME", "PUBLICATION_TIME", "RELEASE_TIME", "RECEPTION_TIME", "NONE"],
-                    "default": "NONE"
-                },
-                "beginPoint": {
-                    "active": True,
-                    "type": "IDREF"
-                }
-            }
-        }]}, {"group_name": "Group2", "templates": [
-            {
-                "type": "TIMEX3",
-                "attributes": {
-                    "tid": {
-                        "active": True,
-                        "type": "ID"
-                    },
-                    "type": {
-                        "active": True,
-                        "type": "string",
-                        "allowedValues": ["DATE", "TIME", "DURATION", "SET"]
-                    },
-                    "functionInDocument": {
-                        "active": True,
-                        "type": "string",
-                        "allowedValues": ["A", "B", "C", "D", "E", "F", "G"],
-                        "default": "NONE"
-                    },
-                    "anchorPoint": {
-                        "active": True,
-                        "type": "IDREF"
-                    }
-                }
-            }
-        ]}]
+        Args:
+            tag_data (dict): Data for the tag to be added.
+        """
+        command = AddTagCommand(self._tag_manager, tag_data)
+        self._execute_command(command)
 
-    def get_meta_tag_labels(self):
-        return ["a-Tag", "b-Tag", "c-Tag"]
+    def perform_edit_tag(self, tag_id: str, tag_data: dict) -> None:
+        """
+        Creates and executes an EditTagCommand to edit an existing tag.
+
+        Args:
+            tag_id (str): The ID of the tag to edit.
+            tag_data (dict): The new data for the tag.
+        """
+        command = EditTagCommand(self._tag_manager, tag_id, tag_data)
+        self._execute_command(command)
+
+    def perform_delete_tag(self, tag_id: str) -> None:
+        """
+        Creates and executes a DeleteTagCommand to delete a tag.
+
+        Args:
+            tag_id (str): The ID of the tag to delete.
+        """
+        command = DeleteTagCommand(self._tag_manager, tag_id)
+        self._execute_command(command)

@@ -2,7 +2,7 @@ from controller.interfaces import IController
 import tkinter as tk
 from tkinter import ttk
 
-from view.tagging_menu_frame import TaggingMenuFrame
+from view.annotation_menu_frame import AnnotationMenuFrame
 # from view.comparison_io_frame import ComparisonIOFrame
 # from view.comparison_controls_frame import ComparisonControlsFrame
 from view.comparison_header_frame import ComparisonHeaderFrame
@@ -48,7 +48,7 @@ class ComparisonView(tk.Frame):
         self.left_frame.pack(fill="both", expand=True)
 
         # Right frame for the tagging menu
-        self.right_frame = TaggingMenuFrame(
+        self.right_frame = AnnotationMenuFrame(
             self, controller=self._controller)
 
         # Add frames to the PanedWindow with weights

@@ -2,17 +2,17 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Dict, List
 from controller.interfaces import IController
-from view.tag_frame import TagFrame
+from view.annotation_tag_frame import AnnotationTagFrame
 
 
-class TaggingMenuFrame(tk.Frame):
+class AnnotationMenuFrame(tk.Frame):
     """
     A tkinter Frame that contains a Notebook with pages representing template groups.
     """
 
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
-        Initializes the TaggingMenuFrame with a Notebook containing pages for each template group.
+        Initializes the AnnotationMenuFrame with a Notebook containing pages for each template group.
 
         Args:
             parent (tk.Widget): The parent tkinter container (e.g., Tk, Frame) for this TaggingMenuFrame.
@@ -86,7 +86,7 @@ class TaggingMenuFrame(tk.Frame):
 
         # Add TagFrames for each template in the group
         for template in templates:
-            tag_frame = TagFrame(scrollable_frame, template)
+            tag_frame = AnnotationTagFrame(scrollable_frame, template)
 
             tag_frame.pack(fill="x", padx=5, pady=5,
                            anchor="n", expand=True)

@@ -3,7 +3,7 @@ from tkinter import ttk
 from controller.interfaces import IController
 
 
-class PDFExtractionFrame(tk.Frame):
+class ExtractionFrame(tk.Frame):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the PDFExtractionView with a reference to the parent widget and controller.

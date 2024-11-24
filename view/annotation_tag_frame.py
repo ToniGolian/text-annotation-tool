@@ -3,7 +3,7 @@ from tkinter import ttk
 from typing import Dict
 
 
-class TagFrame(tk.Frame):
+class AnnotationTagFrame(tk.Frame):
     """
     A tkinter Frame that dynamically generates form fields based on a given template.
 

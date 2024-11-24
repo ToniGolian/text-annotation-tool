@@ -18,9 +18,8 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         super().__init__(parent)
         self._controller: IController = controller
 
-        self._file_names: List[str] = []
+        self._filenames: List[str] = []
         self._widget_structure: List[tk.Widget] = []
-        self._num_annotators: int = 0
 
         # Add observer
         self._controller.add_data_observer(self)
@@ -100,10 +99,10 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         )
         self._widget_structure.append((original_label, original_text_display))
 
-        for index in range(self._num_annotators):
+        for filename in self._filenames:
             # Create a label with the document's filename
             label = tk.Label(self.scrollable_frame,
-                             text=f"Filename: {self._file_names[index]}")
+                             text=f"Filename: {filename}")
 
             # Create a TextDisplayFrame for displaying the document's content
             text_display_frame = ComparisonTextDisplayFrame(
@@ -121,7 +120,6 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         and processes it to refresh the displayed information.
         """
         data = self._controller.get_data_state(self)
-        self._file_names = data["file_names"]
         self._render()
 
     def update_layout(self) -> None:
@@ -132,7 +130,7 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         and processes it to adjust the layout of the view.
         """
         layout = self._controller.get_layout_state(self)
-        self._num_annotators = layout["num_annotators"]
+        self._filenames = layout["filenames"]
         self._render()
 
     # def update(self) -> None:

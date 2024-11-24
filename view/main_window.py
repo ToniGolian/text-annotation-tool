@@ -1,8 +1,8 @@
 import platform
 import tkinter as tk
 from tkinter import ttk
-from view.pdf_extraction_view import PDFExtractionView
-from view.text_annotation_view import TextAnnotationView
+from view.extraction_view import ExtractionView
+from view.annotation_view import AnnotationView
 from view.comparison_view import ComparisonView
 from controller.interfaces import IController
 
@@ -71,12 +71,12 @@ class MainWindow(tk.Tk):
         notebook.pack(fill="both", expand=True)
 
         # Add the PDF Extraction tab
-        pdf_view = PDFExtractionView(
+        pdf_view = ExtractionView(
             parent=notebook, controller=self.controller)
         notebook.add(pdf_view, text="PDF Extraction")
 
         # Add the Text Annotation tab
-        text_annotation_view = TextAnnotationView(
+        text_annotation_view = AnnotationView(
             parent=notebook, controller=self.controller)  # Instantiate text annotation view
         notebook.add(text_annotation_view, text="Text Annotation")
 

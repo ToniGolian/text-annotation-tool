@@ -23,7 +23,7 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         """
         super().__init__(parent)
         self._controller: IController = controller
-        self._num_annotators: int = None
+        self._num_files: int = None
         self._radio_var = tk.IntVar()  # Shared variable for the radio buttons
         self.MAX_BUTTONS_PER_ROW = 8
         self._current_sentence_index: int = 0
@@ -84,7 +84,7 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         manual_radio.grid(row=0, column=0, padx=5, pady=0, sticky="w")
 
         # Annotator Radio Buttons in multiple rows using grid
-        for i in range(self._num_annotators):
+        for i in range(self._num_files):
             # Calculate the row index
             row = ((i+1) // self.MAX_BUTTONS_PER_ROW)
             # Calculate the column index
@@ -134,7 +134,7 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         This method fetches data associated with this observer from the controller
         and processes it to refresh the displayed information.
         """
-        data = self._controller.get_data(self)
+        data = self._controller.get_data_state(self)
         self._num_sentences = data["num_sentences"]
         self._current_sentence_index = data["current_sentence_index"]
         self._render()
@@ -146,8 +146,8 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         This method fetches layout data associated with this observer from the controller
         and processes it to adjust the layout of the view.
         """
-        layout = self._controller.get_layout(self)
-        self._num_annotators = layout["num_annotators"]
+        layout = self._controller.get_layout_state(self)
+        self._num_files = layout["num_files"]
         self._render()
 
     # def update(self):

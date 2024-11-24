@@ -1,8 +1,5 @@
-# from model.text_model import TextModel
-# from model.tag_model import TagModel
 from view.main_window import MainWindow
-# from controller.controller import Controller
-import tkinter as tk
+from mockclasses.mock_configuration_manager import MockConfigurationManager
 from mockclasses.mock_models import MockTagModel, MockDocumentModel, MockComparisonModel
 from mockclasses.mock_controller import MockController
 
@@ -12,7 +9,9 @@ def main():
     text_model = MockDocumentModel()
     tag_model = MockTagModel()
     comparison_model = MockComparisonModel()
-    controller = MockController(text_model, comparison_model)
+    configuration_manager = MockConfigurationManager()
+    controller = MockController(
+        text_model=text_model, comparison_model=comparison_model, configuration_manager=configuration_manager)
     app_view = MainWindow(controller)
     controller.finalize_views()
 

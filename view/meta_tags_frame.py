@@ -26,16 +26,21 @@ class MetaTagsFrame(tk.Frame, IMetaTagsFrame):
         """
         super().__init__(parent)
 
-        self.controller = controller
+        self._controller = controller
 
-        self._meta_tags = []
-        self._meta_tag_types = []
+        # data state
+        self._meta_tag_data = []
+        self._filename = ""
 
-        self._filename_label = None
+        # layout state
+        self._tag_types = []
 
-        self._render()
-        self.controller.add_data_observer(self)
-        self.controller.add_layout_observer(self)
+        # layout elements
+        self._filename_label = self._filename_label = ttk.Label(self)
+
+        # observer pattern
+        self._controller.add_data_observer(self)
+        self._controller.add_layout_observer(self)
 
     def _render(self) -> None:
         """
@@ -48,11 +53,11 @@ class MetaTagsFrame(tk.Frame, IMetaTagsFrame):
         label.grid(row=0, column=0, sticky="w", padx=5, pady=2)
 
         # Placeholder for filename display
-        self._filename_label = ttk.Label(self, text="")
+        self._filename_label.config(text=self._filename)
         self._filename_label.grid(row=0, column=1, sticky="w", padx=5, pady=2)
 
         # Create additional labels and entries based on meta_tag_labels
-        for index, text in enumerate(self._meta_tag_types, start=1):
+        for index, text in enumerate(self._tag_types, start=1):
             label = ttk.Label(self, text=text)
             label.grid(row=index, column=0, sticky="w", padx=5, pady=2)
 
@@ -73,7 +78,7 @@ class MetaTagsFrame(tk.Frame, IMetaTagsFrame):
         Returns:
             List[str]: A list of meta tag label names.
         """
-        return self._meta_tag_types
+        return self._tag_types
 
     def set_meta_tag_labels(self, labels: List[str]) -> None:
         """
@@ -82,7 +87,7 @@ class MetaTagsFrame(tk.Frame, IMetaTagsFrame):
         Args:
             labels (List[str]): A list of new meta tag label names to display.
         """
-        self._meta_tag_types = labels
+        self._tag_types = labels
         # Re-render components if labels are updated
         for widget in self.winfo_children():
             widget.destroy()
@@ -95,7 +100,7 @@ class MetaTagsFrame(tk.Frame, IMetaTagsFrame):
         This method fetches data associated with this observer from the controller
         and processes it to refresh the displayed information.
         """
-        data = self._controller.get_data(self)
+        data = self._controller.get_data_state(self)
         # todo: Process and update the view with the retrieved data
         self._render()
 
@@ -106,6 +111,8 @@ class MetaTagsFrame(tk.Frame, IMetaTagsFrame):
         This method fetches layout data associated with this observer from the controller
         and processes it to adjust the layout of the view.
         """
-        layout = self._controller.get_layout(self)
+        layout = self._controller.get_layout_state(self)
+        self._tag_types = layout["tag_types"]
         # todo: Process and update the layout with the retrieved information
+
         self._render()

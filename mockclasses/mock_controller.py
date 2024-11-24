@@ -4,17 +4,12 @@ from commands.interfaces import ICommand
 from model.interfaces import IComparisonModel
 from utils.interfaces import IDataObserver, IDataPublisher, ILayoutObserver, ILayoutPublisher,  IObserver, IPublisher
 from typing import Dict, List, Any, Sequence
-import tkinter as tk
 
-from view.comparison_header_frame import ComparisonHeaderFrame
-from view.comparison_text_display_frame import ComparisonTextDisplayFrame
-from view.comparison_text_displays import ComparisonTextDisplays
 from view.interfaces import IComparisonHeaderFrame, IComparisonTextDisplayFrame, IComparisonTextDisplays, IMetaTagsFrame, ITextDisplayFrame
-from view.text_display_frame import TextDisplayFrame
 
 
 class MockController(IController):
-    def __init__(self, text_model: IDataPublisher, comparison_model: IComparisonModel):
+    def __init__(self, text_model: IDataPublisher, comparison_model: IComparisonModel, configuration_manager: ILayoutPublisher):
         """
         Initializes the MockController with models and observer management.
 
@@ -25,6 +20,7 @@ class MockController(IController):
         """
         self._text_model: IDataPublisher = text_model
         self._comparison_model: IComparisonModel = comparison_model
+        self._configuration_manager: ILayoutPublisher = configuration_manager
 
         self._dynamic_observer_index: int = 0
         self._observer_data_map: Dict[IDataObserver, Dict] = {}
@@ -101,14 +97,20 @@ class MockController(IController):
             observer (ILayoutObserver): The layout observer to be added.
         """
         if isinstance(observer, (IComparisonTextDisplays, IComparisonHeaderFrame)):
-            keys = ["num_annotators"]
-            sources = [self._comparison_model]
-            self._set_observer_mapping(observer, keys, sources, "layout")
-            self._comparison_model.add_layout_observer(observer)
-            self._observers_to_finalize.append(observer)
-
+            keys = ["filenames", "num_files"]
+            # sources = [self._comparison_model]
+            sources = [self._configuration_manager]
+        elif isinstance(observer, IMetaTagsFrame):
+            keys = ["tag_types"]
+            sources = [self._configuration_manager]
         else:
+            keys = []
+            sources = []
             print(f"Unknown Layout Observer {type(observer)} registered")
+
+        self._set_observer_mapping(observer, keys, sources, "layout")
+        self._comparison_model.add_layout_observer(observer)
+        self._observers_to_finalize.append(observer)
 
     def remove_data_observer(self, observer: IDataObserver) -> None:
         print(f"{type(observer)} removed")
@@ -180,7 +182,7 @@ class MockController(IController):
             have already been registered with the controller.
         """
         for observer in self._observers_to_finalize:
-            observer.update()
+            observer.update_layout()
 
     # helpers
     def _set_observer_mapping(self, observer: IObserver, keys: List[str], sources: List[IPublisher], mapping: str) -> None:

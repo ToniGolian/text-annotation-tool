@@ -1,8 +1,9 @@
+from utils.interfaces import ILayoutPublisher
 from config.template_manager import TemplateManager
 from typing import List, Dict
 
 
-class ConfigurationManager:
+class ConfigurationManager(ILayoutPublisher):
     """
     A configuration manager that provides access to templates and manages meta tag names 
     and template groups for the application.
@@ -109,3 +110,11 @@ class ConfigurationManager:
         """
         # todo getter for all templates
         return self._template_manager.get_templates(template_name)
+
+
+# TODO'
+
+
+def get_layout_state(self) -> Dict:
+    """Retrieves the layout state of the publisher."""
+    pass

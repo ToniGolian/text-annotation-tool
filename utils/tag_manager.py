@@ -1,4 +1,7 @@
-class TagManager:
+from utils.interfaces import ITagManager
+
+
+class TagManager(ITagManager):
     def __init__(self, document_model):
         self.tags = []
         self.text = ""

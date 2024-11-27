@@ -110,3 +110,22 @@ class ILayoutPublisher(IPublisher):
     def get_layout_state(self) -> Dict:
         """Retrieves the layout state of the publisher."""
         pass
+
+
+class ITagManager(ABC):
+    @abstractmethod
+    def add_tag(self, tag_data: dict) -> None:
+        """
+        Simulates adding a tag by appending it to the tags list and updating the text.
+        """
+
+    @abstractmethod
+    def edit_tag(self, tag_id: str, tag_data: dict) -> None:
+        """
+        Simulates editing a tag by updating the corresponding tag in the tags list.
+        """
+    @abstractmethod
+    def delete_tag(self, tag_id: str) -> None:
+        """
+        Simulates deleting a tag by removing it from the tags list.
+        """

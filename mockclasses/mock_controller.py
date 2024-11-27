@@ -36,11 +36,11 @@ class MockController(IController):
         """Executes the specified command."""
         print(f"Controller execute {command}")
 
-    def _undo(self, command: ICommand) -> None:
+    def _undo_command(self, command: ICommand) -> None:
         """Reverses the actions of the specified command."""
         print(f"Controller undo {command}")
 
-    def _redo(self, command: ICommand) -> None:
+    def _redo_command(self, command: ICommand) -> None:
         """Reapplies the actions of the specified command."""
         print(f"Controller redo {command}")
 

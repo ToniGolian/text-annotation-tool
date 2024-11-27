@@ -1,32 +1,30 @@
 from controller.interfaces import IController
 from commands.interfaces import ICommand
-from mockclasses.mock_commands import MockAddTagCommand, MockDeleteTagCommand, MockEditTagCommand
-from mockclasses.mock_tag_manager import MockTagManager
-from model.interfaces import IComparisonModel, IDocumentModel
-from utils.interfaces import IObserver, IPublisher
-from typing import Dict, List, Sequence
-import tkinter as tk
+from utils.interfaces import IDataObserver, IDataPublisher, ILayoutObserver, ILayoutPublisher, IObserver, IPublisher
+from typing import Dict, List
 
-from view.comparison_text_display_frame import ComparisonTextDisplayFrame
-from view.comparison_text_displays import ComparisonTextDisplays
-from view.text_display_frame import TextDisplayFrame
+from utils.tag_manager import TagManager
+from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplayFrame, IComparisonTextDisplays, IMetaTagsFrame, ITextDisplayFrame
 
 
-class MockController(IController):
-    def __init__(self, document_model: IPublisher, tag_model: IPublisher, comparison_model: IPublisher):
+class Controller(IController):
+    def __init__(self, document_model: IDataPublisher, comparison_model: IDataPublisher, configuration_model: ILayoutPublisher):
+
         self._document_model = document_model
         self._comparison_model = comparison_model
+        self._configuration_manager: ILayoutPublisher = configuration_model
         self._tag_manager = TagManager(self._document_model)
 
         self._dynamic_observer_index: int = 0
         self._observer_data_map: Dict[IObserver:Dict] = {}
+        self._observer_layout_map: Dict[ILayoutObserver, Dict] = {}
         self._observers_to_finalize: List = []
 
-        self._undo_stack = []  # Stack to store commands for undo operations
-        self._redo_stack = []  # Stack to store commands for redo operations
+        self._undo_stack = []
+        self._redo_stack = []
 
     # command pattern
-    def _execute_command(self, command) -> None:
+    def _execute_command(self, command: ICommand) -> None:
         """
         Executes a command, adds it to the redo stack, and clears the undo stack.
 
@@ -57,48 +55,158 @@ class MockController(IController):
             command.redo()
 
     # observer pattern
+    def add_data_observer(self, observer: IDataObserver) -> None:
+        """
+        Registers a data observer and maps its data-fetching logic.
 
-    def add_observer(self, observer: IObserver) -> None:
-        if isinstance(observer, TextDisplayFrame):
-            self._observer_data_map[observer] = lambda: {
-                "data": self._document_model.get_data()["text"]}
-            self._document_model.add_observer(observer=observer)
+        Args:
+            observer (IDataObserver): The data observer to be added.
+        """
+        if isinstance(observer, ITextDisplayFrame):
+            keys = ["text"]
+            sources = [self._document_model]
+            self._set_observer_mapping(observer, keys, sources, "data")
+            self._document_model.add_data_observer(observer)
 
-        elif isinstance(observer, ComparisonTextDisplays):
-            self._observer_data_map[observer] = lambda: {
-                "data": self._comparison_model.get_data()["file_names"]}
+        elif isinstance(observer, IMetaTagsFrame):
+            keys = ["file_names"]
+            sources = [self._comparison_model]
+            self._set_observer_mapping(observer, keys, sources, "data")
+            self._comparison_model.add_data_observer(observer)
+            self._observers_to_finalize.append(observer)
+        elif isinstance(observer, IComparisonTextDisplays):
+            keys = ["file_names"]
+            sources = [self._comparison_model]
+            self._set_observer_mapping(observer, keys, sources, "data")
+            self._comparison_model.add_data_observer(observer)
             self._observers_to_finalize.append(observer)
 
-        elif isinstance(observer, ComparisonTextDisplayFrame):
-            self._observer_data_map[observer] = lambda: {
-                "data": self._comparison_model.get_data()["comparison_sentences"][self._dynamic_observer_index]}
+        elif isinstance(observer, IComparisonHeaderFrame):
+            keys = ["num_sentences", "current_sentence_index"]
+            sources = [self._comparison_model]
+            self._set_observer_mapping(observer, keys, sources, "data")
+            self._comparison_model.add_data_observer(observer)
+            self._observers_to_finalize.append(observer)
+
+        elif isinstance(observer, IComparisonTextDisplayFrame):
+            # Dynamically map the observer to a specific sentence in the list
+            index = self._dynamic_observer_index  # Use the current dynamic observer index
             self._dynamic_observer_index += 1
-            self._comparison_model.add_observer(observer)
-            print(
-                f"Comparison Observer {self._dynamic_observer_index} registered")
+
+            # Use a lambda to extract the specific sentence based on the index
+            self._observer_data_map[observer] = lambda index=index: {
+                "sentence": self._comparison_model.get_data_state()["comparison_sentences"][index]
+            }
+
+            self._comparison_model.add_data_observer(observer)
+
         else:
-            print("Other Observer registered")
+            print(f"Unknown Data Observer {type(observer)} registered")
 
-    def remove_observer(self, observer: IObserver) -> None:
-        print("observer removed")
-
-    def get_update_data(self, observer: IObserver) -> None:
+    def add_layout_observer(self, observer: ILayoutObserver) -> None:
         """
-        Retrieves the updated data for a specific observer.
+        Registers a layout observer and maps its layout-fetching logic.
+
+        Args:
+            observer (ILayoutObserver): The layout observer to be added.
+        """
+        # standard source. observers can add additional sources
+        sources = [self._configuration_manager]
+
+        if isinstance(observer, (IComparisonTextDisplays, IComparisonHeaderFrame)):
+            keys = ["filenames", "num_files"]
+        elif isinstance(observer, IMetaTagsFrame):
+            keys = ["tag_types"]
+        elif isinstance(observer, IAnnotationMenuFrame):
+            keys = ["template_groups"]
+        else:
+            keys = []
+            print(f"Unknown Layout Observer {type(observer)} registered")
+
+        self._set_observer_mapping(observer, keys, sources, "layout")
+        self._comparison_model.add_layout_observer(observer)
+        self._observers_to_finalize.append(observer)
+
+    def remove_data_observer(self, observer: IDataObserver) -> None:
+        print(f"{type(observer)} removed")
+
+    def remove_layout_observer(self, observer: ILayoutObserver) -> None:
+        print(f"{type(observer)} removed")
+
+    def _set_observer_mapping(self, observer: IObserver, keys: List[str], sources: List[IPublisher], mapping: str) -> None:
+        """
+        Sets the data or layout mapping for an observer with specific keys and sources.
+
+        Depending on the `mapping` argument, this method registers the observer
+        to either the data or layout map. The method combines the states from the
+        provided sources and creates a lambda function to filter the relevant keys
+        for the observer.
+
+        Args:
+            observer (IObserver): The observer to register.
+            keys (List[str]): A list of keys to extract from the state.
+            sources (List[IPublisher]): A list of sources providing state dictionaries.
+            mapping (str): Specifies the type of mapping ("data" or "layout") to register.
+                        - "data": The observer is mapped to the data state.
+                        - "layout": The observer is mapped to the layout state.
+
+        Raises:
+            ValueError: If `mapping` is not "data" or "layout".
+        """
+        if mapping == "data":
+            data = {key: value for source in sources for key,
+                    value in source.get_data_state().items()}
+            self._observer_data_map[observer] = lambda: {
+                key: data[key] for key in keys if key in data}
+        elif mapping == "layout":
+            layout = {key: value for source in sources for key,
+                      value in source.get_layout_state().items()}
+            self._observer_layout_map[observer] = lambda: {
+                key: layout[key] for key in keys if key in layout}
+        else:
+            raise ValueError("Invalid mapping type. Use 'data' or 'layout'.")
+
+    def get_data_state(self, observer: IDataObserver) -> None:
+        """
+        Retrieves the updated data for a specific data observer.
 
         This method accesses the `_observer_data_map` to fetch the data
         processing logic associated with the given observer. It then
-        executes this logic (typically a lambda function) to return the
+        executes this logic (typically a callable) to return the
         computed data for the observer.
 
         Args:
-            observer (IObserver): The observer requesting updated data.
+            observer (IDataObserver): The data observer requesting updated data.
+
+        Returns:
+            The computed data specific to the requesting observer.
 
         Raises:
             KeyError: If the provided observer is not registered in the
             `_observer_data_map`.
         """
         return self._observer_data_map[observer]()
+
+    def get_layout_state(self, observer: ILayoutObserver) -> None:
+        """
+        Retrieves the updated layout information for a specific layout observer.
+
+        This method accesses the `_observer_layout_map` to fetch the layout
+        processing logic associated with the given observer. It then
+        executes this logic (typically a callable) to return the
+        computed layout information for the observer.
+
+        Args:
+            observer (ILayoutObserver): The layout observer requesting updated layout information.
+
+        Returns:
+            The computed layout information specific to the requesting observer.
+
+        Raises:
+            KeyError: If the provided observer is not registered in the
+            `_observer_layout_map`.
+        """
+        return self._observer_layout_map[observer]()
 
     # initialization
 
@@ -117,7 +225,7 @@ class MockController(IController):
             have already been registered with the controller.
         """
         for observer in self._observers_to_finalize:
-            observer.update()
+            observer.update_layout()
 
     def perform_add_tag(self, tag_data: dict) -> None:
         """

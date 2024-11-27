@@ -23,12 +23,12 @@ class IController(ABC):
         pass
 
     @abstractmethod
-    def _undo(self, command: ICommand) -> None:
+    def _undo_command(self, command: ICommand) -> None:
         """Reverses the actions of the specified command."""
         pass
 
     @abstractmethod
-    def _redo(self, command: ICommand) -> None:
+    def _redo_command(self, command: ICommand) -> None:
         """Reapplies the actions of the specified command."""
         pass
 

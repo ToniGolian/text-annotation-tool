@@ -1,3 +1,7 @@
+from commands.interfaces import ICommand
+from utils.interfaces import ITagManager
+
+
 class AddTagCommand(ICommand):
     def __init__(self, tag_manager: ITagManager, tag_data: dict) -> None:
         """

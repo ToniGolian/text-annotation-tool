@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
+from model.interfaces import ITagModel
+
 
 class IObserver(ABC):
     pass
@@ -128,4 +130,10 @@ class ITagManager(ABC):
     def delete_tag(self, tag_id: str) -> None:
         """
         Simulates deleting a tag by removing it from the tags list.
+        """
+
+    @abstractmethod
+    def get_tag(self, tag_uuid: str) -> ITagModel:
+        """
+        Retrieves the data of a tag by its unique UUID.
         """

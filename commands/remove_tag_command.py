@@ -26,7 +26,7 @@ class RemoveTagCommand(ICommand):
         Executes the command to remove the tag.
         Stores the tag's data for undo functionality.
         """
-        self._tag_data = self._tag_manager.get_tag_data(self._tag_id)
+        self._tag_data = self._tag_manager.get_tag(self._tag_id)
         self._tag_manager.delete_tag(self._tag_id)
 
     def undo(self) -> None:

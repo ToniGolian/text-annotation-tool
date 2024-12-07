@@ -1,5 +1,5 @@
 from typing import Dict, List
-from utils.interfaces import IDataPublisher, ILayoutPublisher, IObserver
+from observer.interfaces import IDataPublisher, ILayoutPublisher, IObserver
 
 
 class MockDocumentModel(IDataPublisher):

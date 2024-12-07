@@ -1,9 +1,9 @@
 from typing import List, Dict
 
-from utils.interfaces import ITagStringProcessor
+from utils.interfaces import ITagProcessor
 
 
-class TagStringProcessor(ITagStringProcessor):
+class TagProcessor(ITagProcessor):
     """
     Handles the transformation of tag objects to strings and vice versa,
     and performs string operations on the document text.

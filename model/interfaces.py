@@ -1,5 +1,9 @@
-from abc import abstractmethod
-from utils.interfaces import IDataPublisher, ILayoutPublisher
+from abc import ABC, abstractmethod
+from observer.interfaces import IDataPublisher, ILayoutPublisher
+
+
+class ITagModel(ABC):
+    pass
 
 
 class IComparisonModel(IDataPublisher, ILayoutPublisher):
@@ -7,10 +11,6 @@ class IComparisonModel(IDataPublisher, ILayoutPublisher):
 
 
 class IConfigurationModel(ILayoutPublisher):
-    pass
-
-
-class ITagModel(IDataPublisher):
     pass
 
 

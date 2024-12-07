@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from commands.interfaces import ICommand
-from utils.interfaces import IDataObserver, ILayoutObserver, IObserver, IPublisher
-from typing import List, Sequence
+from observer.interfaces import IDataObserver, ILayoutObserver, IObserver, IPublisher
+from typing import List
 
 
 class IController(ABC):

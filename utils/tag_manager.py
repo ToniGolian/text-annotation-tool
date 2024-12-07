@@ -2,7 +2,7 @@ from typing import Dict, List
 import uuid
 from model.interfaces import IDocumentModel
 from model.tag_model import TagModel
-from utils.interfaces import ITagStringProcessor
+from utils.interfaces import ITagProcessor
 
 
 class TagManager:
@@ -11,7 +11,7 @@ class TagManager:
     retrieving, and deleting tags for a specific document.
     """
 
-    def __init__(self, document: IDocumentModel, tag_processor: ITagStringProcessor) -> None:
+    def __init__(self, tag_processor: ITagProcessor) -> None:
         """
         Initializes the TagManager with an internal tag list, a reference to the document,
         and a TagStringProcessor.
@@ -21,10 +21,9 @@ class TagManager:
             tag_processor (ITagStringProcessor): The processor for handling string transformations
                                                  and text manipulation for tags.
         """
-        self._document = document
-        self._tag_processor = tag_processor
+        self._document: IDocumentModel = None
+        self._tag_processor: ITagProcessor = tag_processor
         self._tags: Dict[str, Dict] = {}
-        self._extract_tags_from_document()
 
     def _extract_tags_from_document(self) -> None:
         """

@@ -4,8 +4,8 @@ from commands.interfaces import ICommand
 from mockclasses.mock_commands import MockAddTagCommand, MockDeleteTagCommand, MockEditTagCommand
 from mockclasses.mock_tag_manager import MockTagManager
 from model.interfaces import IComparisonModel
-from utils.interfaces import IDataObserver, IDataPublisher, ILayoutObserver, ILayoutPublisher,  IObserver, IPublisher
-from typing import Dict, List, Any, Sequence
+from observer.interfaces import IDataObserver, IDataPublisher, ILayoutObserver, ILayoutPublisher,  IObserver, IPublisher
+from typing import Dict, List
 
 from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplayFrame, IComparisonTextDisplays, IMetaTagsFrame, ITextDisplayFrame
 

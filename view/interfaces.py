@@ -1,4 +1,4 @@
-from utils.interfaces import IDataObserver, ILayoutObserver
+from observer.interfaces import IDataObserver, ILayoutObserver
 
 
 class IMetaTagsFrame(IDataObserver, ILayoutObserver):

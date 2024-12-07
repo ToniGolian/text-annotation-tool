@@ -1,29 +1,37 @@
 from controller.interfaces import IController
 from commands.interfaces import ICommand
-from utils.interfaces import IDataObserver, IDataPublisher, ILayoutObserver, ILayoutPublisher, IObserver, IPublisher
+from model.interfaces import IComparisonModel, IDocumentModel
+from observer.interfaces import IDataObserver, IDataPublisher, ILayoutObserver, ILayoutPublisher, IObserver, IPublisher
 from typing import Dict, List
 
 from utils.tag_manager import TagManager
+from utils.tag_processor import TagProcessor
 from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplayFrame, IComparisonTextDisplays, IMetaTagsFrame, ITextDisplayFrame
 
 
 class Controller(IController):
-    def __init__(self, document_model: IDataPublisher, comparison_model: IDataPublisher, configuration_model: ILayoutPublisher):
+    def __init__(self, configuration_model: ILayoutPublisher, document_model: IDataPublisher = None, comparison_model: IDataPublisher = None):
 
-        self._document_model = document_model
-        self._comparison_model = comparison_model
+        # dependencies
+        self._tag_processor = TagProcessor()
+        self._tag_manager = TagManager(self._tag_processor)
         self._configuration_manager: ILayoutPublisher = configuration_model
-        self._tag_manager = TagManager(self._document_model)
 
+        # state
         self._dynamic_observer_index: int = 0
         self._observer_data_map: Dict[IObserver:Dict] = {}
         self._observer_layout_map: Dict[ILayoutObserver, Dict] = {}
         self._observers_to_finalize: List = []
 
+        self._document_model: IDocumentModel = None
+        self._comparison_model: IComparisonModel = None
+
+        # collections
         self._undo_stack = []
         self._redo_stack = []
 
     # command pattern
+
     def _execute_command(self, command: ICommand) -> None:
         """
         Executes a command, adds it to the redo stack, and clears the undo stack.

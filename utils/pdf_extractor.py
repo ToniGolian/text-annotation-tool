@@ -67,11 +67,18 @@ class PDFExtractor:
         # Column gap tolerance (in pixels) for preventing merging across columns
         self._column_gap_tolerance = 1
 
-        # Allowed fint sizes
+        # Allowed font sizes
         # Minimum allowed font size
         self._min_allowed_font_size = 0
         # Maximum allowed font size
         self._max_allowed_font_size = 100
+
+        # Table detection
+        # Number of narrow spans required to consider a block as a potential table
+        self._min_potential_table_entries = 8
+
+        # Maximum relative width of a narrow span (relative to page width)
+        self._max_relative_span_width = 0.2
 
         # Document-level data
         self.doc = None  # The PDF document object loaded with pymupdf
@@ -207,8 +214,9 @@ class PDFExtractor:
 
         self._document_content = []  # Initialize the container for all page contents
 
-        for page, page_margins in zip(self.doc, self._pages_margins):
+        for page_number, (page, page_margins) in enumerate(zip(self.doc, self._pages_margins)):
             # Extract and sort page content
+            print(f"{page_number=}")
             page_content = self._extract_page_content(page, page_margins)
             page_content = self._sort_text_data(page_content)
 
@@ -383,20 +391,16 @@ class PDFExtractor:
         Extracts content from a PDF page within the specified margins and organizes it into
         geometric data, text blocks, obstacle information, and font-size distribution.
         """
-
-        start_time = time.perf_counter()
+        # Page width for relative span width calculation
+        page_width = page.rect.width
+        max_absolute_span_width = self._max_relative_span_width*page_width
 
         # Geometry data
-        clip_rect = Rect(page_margins[0], page_margins[1], page.rect.width -
+        clip_rect = Rect(page_margins[0], page_margins[1], page_width -
                          page_margins[2], page.rect.height - page_margins[3])
-        print(
-            f"Clip rect calculated in {time.perf_counter() - start_time:.3f} seconds")
 
         # Extract text blocks
-        start_time = time.perf_counter()
         text_blocks = page.get_text("dict", clip=clip_rect)["blocks"]
-        print(
-            f"Text blocks extracted in {time.perf_counter() - start_time:.3f} seconds")
 
         # Early return for empty pages
         if not text_blocks:
@@ -416,36 +420,31 @@ class PDFExtractor:
         max_font_size = self._min_allowed_font_size
         min_font_size = self._max_allowed_font_size
 
-        # Find table, image, and graphic boxes
-        start_time = time.perf_counter()
-        tables = page.find_tables()
-        table_bboxes = [Rect(table.bbox).irect for table in tables]
+        # Find image, and graphic boxes
+        # tables = page.find_tables()
+        # table_bboxes = [Rect(table.bbox).irect for table in tables]
         images = page.get_images()
         image_bboxes = [page.get_image_rects(
             image)[0].irect for image in images]
         graphics = page.get_drawings()
         graphic_bboxes = [graphic["rect"].irect for graphic in graphics]
-        print(
-            f"Tables, images, and graphics processed in {time.perf_counter() - start_time:.3f} seconds")
 
         background_bboxes = []
         filtered_graphic_bboxes = []
 
-        start_time = time.perf_counter()
+        # start_time = time.perf_counter()
         for box in graphic_bboxes:
             if box.width * box.height > self._min_area_for_background and min(box.width, box.height) > self._min_size_for_background:
                 background_bboxes.append(box)
             else:
                 filtered_graphic_bboxes.append(box)
         graphic_bboxes = filtered_graphic_bboxes
-        print(
-            f"Graphics filtered in {time.perf_counter() - start_time:.3f} seconds")
 
         # Text blocks
-        start_time = time.perf_counter()
         text_bboxes = []
         non_horizontal_text_bboxes = []
         filtered_text_blocks = []
+        table_bboxes = []
 
         for block in text_blocks:
             if not block.get("lines", []):
@@ -455,12 +454,30 @@ class PDFExtractor:
             if block["lines"][0]["dir"] != (1.0, 0.0):
                 non_horizontal_text_bboxes.append(Rect(block["bbox"]).irect)
                 continue
+            # todo improve performance table detection
+            if not table_bboxes:
+                # Check if the block might contain a table
+                # Count the number of lines with spans narrower than the threshold
+                narrow_span_count = sum(
+                    len([span for span in line.get("spans", []) if (
+                        span["bbox"][2] - span["bbox"][0]) <= max_absolute_span_width])
+                    for line in block["lines"]
+                )
 
-            # Ignore tables
+                # Determine if the block is a potential table
+                potential_table = narrow_span_count > self._min_potential_table_entries
+
+                # Detect tables if the block is a potential table
+                if potential_table:
+                    print("TABLE FOUND!")
+                    tables = page.find_tables()
+                    table_bboxes = [Rect(table.bbox).irect for table in tables]
+
+            # Skip the block if it is within a detected table
             if any(self._is_bbox_within(Rect(block["bbox"]).irect, table_bbox) for table_bbox in table_bboxes):
                 continue
-            else:
-                filtered_text_blocks.append(block)
+
+            filtered_text_blocks.append(block)
 
             # Process spans for font and size distribution
             for line in block.get("lines", []):
@@ -497,17 +514,12 @@ class PDFExtractor:
                     initial_rect[2] = max(initial_rect[2], line_bbox[2])
                     initial_rect[3] = max(initial_rect[3], line_bbox[3])
             text_bboxes.append(Rect(initial_rect).irect)
-        print(
-            f"Text blocks processed in {time.perf_counter() - start_time:.3f} seconds")
 
         # Obstacle boxes
-        start_time = time.perf_counter()
         obstacle_bboxes = non_horizontal_text_bboxes + \
             table_bboxes + image_bboxes + graphic_bboxes
         if self.consider_bg_colors:
             obstacle_bboxes += background_bboxes
-        print(
-            f"Obstacle boxes calculated in {time.perf_counter() - start_time:.3f} seconds")
 
         return {
             "geometry": clip_rect,

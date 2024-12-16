@@ -1,0 +1,1103 @@
+
+
+from io import BytesIO
+import re
+from PIL import Image
+from pprint import pprint
+from pymupdf import Rect
+import pymupdf
+from pathlib import Path
+
+
+import time
+
+
+def measure_exec_time(func):
+    """
+    Decorator to measure the execution time of a function in milliseconds.
+
+    Args:
+        func (function): The function whose execution time is to be measured.
+
+    Returns:
+        function: The wrapped function with execution time measurement.
+    """
+    def wrapper(*args, **kwargs):
+        start_time = time.perf_counter()  # High-precision timer
+        result = func(*args, **kwargs)
+        print(
+            f"Execution time of {func.__name__}: {time.perf_counter() - start_time:.3f} seconds\n")
+        return result
+    return wrapper
+
+
+class PDFExtractor:
+    def __init__(self, pdf_path: str = "", consider_bg_colors: bool = False, ignore_tables: bool = True, ignore_headlines: bool = True):
+        """
+        Initializes the PDFExtractor with the given PDF path and various processing options.
+
+        Args:
+            pdf_path (str, optional): Path to the PDF file. Default is an empty string.
+            consider_bg_colors (bool, optional): Whether to consider background colors during processing. Default is False.
+            ignore_tables (bool, optional): Whether to ignore tables when extracting text. Default is True.
+            ignore_headlines (bool, optional): Whether to ignore headlines when processing text. Default is True.
+        """
+
+        # Processing options
+        # Whether to consider background colors in bounding box decisions
+        self.consider_bg_colors = consider_bg_colors
+        # Whether to ignore tables during text extraction
+        self.ignore_tables = ignore_tables
+        # Whether to ignore headlines during text extraction
+        self.ignore_headlines = ignore_headlines
+
+        # Background bounding box thresholds
+        # Minimum area for considering a bounding box as part of the background
+        self._min_area_for_background = 1000
+        # Minimum size (width or height) for considering a bounding box as part of the background
+        self._min_size_for_background = 10
+
+        # Text processing tolerances
+        # Maximum vertical spacing between lines within the same text block
+        self._max_line_vertical_spacing = 5
+        # Tolerance for considering two text blocks to be left-aligned
+        self._left_alignment_tolerance = 2
+        # Vertical overlap tolerance (in pixels) for obstacles when extending bounding boxes
+        self._vertical_overlap_tolerance = 3
+        # Column gap tolerance (in pixels) for preventing merging across columns
+        self._column_gap_tolerance = 1
+
+        # Allowed fint sizes
+        # Minimum allowed font size
+        self._min_allowed_font_size = 0
+        # Maximum allowed font size
+        self._max_allowed_font_size = 100
+
+        # Document-level data
+        self.doc = None  # The PDF document object loaded with pymupdf
+        self.pdf_path = None  # Path to the currently loaded PDF file
+        # Margins for each page, specified as a list of lists [[left, top, right, bottom]]
+        self._pages_margins = None
+
+        # Processed data
+        self._document_content = []  # List storing extracted and processed data for each page
+        # Dictionary tracking the frequency of (clustered_font, normalized_font_size) combinations
+        self._font_size_distribution = {}
+
+        # Font size metadata
+        self._max_font_size = 0  # The largest font size found in the document
+        self._min_font_size = 0  # The smallest font size found in the document
+
+        # Load the PDF document if a path is provided
+        if pdf_path:
+            self._load_document(pdf_path)
+
+    @measure_exec_time
+    def _load_document(self, pdf_path: str, pages_margins: list = None) -> None:
+        """
+        Loads a new PDF document, initializes margins, extracts document data,
+        and computes font clustering, font size normalization, and their distribution.
+
+        Args:
+            pdf_path (str): Path to the new PDF document.
+            pages_margins (list, optional): Margins for each page, specified as a list of lists.
+                                            Defaults to None, which applies a default margin to all pages.
+
+        Raises:
+            ValueError: If the length of `pages_margins` does not match the number of pages in the document.
+        """
+        # Load the document
+        self.pdf_path = Path(pdf_path)
+        self.doc = pymupdf.open(self.pdf_path)
+
+        self._initialize_pages_margins(pages_margins)
+        self._extract_document()
+        self._calculate_min_max_font_size()
+        self._analyze_font_size_distribution()
+
+    def _initialize_pages_margins(self, pages_margins: list = None) -> None:
+        """
+        Initializes the page margins for the document.
+
+        If `pages_margins` is provided, it validates that its length matches the number
+        of pages in the document. Otherwise, it assigns a default margin of [10, 10, 10, 10]
+        to all pages.
+
+        Args:
+            pages_margins (list, optional): A list of margin definitions for each page,
+                                            where each entry is a list of four integers.
+                                            Defaults to None.
+
+        Raises:
+            ValueError: If the number of margin entries in `pages_margins` does not match
+                        the number of pages in the document.
+        """
+        if pages_margins:
+            if len(pages_margins) != len(self.doc):
+                raise ValueError(
+                    "The number of margin entries in 'pages_margins' must match the number of pages in the document."
+                )
+            self._pages_margins = pages_margins
+        else:
+            self._pages_margins = [[10, 10, 10, 10]] * len(self.doc)
+
+    def _analyze_font_size_distribution(self) -> None:
+        """
+        Clusters fonts, normalizes font sizes, and computes the distribution
+        of (clustered_font, normalized_font_size) combinations across all pages.
+
+        This method updates:
+            - self._font_size_distribution: A dictionary where keys are tuples
+            of (clustered_font, normalized_font_size) and values are the cumulative
+            character counts for those combinations.
+        """
+        # Initialize distribution dictionary for font and normalized font size combinations
+        self._font_size_distribution = {}
+
+        # Cluster fonts and normalize font sizes per page
+        for page_content in self._document_content:
+
+            #! depr
+            # Cluster and normalize fonts
+            # page_content = self._cluster_and_normalize_fonts(page_content)
+            # Normalize font sizes
+            # page_content = self._cluster_fonts(page_content)
+            # page_content = self._normalize_font_sizes(page_content)
+
+            # Count font and font size combinations
+            text_blocks = page_content["text_data"][0]
+            for block in text_blocks:
+                clustered_font = block.get("font_name_cluster")
+                normalized_font_size = block.get("normalized_font_size")
+
+                if clustered_font is None or normalized_font_size is None:
+                    continue
+
+                # Count the occurrences of each combination
+                for line in block.get("lines", []):
+                    for span in line.get("spans", []):
+                        char_count = len(span.get("text", "").strip())
+                        combination = (clustered_font, normalized_font_size)
+                        self._font_size_distribution[combination] = self._font_size_distribution.get(
+                            combination, 0) + char_count
+
+    def _extract_document(self) -> None:
+        """
+        Extracts content from each page of the document using the margins specified
+        in the object variable `_pages_margins`, sorts the text data, and stores
+        the results in an object variable.
+
+        Raises:
+            AttributeError: If `self.doc` or `_pages_margins` is not initialized.
+            ValueError: If the number of margins in `_pages_margins` does not match
+                        the number of pages in the document.
+        """
+        if not hasattr(self, "doc"):
+            raise AttributeError(
+                "The document object 'self.doc' is not initialized.")
+
+        if not hasattr(self, "_pages_margins"):
+            raise AttributeError(
+                "The margins object '_pages_margins' is not initialized.")
+
+        # Validate that the number of margin entries matches the number of pages
+        if len(self._pages_margins) != len(self.doc):
+            raise ValueError(
+                "The number of margins in '_pages_margins' must match the number of pages in the document.")
+
+        self._document_content = []  # Initialize the container for all page contents
+
+        for page, page_margins in zip(self.doc, self._pages_margins):
+            # Extract and sort page content
+            page_content = self._extract_page_content(page, page_margins)
+            page_content = self._sort_text_data(page_content)
+
+            # Append the processed page content to the document container
+            self._document_content.append(page_content)
+
+    def _find_connected_text_boxes(self, page_content):
+        """
+        Finds connected text boxes on a page, considering margins and optional background colors.
+
+        Args:
+            page: The page object to analyze.
+            consider_bg_colors (bool): Whether to consider background colors in the analysis.
+        """
+        page_content = self._sort_text_data(page_content)
+        page_content = self._extend_bounding_boxes(page_content)
+        page_content = self._sort_text_data(page_content)
+        page_content = self._merge_text_boxes(page_content)
+        # self.visualize_bboxes(page, page_content)
+
+    # @measure_exec_time
+    # def _extract_page_content(self, page: pymupdf.Page, page_margins: list[int]) -> dict:
+    #     """
+    #     Extracts content from a PDF page within the specified margins and organizes it into
+    #     geometric data, text blocks, obstacle information, and font-size distribution.
+
+    #     Args:
+    #         page (pymupdf.Page): The page object to extract content from.
+    #         page_margins (list[int]): A list of integers specifying margins (left, top, right, bottom)
+    #                                     for clipping the page content.
+
+    #     Returns:
+    #         dict: A dictionary containing the following keys:
+    #             - "geometry" (Rect): The rectangular area used for clipping the content.
+    #             - "text_data" (tuple): A tuple containing:
+    #                 * A list of dictionaries representing text blocks within the clipped area.
+    #                 * A list of Rect objects representing the bounding boxes of the text blocks.
+    #             - "obstacles" (list[Rect]): A list of Rect objects representing obstacles
+    #                                         such as non-horizontal text, tables, images, and graphics.
+    #             - "backgrounds" (list[Rect]): A list of Rect objects representing background graphics
+    #                                         meeting the specified size and area criteria.
+    #             - "font_and_size_distribution" (dict): Dictionary of (clustered_font, font_size) combinations
+    #                                                 and their character count.
+    #             - "max_font_size" (float): The maximum font size found on the page.
+    #             - "min_font_size" (float): The minimum font size found on the page.
+    #     """
+    #     # Geometry data
+    #     clip_rect = Rect(page_margins[0], page_margins[1], page.rect.width -
+    #                      page_margins[2], page.rect.height - page_margins[3])
+
+    #     # Extract text blocks
+    #     text_blocks = page.get_text("dict", clip=clip_rect)["blocks"]
+
+    #     # Early return for empty pages
+    #     if not text_blocks:
+    #         return {
+    #             "geometry": clip_rect,
+    #             "text_data": ([], []),
+    #             "obstacles": [],
+    #             "backgrounds": [],
+    #             "font_and_size_distribution": {},
+    #             "max_font_size": 0,
+    #             "min_font_size": 0,
+    #         }
+
+    #     # Initialize variables
+    #     font_and_size_distribution = {}
+    #     clusters = {}
+    #     max_font_size = self._min_allowed_font_size
+    #     min_font_size = self._max_allowed_font_size
+
+    #     # Find table, image, and graphic boxes
+    #     tables = page.find_tables()
+    #     table_bboxes = [Rect(table.bbox).irect for table in tables]
+
+    #     images = page.get_images()
+    #     image_bboxes = [page.get_image_rects(
+    #         image)[0].irect for image in images]
+
+    #     graphics = page.get_drawings()
+    #     graphic_bboxes = [graphic["rect"].irect for graphic in graphics]
+
+    #     background_bboxes = []
+    #     filtered_graphic_bboxes = []
+
+    #     for box in graphic_bboxes:
+    #         if box.width * box.height > self._min_area_for_background and min(box.width, box.height) > self._min_size_for_background:
+    #             background_bboxes.append(box)
+    #         else:
+    #             filtered_graphic_bboxes.append(box)
+
+    #     graphic_bboxes = filtered_graphic_bboxes
+
+    #     # Text blocks
+    #     # Separate horizontal and non-horizontal text blocks
+    #     text_bboxes = []
+    #     non_horizontal_text_bboxes = []
+    #     filtered_text_blocks = []
+
+    #     for block in text_blocks:
+    #         if not block.get("lines", []):
+    #             continue
+
+    #         # Filter non horizontal text
+    #         if block["lines"][0]["dir"] != (1.0, 0.0):
+    #             non_horizontal_text_bboxes.append(
+    #                 Rect(block["bbox"]).irect)
+    #             continue
+
+    #         # Ignore tables
+    #         if any(self._is_bbox_within(Rect(block["bbox"]).irect, table_bbox) for table_bbox in table_bboxes):
+    #             continue
+    #         else:
+    #             filtered_text_blocks.append(block)
+
+    #         # Process spans for font and size distribution
+    #         for line in block.get("lines", []):
+    #             for span in line.get("spans", []):
+    #                 font_name = span.get("font", None)
+    #                 font_size = span.get("size", None)
+    #                 if font_name is None or font_size is None:
+    #                     continue
+    #                 font_size = round(font_size, 2)
+    #                 font_size = max(font_size, self._min_allowed_font_size)
+    #                 font_size = min(font_size, self._max_allowed_font_size)
+
+    #                 # Update min and max font sizes
+    #                 max_font_size = max(max_font_size, font_size)
+    #                 min_font_size = min(min_font_size, font_size)
+
+    #                 # Cluster font and count distribution
+    #                 clustered_font = self._cluster_span_font(
+    #                     font_name, clusters)
+    #                 key = (clustered_font, font_size)
+    #                 char_count = len(span.get("text", "").strip())
+    #                 font_and_size_distribution[key] = font_and_size_distribution.get(
+    #                     key, 0) + char_count
+
+    #         # Combine lines within blocks into bounding boxes
+    #         # Use the first line's bbox as initial rect
+    #         initial_rect = list(block["lines"][0]["bbox"])
+    #         for line in block["lines"]:
+    #             # Check for non-empty text spans
+    #             if any(span["text"].strip() for span in line["spans"]):
+    #                 line_bbox = line["bbox"]
+    #                 initial_rect[0] = min(initial_rect[0], line_bbox[0])
+    #                 initial_rect[1] = min(initial_rect[1], line_bbox[1])
+    #                 initial_rect[2] = max(initial_rect[2], line_bbox[2])
+    #                 initial_rect[3] = max(initial_rect[3], line_bbox[3])
+    #         text_bboxes.append(Rect(initial_rect).irect)
+    #     # Update text blocks to only contain horizontal text blocks
+    #     text_blocks = filtered_text_blocks
+
+    #     # Obstacle boxes
+    #     obstacle_bboxes = non_horizontal_text_bboxes + \
+    #         table_bboxes + image_bboxes + graphic_bboxes
+    #     if self.consider_bg_colors:
+    #         obstacle_bboxes += background_bboxes
+    #     return {
+    #         "geometry": clip_rect,
+    #         "text_data": (text_blocks, text_bboxes),
+    #         "obstacles": obstacle_bboxes,
+    #         "backgrounds": background_bboxes,
+    #         "font_and_size_distribution": font_and_size_distribution,
+    #         "max_font_size": max_font_size,
+    #         "min_font_size": min_font_size,
+    #     }
+
+    @measure_exec_time
+    def _extract_page_content(self, page: pymupdf.Page, page_margins: list[int]) -> dict:
+        """
+        Extracts content from a PDF page within the specified margins and organizes it into
+        geometric data, text blocks, obstacle information, and font-size distribution.
+        """
+
+        start_time = time.perf_counter()
+
+        # Geometry data
+        clip_rect = Rect(page_margins[0], page_margins[1], page.rect.width -
+                         page_margins[2], page.rect.height - page_margins[3])
+        print(
+            f"Clip rect calculated in {time.perf_counter() - start_time:.3f} seconds")
+
+        # Extract text blocks
+        start_time = time.perf_counter()
+        text_blocks = page.get_text("dict", clip=clip_rect)["blocks"]
+        print(
+            f"Text blocks extracted in {time.perf_counter() - start_time:.3f} seconds")
+
+        # Early return for empty pages
+        if not text_blocks:
+            return {
+                "geometry": clip_rect,
+                "text_data": ([], []),
+                "obstacles": [],
+                "backgrounds": [],
+                "font_and_size_distribution": {},
+                "max_font_size": 0,
+                "min_font_size": 0,
+            }
+
+        # Initialize variables
+        font_and_size_distribution = {}
+        clusters = {}
+        max_font_size = self._min_allowed_font_size
+        min_font_size = self._max_allowed_font_size
+
+        # Find table, image, and graphic boxes
+        start_time = time.perf_counter()
+        tables = page.find_tables()
+        table_bboxes = [Rect(table.bbox).irect for table in tables]
+        images = page.get_images()
+        image_bboxes = [page.get_image_rects(
+            image)[0].irect for image in images]
+        graphics = page.get_drawings()
+        graphic_bboxes = [graphic["rect"].irect for graphic in graphics]
+        print(
+            f"Tables, images, and graphics processed in {time.perf_counter() - start_time:.3f} seconds")
+
+        background_bboxes = []
+        filtered_graphic_bboxes = []
+
+        start_time = time.perf_counter()
+        for box in graphic_bboxes:
+            if box.width * box.height > self._min_area_for_background and min(box.width, box.height) > self._min_size_for_background:
+                background_bboxes.append(box)
+            else:
+                filtered_graphic_bboxes.append(box)
+        graphic_bboxes = filtered_graphic_bboxes
+        print(
+            f"Graphics filtered in {time.perf_counter() - start_time:.3f} seconds")
+
+        # Text blocks
+        start_time = time.perf_counter()
+        text_bboxes = []
+        non_horizontal_text_bboxes = []
+        filtered_text_blocks = []
+
+        for block in text_blocks:
+            if not block.get("lines", []):
+                continue
+
+            # Filter non-horizontal text
+            if block["lines"][0]["dir"] != (1.0, 0.0):
+                non_horizontal_text_bboxes.append(Rect(block["bbox"]).irect)
+                continue
+
+            # Ignore tables
+            if any(self._is_bbox_within(Rect(block["bbox"]).irect, table_bbox) for table_bbox in table_bboxes):
+                continue
+            else:
+                filtered_text_blocks.append(block)
+
+            # Process spans for font and size distribution
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    font_name = span.get("font", None)
+                    font_size = span.get("size", None)
+                    if font_name is None or font_size is None:
+                        continue
+                    font_size = round(font_size, 2)
+                    font_size = max(font_size, self._min_allowed_font_size)
+                    font_size = min(font_size, self._max_allowed_font_size)
+
+                    # Update min and max font sizes
+                    max_font_size = max(max_font_size, font_size)
+                    min_font_size = min(min_font_size, font_size)
+
+                    # Cluster font and count distribution
+                    clustered_font = self._cluster_span_font(
+                        font_name, clusters)
+                    key = (clustered_font, font_size)
+                    char_count = len(span.get("text", "").strip())
+                    font_and_size_distribution[key] = font_and_size_distribution.get(
+                        key, 0) + char_count
+
+            # Combine lines within blocks into bounding boxes
+            # Use the first line's bbox as initial rect
+            initial_rect = list(block["lines"][0]["bbox"])
+            for line in block["lines"]:
+                # Check for non-empty text spans
+                if any(span["text"].strip() for span in line["spans"]):
+                    line_bbox = line["bbox"]
+                    initial_rect[0] = min(initial_rect[0], line_bbox[0])
+                    initial_rect[1] = min(initial_rect[1], line_bbox[1])
+                    initial_rect[2] = max(initial_rect[2], line_bbox[2])
+                    initial_rect[3] = max(initial_rect[3], line_bbox[3])
+            text_bboxes.append(Rect(initial_rect).irect)
+        print(
+            f"Text blocks processed in {time.perf_counter() - start_time:.3f} seconds")
+
+        # Obstacle boxes
+        start_time = time.perf_counter()
+        obstacle_bboxes = non_horizontal_text_bboxes + \
+            table_bboxes + image_bboxes + graphic_bboxes
+        if self.consider_bg_colors:
+            obstacle_bboxes += background_bboxes
+        print(
+            f"Obstacle boxes calculated in {time.perf_counter() - start_time:.3f} seconds")
+
+        return {
+            "geometry": clip_rect,
+            "text_data": (filtered_text_blocks, text_bboxes),
+            "obstacles": obstacle_bboxes,
+            "backgrounds": background_bboxes,
+            "font_and_size_distribution": font_and_size_distribution,
+            "max_font_size": max_font_size,
+            "min_font_size": min_font_size,
+        }
+
+    def _cluster_span_font(self, font_name: str, clusters: dict) -> str:
+        """
+        Clusters a given font name based on its root and updates the clusters dictionary.
+
+        Args:
+            font_name (str): The font name to be clustered.
+            clusters (dict): Dictionary of existing font clusters, where the key is the font name
+                            and the value is its clustered root.
+
+        Returns:
+            str: The clustered font name.
+        """
+        if font_name in clusters:
+            return clusters[font_name]
+
+        # Extract the root of the font name
+        match = re.match(r'([A-Za-z][A-Za-z]+)', font_name)
+        root = match.group(1) if match else font_name
+        clusters[font_name] = root
+        return root
+
+    # def _extract_page_content(self, page: pymupdf.Page, page_margins: list[int]) -> dict:
+    #     """
+    #     Extracts content from a PDF page within the specified margins and organizes it into
+    #     geometric data, text blocks, and obstacle information.
+
+    #     Args:
+    #         page (pymupdf.Page): The page object to extract content from.
+    #         page_margins (list[int]): A list of integers specifying margins (left, top, right, bottom)
+    #                                 for clipping the page content.
+
+    #     Returns:
+    #         dict: A dictionary containing the following keys:
+    #             - "geometry" (Rect): The rectangular area used for clipping the content.
+    #             - "text_data" (tuple): A tuple containing:
+    #                 * A list of dictionaries representing text blocks within the clipped area.
+    #                 * A list of Rect objects representing the bounding boxes of the text blocks.
+    #             - "obstacles" (list[Rect]): A list of Rect objects representing obstacles
+    #                                         such as non-horizontal text, tables, images, and graphics.
+    #             - "backgrounds" (list[Rect]): A list of Rect objects representing background graphics
+    #                                         meeting the specified size and area criteria.
+    #     """
+    #     # geometric data
+    #     left = page_margins[0]
+    #     top = page_margins[1]
+    #     right = page.rect.width - page_margins[2]
+    #     bottom = page.rect.height - page_margins[3]
+    #     clip_rect = Rect(left, top, right, bottom)
+
+    #     # Get text blocks within clipped area
+    #     text_blocks = page.get_text("dict", clip=clip_rect)["blocks"]
+
+    #     # If no text found on this page
+    #     if not text_blocks:
+    #         {
+    #             "geometry": clip_rect,
+    #             "text_data": ([{"font_name": "", "lines": []}], []),
+    #             "obstacles": [],
+    #             "backgrounds": [],
+    #         }
+
+    #     # Separate horizontal and non-horizontal text blocks in one pass
+    #     non_horizontal_text_bboxes = []
+    #     filtered_text_blocks = []
+
+    #     for block in text_blocks:
+    #         if block.get("lines") and len(block["lines"]) > 0 and block["lines"][0]["dir"] != (1.0, 0.0):
+    #             non_horizontal_text_bboxes.append(Rect(block["bbox"]).irect)
+    #         else:
+    #             filtered_text_blocks.append(block)
+
+    #     # Update text_blocks to only contain horizontal text blocks
+    #     text_blocks = filtered_text_blocks
+
+    #     # Find table, image, and graphic boxes
+    #     tables = page.find_tables()
+    #     table_bboxes = [Rect(table.bbox).irect for table in tables]
+
+    #     images = page.get_images()
+    #     image_bboxes = [page.get_image_rects(
+    #         image)[0].irect for image in images]
+
+    #     graphics = page.get_drawings()
+    #     graphic_bboxes = [graphic["rect"].irect for graphic in graphics]
+
+    #     background_bboxes = []
+    #     filtered_graphic_bboxes = []
+
+    #     for box in graphic_bboxes:
+    #         if box.width * box.height > self._min_area_for_background and min(box.width, box.height) > self._min_size_for_background:
+    #             background_bboxes.append(box)
+    #         else:
+    #             filtered_graphic_bboxes.append(box)
+
+    #     graphic_bboxes = filtered_graphic_bboxes
+
+    #     obstacle_bboxes = non_horizontal_text_bboxes + \
+    #         table_bboxes+image_bboxes+graphic_bboxes
+    #     if self.consider_bg_colors:
+    #         obstacle_bboxes += background_bboxes
+
+    #     # Ignore tables
+    #     if self.ignore_tables:
+    #         text_blocks = [block for block in text_blocks if not any(
+    #             self._is_bbox_within(Rect(block["bbox"]).irect, table_bbox) for table_bbox in table_bboxes)]
+
+    #     # Combine lines within blocks into bounding boxes
+    #     text_bboxes = []
+    #     for block in text_blocks:
+    #         # Skip blocks without "lines" or empty "lines" lists
+    #         if not block.get("lines") or len(block["lines"]) == 0:
+    #             continue
+
+    #         # Use the first line's bbox as initial rect
+    #         initial_rect = list(block["lines"][0]["bbox"])
+    #         for line in block["lines"]:
+    #             # Check for non-empty text spans
+    #             if any(span["text"].strip() for span in line["spans"]):
+    #                 line_bbox = line["bbox"]
+    #                 initial_rect[0] = min(initial_rect[0], line_bbox[0])
+    #                 initial_rect[1] = min(initial_rect[1], line_bbox[1])
+    #                 initial_rect[2] = max(initial_rect[2], line_bbox[2])
+    #                 initial_rect[3] = max(initial_rect[3], line_bbox[3])
+    #         text_bboxes.append(Rect(initial_rect).irect)
+
+    #     return {
+    #         "geometry": clip_rect,
+    #         "text_data": (text_blocks, text_bboxes),
+    #         "obstacles": obstacle_bboxes,
+    #         "backgrounds": background_bboxes,
+    #     }
+
+    def _extend_bounding_boxes(self, page_content: dict) -> dict:
+        """
+        Extends the text bounding boxes within the page_content dictionary to the right edge of the page,
+        stopping at obstacles and adjusting for columns.
+
+        Args:
+            page_content (dict): A dictionary containing page data including 'text_data', 'obstacles', and 'backgrounds'.
+
+        Returns:
+            dict: The updated page_content dictionary with extended and sorted 'text_data'.
+        """
+        text_blocks, text_bboxes = page_content["text_data"]
+        obstacle_bboxes = page_content["obstacles"]
+
+        # Extend text bounding boxes to the right edge of the page, stopping at obstacles
+        for index, text_bbox in enumerate(text_bboxes):
+            # Start by extending the box to the right edge of the page
+            extended_bbox = Rect(text_bbox.x0, text_bbox.y0,
+                                 page_content["geometry"].x1, text_bbox.y1).irect
+
+            # Check for collisions with obstacles
+            for obstacle_bbox in obstacle_bboxes:
+                if extended_bbox.intersects(obstacle_bbox):
+                    # Calculate the vertical overlap
+                    overlap_top = max(0, obstacle_bbox.y1 - extended_bbox.y0)
+                    overlap_bottom = max(
+                        0, extended_bbox.y1 - obstacle_bbox.y0)
+
+                    # Ignore the obstacle if overlap is within the vertical overlap tolerance
+                    if overlap_top > self._vertical_overlap_tolerance and overlap_bottom > self._vertical_overlap_tolerance:
+                        extended_bbox.x1 = min(
+                            extended_bbox.x1, obstacle_bbox.x0)
+
+            # Prevent merging across columns
+            for other_bbox in text_bboxes:
+                if other_bbox == text_bbox:  # Skip the current box
+                    continue
+                # Check if other box is to the right with a positive gap
+                if other_bbox.x0 > text_bbox.x1 + self._column_gap_tolerance:
+                    # Adjust the right edge
+                    extended_bbox.x1 = min(extended_bbox.x1, other_bbox.x0)
+
+            # Update the bounding box
+            text_bboxes[index] = extended_bbox
+
+        # Update text_data in the page_content dictionary
+        page_content["text_data"] = (text_blocks, text_bboxes)
+
+        return page_content
+
+    def _merge_text_boxes(self, page_content: dict) -> dict:
+        """
+        Merges close or overlapping text blocks within the page_content dictionary.
+
+        Args:
+            page_content (dict): A dictionary containing page data including 'text_data'.
+
+        Returns:
+            dict: The updated page_content dictionary with merged 'text_data'.
+        """
+        text_blocks, text_bboxes = page_content["text_data"]
+
+        # Initialize merged lists with the first block and bounding box
+        merged_text_blocks = [text_blocks[0]]
+        merged_text_bboxes = [text_bboxes[0]]
+
+        # Iterate over the remaining blocks and bounding boxes
+        for block, text_bbox in zip(text_blocks[1:], text_bboxes[1:]):
+            # Get the last merged bounding box
+            last_text_bbox = merged_text_bboxes[-1]
+
+            # Check if the rectangles intersect or are left-aligned with a small horizontal gap
+            intersects = text_bbox.intersects(last_text_bbox)
+            horizontal_gap = abs(text_bbox.y0 - last_text_bbox.y1)
+
+            # Check alignment and gap
+            left_alignment = abs(
+                text_bbox.x0 - last_text_bbox.x0) <= self._left_alignment_tolerance
+            within_max_spacing = horizontal_gap <= self._max_line_vertical_spacing
+
+            # Merge condition: rectangles intersect or are left-aligned and within spacing
+            if intersects or (left_alignment and within_max_spacing):
+                # Merge the bounding box
+                merged_bbox = Rect(
+                    min(last_text_bbox.x0, text_bbox.x0),
+                    min(last_text_bbox.y0, text_bbox.y0),
+                    max(last_text_bbox.x1, text_bbox.x1),
+                    max(last_text_bbox.y1, text_bbox.y1),
+                )
+                merged_text_bboxes[-1] = merged_bbox  # Update the last bbox
+                # Merge lines
+                merged_text_blocks[-1]["lines"].extend(block["lines"])
+            else:
+                # Add as a new separate block and bbox
+                merged_text_blocks.append(block)
+                merged_text_bboxes.append(text_bbox)
+
+        # Update page_content with merged text data
+        page_content["text_data"] = (merged_text_blocks, merged_text_bboxes)
+
+        return page_content
+
+    def _sort_text_data(self, page_content: dict) -> dict:
+        """
+        Sorts the text data (text_blocks and text_bboxes) within the page_content dictionary
+        and updates the dictionary with the sorted data.
+
+        Args:
+            page_content (dict): A dictionary containing page data including 'text_data' and 'backgrounds'.
+
+        Returns:
+            dict: The updated page_content dictionary with sorted 'text_data'.
+        """
+        text_blocks, text_bboxes = page_content["text_data"]
+        background_bboxes = page_content["backgrounds"]
+
+        # Combine text_blocks and text_bboxes for sorting
+        combined = list(zip(text_blocks, text_bboxes))
+        if self.consider_bg_colors:
+            with_bg_color = [item for item in combined if self._has_bg_color(
+                item[1], background_bboxes)]
+            without_bg_color = [item for item in combined if not self._has_bg_color(
+                item[1], background_bboxes)]
+            without_bg_color.sort(key=lambda x: (x[1].x0, x[1].y0))
+            with_bg_color.sort(key=lambda x: (x[1].x0, x[1].y0))
+            combined = without_bg_color + with_bg_color
+        else:
+            combined.sort(key=lambda x: (x[1].x0, x[1].y0))
+
+        # Unzip the sorted combined list back into text_blocks and text_bboxes
+        page_content["text_data"] = list(map(
+            list, zip(*combined))) if combined else ([], [])
+
+        return page_content
+
+    def _is_bbox_within(self, inner_bbox, outer_bbox):
+        """
+        Checks if one bounding box is within another.
+
+        Args:
+            inner_bbox (Rect): The inner bounding box.
+            outer_bbox (Rect): The outer bounding box.
+
+        Returns:
+            bool: True if inner_bbox is within outer_bbox.
+        """
+        return (
+            inner_bbox.x0 >= outer_bbox.x0
+            and inner_bbox.y0 >= outer_bbox.y0
+            and inner_bbox.x1 <= outer_bbox.x1
+            and inner_bbox.y1 <= outer_bbox.y1
+        )
+
+    def _has_bg_color(self, bbox, background_bboxes):
+        """
+        Checks if a bounding box has a background color.
+
+        Args:
+            bbox (Rect): The bounding box to check.
+            background_bboxes (list[Rect]): List of background bounding boxes.
+
+        Returns:
+            bool: True if the bbox has a background color.
+        """
+        return any(self._is_bbox_within(bbox, bg_bbox) for bg_bbox in background_bboxes)
+
+    # def _cluster_and_normalize_fonts(self, page_content: dict) -> dict:
+    #     """
+    #     Analyzes font data (clustering and size normalization) for all spans in the page_content dictionary.
+
+    #     This method clusters fonts and normalizes font sizes, combining the responsibilities of
+    #     two separate tasks into one for performance reasons.
+
+    #     Args:
+    #         page_content (dict): A dictionary containing page data, including 'text_data'.
+
+    #     Returns:
+    #         dict: The updated page_content dictionary with font clustering and normalized font size
+    #             information added to each span.
+    #     """
+    #     text_blocks = page_content["text_data"][0]  # Extract text_blocks from page_content
+
+    #     # Ensure max_font_size and min_font_size are set as object variables
+    #     if not hasattr(self, "_max_font_size") or not hasattr(self, "_min_font_size"):
+    #         raise AttributeError(
+    #             "Object variables '_max_font_size' and '_min_font_size' must be set before calling this method."
+    #         )
+
+    #     # Calculate font size range
+    #     font_size_range = self._max_font_size - self._min_font_size
+
+    #     # Initialize font clusters
+    #     font_list = []
+    #     for block in text_blocks:
+    #         for line in block.get("lines", []):
+    #             for span in line.get("spans", []):
+    #                 if "font" in span:
+    #                     font_list.append(span["font"])
+    #     font_list = list(set(font_list))  # Remove duplicates
+
+    #     # Generate font clusters
+    #     clusters = {}
+    #     def find_shortest_word(word_list): return min(word_list, key=len)
+
+    #     def find_root(word):
+    #         match = re.match(r'([A-Za-z][A-Za-z]+)', word)
+    #         return match.group(1) if match else word
+
+    #     while font_list:
+    #         shortest_word = find_shortest_word(font_list)
+    #         root = find_root(shortest_word)
+    #         for word in font_list.copy():
+    #             if root in word:
+    #                 clusters[word] = root
+    #                 font_list.remove(word)
+
+    #     # Process spans: Normalize font sizes and cluster fonts
+    #     for block in text_blocks:
+    #         for line in block.get("lines", []):
+    #             for span in line.get("spans", []):
+    #                 # Normalize font size
+    #                 if "size" in span:
+    #                     normalized_size = round(
+    #                         (span["size"] - self._min_font_size) /
+    #                         font_size_range, 2
+    #                     )
+    #                     span["normalized_font_size"] = normalized_size
+    #                 # Apply font clustering
+    #                 if "font" in span and span["font"] in clusters:
+    #                     span["font_cluster"] = clusters[span["font"]]
+
+    #     # Update the page_content dictionary with the modified text blocks
+    #     page_content["text_data"] = (text_blocks, page_content["text_data"][1])
+
+    #     return page_content
+
+    # def _cluster_fonts(self, page_content: dict) -> dict:
+    #     """
+    #     Clusters fonts found in spans and updates the spans to reflect font families.
+
+    #     This method lists all occurring fonts from the spans, creates a dictionary mapping
+    #     individual fonts to their stems, and updates the spans to use these stems. This aids
+    #     in the identification of headings by normalizing font variations.
+
+    #     Args:
+    #         page_content (dict): A dictionary containing page data, including 'text_data'.
+
+    #     Returns:
+    #         dict: The updated page_content dictionary with font clusters added to the spans.
+    #     """
+    #     text_blocks = page_content["text_data"][0]  # Extract text_blocks from page_content
+
+    #     # Extract all unique fonts from spans
+    #     font_list = []
+    #     for block in text_blocks:
+    #         for line in block.get("lines", []):
+    #             for span in line.get("spans", []):
+    #                 if "font" in span:
+    #                     font_list.append(span["font"])
+    #     font_list = list(set(font_list))  # Remove duplicates
+
+    #     # Initialize a dictionary to hold clusters
+    #     clusters = {}
+
+    #     # Custom function to find the shortest word in a list
+    #     def find_shortest_word(word_list):
+    #         return min(word_list, key=len)
+
+    #     # Custom function to find the root of a word using regex
+    #     def find_root(word):
+    #         match = re.match(r'([A-Za-z][A-Za-z]+)', word)
+    #         return match.group(1) if match else word
+
+    #     # Cluster fonts based on their root
+    #     while font_list:
+    #         shortest_word = find_shortest_word(font_list)
+    #         root = find_root(shortest_word)
+    #         for word in font_list.copy():  # Iterate over a copy to safely modify the original list
+    #             if root in word:
+    #                 clusters[word] = root
+    #                 font_list.remove(word)
+
+    #     # Update spans with the font clusters
+    #     for block in text_blocks:
+    #         for line in block.get("lines", []):
+    #             for span in line.get("spans", []):
+    #                 if "font" in span and span["font"] in clusters:
+    #                     span["font_cluster"] = clusters[span["font"]]
+
+    #     # Update page_content with the modified text blocks
+    #     page_content["text_data"] = (text_blocks, page_content["text_data"][1])
+
+    #     return page_content
+
+    # def _normalize_font_sizes(self, page_content: dict) -> dict:
+    #     """
+    #     Normalizes font sizes across the extracted text blocks within the page_content dictionary.
+
+    #     Args:
+    #         page_content (dict): A dictionary containing page data, including 'text_data'.
+
+    #     Returns:
+    #         dict: The updated page_content dictionary with normalized font size information added
+    #             to each text block under the key 'normalized_font_size'.
+    #     """
+    #     text_blocks = page_content["text_data"][0]  # Extract text_blocks from page_content
+
+    #     # Ensure max_font_size and min_font_size are set as object variables
+    #     if not hasattr(self, "_max_font_size") or not hasattr(self, "_min_font_size"):
+    #         raise AttributeError(
+    #             "Object variables '_max_font_size' and '_min_font_size' must be set before calling this method."
+    #         )
+
+    #     # Normalize font sizes and add them to the text blocks
+    #     font_size_range = self._max_font_size - self._min_font_size
+    #     for block in text_blocks:
+    #         normalized_size = round(
+    #             (block['font_size'] - self._min_font_size) /
+    #             font_size_range, 2
+    #         )
+    #         block['normalized_font_size'] = normalized_size
+
+    #     # Update the page_content dictionary with the modified text blocks
+    #     page_content["text_data"] = (text_blocks, page_content["text_data"][1])
+
+    #     return page_content
+
+    def _calculate_min_max_font_size(self) -> None:
+        """
+        Calculates the minimum and maximum font sizes across the entire document
+        using the precomputed data stored in `self._document_content`.
+
+        This method updates the following object variables:
+            - self._max_font_size: The largest font size found in the document.
+            - self._min_font_size: The smallest font size found in the document.
+
+        Raises:
+            AttributeError: If `self._document_content` is not initialized or if the
+                            constants for allowed font sizes are not set.
+        """
+        if not hasattr(self, "_document_content") or not self._document_content:
+            raise AttributeError(
+                "The document content 'self._document_content' is not initialized or empty."
+            )
+
+        # Ensure constants for allowed font sizes are defined
+        if not hasattr(self, "_min_allowed_font_size") or not hasattr(self, "_max_allowed_font_size"):
+            raise AttributeError(
+                "The object must have '_min_allowed_font_size' and '_max_allowed_font_size' constants defined."
+            )
+
+        # Initialize global min and max font sizes with object constants
+        # Start with the maximum allowed value
+        global_min_font_size = self._max_allowed_font_size
+        # Start with the minimum allowed value
+        global_max_font_size = self._min_allowed_font_size
+
+        # Iterate through page-level max and min font sizes
+        for page_content in self._document_content:
+            page_max = page_content.get(
+                "max_font_size", self._min_allowed_font_size)
+            page_min = page_content.get(
+                "min_font_size", self._max_allowed_font_size)
+
+            # Update global max and min font sizes
+            global_max_font_size = max(global_max_font_size, page_max)
+            global_min_font_size = min(global_min_font_size, page_min)
+
+        # Handle case where no valid font sizes are found
+        if global_max_font_size == self._min_allowed_font_size and global_min_font_size == self._max_allowed_font_size:
+            # No font sizes found in the document
+            self._max_font_size = 0
+            self._min_font_size = 0
+        else:
+            self._max_font_size = global_max_font_size
+            self._min_font_size = global_min_font_size
+
+    #!just for debugging
+
+    def visualize_bboxes(self, page, page_content: dict) -> None:
+        """
+        Visualizes bounding boxes on the given page by drawing rectangles and writing the index
+        of each box in its center.
+
+        Args:
+            page (Page): The PyMuPDF page object to annotate.
+            page_content (dict): A dictionary containing page data including 'text_data' and 'obstacles'.
+        """
+        text_bboxes = page_content["text_data"][1]  # Extract text_bboxes from text_data
+        obstacle_bboxes = page_content["obstacles"]
+
+        # Create a shape object for drawing text_boxes
+        shape = page.new_shape()
+
+        for index, bbox in enumerate(text_bboxes):
+            # Draw the bounding box in red
+            shape.draw_rect(bbox)
+
+            # Write the index number (+1) in the center of the box
+            center_x = (bbox.x0 + bbox.x1) / 2
+            center_y = (bbox.y0 + bbox.y1) / 2
+            shape.insert_text((center_x, center_y), str(
+                index + 1), fontsize=20, color=(1, 0, 0))
+
+        # Commit the drawings to the page
+        shape.finish(color=(1, 0, 0), fill=None, width=1)
+        shape.commit()
+
+        # Create a shape object for drawing obstacles
+        shape = page.new_shape()
+
+        for index, bbox in enumerate(obstacle_bboxes):
+            # Draw the bounding box in green
+            shape.draw_rect(bbox)
+
+            # Write the index number (+1) in the center of the box
+            center_x = (bbox.x0 + bbox.x1) / 2
+            center_y = (bbox.y0 + bbox.y1) / 2
+            shape.insert_text((center_x, center_y), str(
+                index + 1), fontsize=20, color=(0, 1, 0))
+
+        # Commit the drawings to the page
+        shape.finish(color=(0, 1, 0), fill=None, width=1)
+        shape.commit()
+
+        # Render the page as a pixmap
+        pix = page.get_pixmap()
+
+        # Convert the pixmap to a Pillow image
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+
+        # Show the image using Pillow
+        img.show()
+
+
+# Example usage:
+if __name__ == "__main__":
+
+    test_pdf_path = "test_data/pdf"
+    test_docs = [
+        "Grundwasser-Überwachungsprogramm - 2022.pdf",
+        "Auf zu neuen Wegen – gemeinschaftlich und nachhaltig wirtschaften!_2022.pdf",
+    ]
+    DOCUMENT = 0
+    TEST_PAGE = 31
+    margins = [10, 10, 10, 10]
+    pdf_extractor = PDFExtractor(
+        pdf_path=f"{test_pdf_path}/{test_docs[DOCUMENT]}")
+    # page = pdf_extractor.doc[TEST_PAGE]
+    # pdf_extractor._find_connected_text_boxes(page, margins)

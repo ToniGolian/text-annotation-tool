@@ -162,36 +162,45 @@ class PDFExtractor:
 
     def _analyze_font_size_distribution(self) -> None:
         """
-        Clusters fonts, normalizes font sizes, and computes the distribution
-        of (clustered_font, normalized_font_size) combinations across all pages.
+        Normalizes font sizes and computes the cumulative distribution of
+        (clustered_font, normalized_font_size) combinations across all pages.
 
         This method updates:
             - self._font_size_distribution: A dictionary where keys are tuples
             of (clustered_font, normalized_font_size) and values are the cumulative
             character counts for those combinations.
+
+        Raises:
+            ValueError: If global minimum or maximum font sizes are not calculated.
         """
-        # Initialize distribution dictionary for font and normalized font size combinations
+        # Ensure that global min and max font sizes are available
+        if not hasattr(self, "_min_font_size") or not hasattr(self, "_max_font_size"):
+            raise ValueError(
+                "Global minimum and maximum font sizes must be calculated before analyzing distribution.")
+        if self._min_font_size >= self._max_font_size:
+            raise ValueError(
+                "Invalid font size range: minimum font size must be smaller than maximum font size.")
+
+        # Initialize the cumulative font size distribution
         self._font_size_distribution = {}
+        font_size_range = (self._max_font_size - self._min_font_size)
 
-        # Cluster fonts and normalize font sizes per page
+        # Normalize and aggregate font size distribution
         for page_content in self._document_content:
+            page_font_distribution = page_content.get(
+                "font_and_size_distribution", {})
 
-            # Count font and font size combinations
-            text_blocks = page_content["text_data"][0]
-            for block in text_blocks:
-                clustered_font = block.get("font_name_cluster")
-                normalized_font_size = block.get("normalized_font_size")
+            for (clustered_font, raw_font_size), count in page_font_distribution.items():
+                # Normalize font size using global min and max font sizes
+                normalized_font_size = round(
+                    (raw_font_size - self._min_font_size) / font_size_range, 2
+                )
+                normalized_font_size = max(0, min(1, normalized_font_size))
 
-                if clustered_font is None or normalized_font_size is None:
-                    continue
-
-                # Count the occurrences of each combination
-                for line in block.get("lines", []):
-                    for span in line.get("spans", []):
-                        char_count = len(span.get("text", "").strip())
-                        combination = (clustered_font, normalized_font_size)
-                        self._font_size_distribution[combination] = self._font_size_distribution.get(
-                            combination, 0) + char_count
+                # Update cumulative distribution
+                key = (clustered_font, normalized_font_size)
+                self._font_size_distribution[key] = self._font_size_distribution.get(
+                    key, 0) + count
 
     def _extract_document(self) -> None:
         """
@@ -241,155 +250,6 @@ class PDFExtractor:
         page_content = self._merge_text_boxes(page_content)
         # self.visualize_bboxes(page, page_content)
 
-    # @measure_exec_time
-    # def _extract_page_content(self, page: pymupdf.Page, page_margins: list[int]) -> dict:
-    #     """
-    #     Extracts content from a PDF page within the specified margins and organizes it into
-    #     geometric data, text blocks, obstacle information, and font-size distribution.
-
-    #     Args:
-    #         page (pymupdf.Page): The page object to extract content from.
-    #         page_margins (list[int]): A list of integers specifying margins (left, top, right, bottom)
-    #                                     for clipping the page content.
-
-    #     Returns:
-    #         dict: A dictionary containing the following keys:
-    #             - "geometry" (Rect): The rectangular area used for clipping the content.
-    #             - "text_data" (tuple): A tuple containing:
-    #                 * A list of dictionaries representing text blocks within the clipped area.
-    #                 * A list of Rect objects representing the bounding boxes of the text blocks.
-    #             - "obstacles" (list[Rect]): A list of Rect objects representing obstacles
-    #                                         such as non-horizontal text, tables, images, and graphics.
-    #             - "backgrounds" (list[Rect]): A list of Rect objects representing background graphics
-    #                                         meeting the specified size and area criteria.
-    #             - "font_and_size_distribution" (dict): Dictionary of (clustered_font, font_size) combinations
-    #                                                 and their character count.
-    #             - "max_font_size" (float): The maximum font size found on the page.
-    #             - "min_font_size" (float): The minimum font size found on the page.
-    #     """
-    #     # Geometry data
-    #     clip_rect = Rect(page_margins[0], page_margins[1], page.rect.width -
-    #                      page_margins[2], page.rect.height - page_margins[3])
-
-    #     # Extract text blocks
-    #     text_blocks = page.get_text("dict", clip=clip_rect)["blocks"]
-
-    #     # Early return for empty pages
-    #     if not text_blocks:
-    #         return {
-    #             "geometry": clip_rect,
-    #             "text_data": ([], []),
-    #             "obstacles": [],
-    #             "backgrounds": [],
-    #             "font_and_size_distribution": {},
-    #             "max_font_size": 0,
-    #             "min_font_size": 0,
-    #         }
-
-    #     # Initialize variables
-    #     font_and_size_distribution = {}
-    #     clusters = {}
-    #     max_font_size = self._min_allowed_font_size
-    #     min_font_size = self._max_allowed_font_size
-
-    #     # Find table, image, and graphic boxes
-    #     tables = page.find_tables()
-    #     table_bboxes = [Rect(table.bbox).irect for table in tables]
-
-    #     images = page.get_images()
-    #     image_bboxes = [page.get_image_rects(
-    #         image)[0].irect for image in images]
-
-    #     graphics = page.get_drawings()
-    #     graphic_bboxes = [graphic["rect"].irect for graphic in graphics]
-
-    #     background_bboxes = []
-    #     filtered_graphic_bboxes = []
-
-    #     for box in graphic_bboxes:
-    #         if box.width * box.height > self._min_area_for_background and min(box.width, box.height) > self._min_size_for_background:
-    #             background_bboxes.append(box)
-    #         else:
-    #             filtered_graphic_bboxes.append(box)
-
-    #     graphic_bboxes = filtered_graphic_bboxes
-
-    #     # Text blocks
-    #     # Separate horizontal and non-horizontal text blocks
-    #     text_bboxes = []
-    #     non_horizontal_text_bboxes = []
-    #     filtered_text_blocks = []
-
-    #     for block in text_blocks:
-    #         if not block.get("lines", []):
-    #             continue
-
-    #         # Filter non horizontal text
-    #         if block["lines"][0]["dir"] != (1.0, 0.0):
-    #             non_horizontal_text_bboxes.append(
-    #                 Rect(block["bbox"]).irect)
-    #             continue
-
-    #         # Ignore tables
-    #         if any(self._is_bbox_within(Rect(block["bbox"]).irect, table_bbox) for table_bbox in table_bboxes):
-    #             continue
-    #         else:
-    #             filtered_text_blocks.append(block)
-
-    #         # Process spans for font and size distribution
-    #         for line in block.get("lines", []):
-    #             for span in line.get("spans", []):
-    #                 font_name = span.get("font", None)
-    #                 font_size = span.get("size", None)
-    #                 if font_name is None or font_size is None:
-    #                     continue
-    #                 font_size = round(font_size, 2)
-    #                 font_size = max(font_size, self._min_allowed_font_size)
-    #                 font_size = min(font_size, self._max_allowed_font_size)
-
-    #                 # Update min and max font sizes
-    #                 max_font_size = max(max_font_size, font_size)
-    #                 min_font_size = min(min_font_size, font_size)
-
-    #                 # Cluster font and count distribution
-    #                 clustered_font = self._cluster_span_font(
-    #                     font_name, clusters)
-    #                 key = (clustered_font, font_size)
-    #                 char_count = len(span.get("text", "").strip())
-    #                 font_and_size_distribution[key] = font_and_size_distribution.get(
-    #                     key, 0) + char_count
-
-    #         # Combine lines within blocks into bounding boxes
-    #         # Use the first line's bbox as initial rect
-    #         initial_rect = list(block["lines"][0]["bbox"])
-    #         for line in block["lines"]:
-    #             # Check for non-empty text spans
-    #             if any(span["text"].strip() for span in line["spans"]):
-    #                 line_bbox = line["bbox"]
-    #                 initial_rect[0] = min(initial_rect[0], line_bbox[0])
-    #                 initial_rect[1] = min(initial_rect[1], line_bbox[1])
-    #                 initial_rect[2] = max(initial_rect[2], line_bbox[2])
-    #                 initial_rect[3] = max(initial_rect[3], line_bbox[3])
-    #         text_bboxes.append(Rect(initial_rect).irect)
-    #     # Update text blocks to only contain horizontal text blocks
-    #     text_blocks = filtered_text_blocks
-
-    #     # Obstacle boxes
-    #     obstacle_bboxes = non_horizontal_text_bboxes + \
-    #         table_bboxes + image_bboxes + graphic_bboxes
-    #     if self.consider_bg_colors:
-    #         obstacle_bboxes += background_bboxes
-    #     return {
-    #         "geometry": clip_rect,
-    #         "text_data": (text_blocks, text_bboxes),
-    #         "obstacles": obstacle_bboxes,
-    #         "backgrounds": background_bboxes,
-    #         "font_and_size_distribution": font_and_size_distribution,
-    #         "max_font_size": max_font_size,
-    #         "min_font_size": min_font_size,
-    #     }
-
-    # @measure_exec_time
     def _extract_page_content(self, page: pymupdf.Page, page_margins: list[int]) -> dict:
         """
         Extracts content from a PDF page within the specified margins and organizes it into
@@ -454,16 +314,13 @@ class PDFExtractor:
         vertical_lines = list(set(vertical_lines))
 
         # Check for potential tables
-        print(f"Page {page.number+1}")
         potential_table = self._are_tables_on_page(
             vertical_lines, background_bboxes)
 
         # Extract tables
         if potential_table:
-            start = time.perf_counter()
             tables = page.find_tables()
             table_bboxes = [Rect(table.bbox).irect for table in tables]
-            print(f"Time to find table:{time.perf_counter()-start:.3f}s")
         else:
             table_bboxes = []
 
@@ -902,7 +759,7 @@ class PDFExtractor:
             other_bbox (IRect): The second bounding box to compare.
 
         Returns:
-            bool: True if the two bounding boxes are within the same row based on vertical position tolerance, 
+            bool: True if the two bounding boxes are within the same row based on vertical position tolerance,
                 False otherwise.
         """
         return (
@@ -919,7 +776,7 @@ class PDFExtractor:
             other_bbox (IRect): The second bounding box to compare.
 
         Returns:
-            bool: True if the two bounding boxes are within the same column based on horizontal position tolerance, 
+            bool: True if the two bounding boxes are within the same column based on horizontal position tolerance,
                 False otherwise.
         """
         return (
@@ -939,6 +796,129 @@ class PDFExtractor:
             bool: True if the bbox has a background color.
         """
         return any(self._is_bbox_within(bbox, bg_bbox) for bg_bbox in background_bboxes)
+
+    def _calculate_min_max_font_size(self) -> None:
+        """
+        Calculates the minimum and maximum font sizes across the entire document
+        using the precomputed data stored in `self._document_content`.
+
+        This method updates the following object variables:
+            - self._max_font_size: The largest font size found in the document.
+            - self._min_font_size: The smallest font size found in the document.
+
+        Raises:
+            AttributeError: If `self._document_content` is not initialized or if the
+                            constants for allowed font sizes are not set.
+        """
+        if not hasattr(self, "_document_content") or not self._document_content:
+            raise AttributeError(
+                "The document content 'self._document_content' is not initialized or empty."
+            )
+
+        # Ensure constants for allowed font sizes are defined
+        if not hasattr(self, "_min_allowed_font_size") or not hasattr(self, "_max_allowed_font_size"):
+            raise AttributeError(
+                "The object must have '_min_allowed_font_size' and '_max_allowed_font_size' constants defined."
+            )
+
+        # Initialize global min and max font sizes with object constants
+        # Start with the maximum allowed value
+        global_min_font_size = self._max_allowed_font_size
+        # Start with the minimum allowed value
+        global_max_font_size = self._min_allowed_font_size
+
+        # Iterate through page-level max and min font sizes
+        for page_content in self._document_content:
+            page_max = page_content.get(
+                "max_font_size", self._min_allowed_font_size)
+            page_min = page_content.get(
+                "min_font_size", self._max_allowed_font_size)
+
+            # Update global max and min font sizes
+            global_max_font_size = max(global_max_font_size, page_max)
+            global_min_font_size = min(global_min_font_size, page_min)
+
+        self._max_font_size = global_max_font_size
+        self._min_font_size = global_min_font_size
+
+    #!just for debugging
+
+    def visualize_bboxes(self, page, page_content: dict) -> None:
+        """
+        Visualizes bounding boxes on the given page by drawing rectangles and writing the index
+        of each box in its center.
+
+        Args:
+            page (Page): The PyMuPDF page object to annotate.
+            page_content (dict): A dictionary containing page data including 'text_data' and 'obstacles'.
+        """
+        text_bboxes = page_content["text_data"][1]  # Extract text_bboxes from text_data
+        obstacle_bboxes = page_content["obstacles"]
+
+        # Create a shape object for drawing text_boxes
+        shape = page.new_shape()
+
+        for index, bbox in enumerate(text_bboxes):
+            # Draw the bounding box in red
+            shape.draw_rect(bbox)
+
+            # Write the index number (+1) in the center of the box
+            center_x = (bbox.x0 + bbox.x1) / 2
+            center_y = (bbox.y0 + bbox.y1) / 2
+            shape.insert_text((center_x, center_y), str(
+                index + 1), fontsize=20, color=(1, 0, 0))
+
+        # Commit the drawings to the page
+        shape.finish(color=(1, 0, 0), fill=None, width=1)
+        shape.commit()
+
+        # Create a shape object for drawing obstacles
+        shape = page.new_shape()
+
+        for index, bbox in enumerate(obstacle_bboxes):
+            # Draw the bounding box in green
+            shape.draw_rect(bbox)
+
+            # Write the index number (+1) in the center of the box
+            center_x = (bbox.x0 + bbox.x1) / 2
+            center_y = (bbox.y0 + bbox.y1) / 2
+            shape.insert_text((center_x, center_y), str(
+                index + 1), fontsize=20, color=(0, 1, 0))
+
+        # Commit the drawings to the page
+        shape.finish(color=(0, 1, 0), fill=None, width=1)
+        shape.commit()
+
+        # Render the page as a pixmap
+        pix = page.get_pixmap()
+
+        # Convert the pixmap to a Pillow image
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+
+        # Show the image using Pillow
+        img.show()
+
+
+# Example usage:
+if __name__ == "__main__":
+
+    test_pdf_path = "test_data/pdf"
+    test_docs = [
+        "Grundwasser-Überwachungsprogramm - 2022.pdf",
+        "Auf zu neuen Wegen – gemeinschaftlich und nachhaltig wirtschaften!_2022.pdf",
+        "10274-Sondermessungen_2020_Abschlussbericht.pdf",
+        "Energie-_und_Stoffstrommanagement._Praxisbeispiel_Kunststofflackierung.pdf",
+    ]
+    DOCUMENT = 0
+    TEST_PAGE = 9
+    margins = [10, 10, 10, 10]
+    pdf_extractor = PDFExtractor(
+        pdf_path=f"{test_pdf_path}/{test_docs[DOCUMENT]}")
+    page = pdf_extractor.doc[TEST_PAGE-1]
+    page_content = pdf_extractor._document_content[TEST_PAGE-1]
+    pdf_extractor.visualize_bboxes(page=page, page_content=page_content)
+    obstacle = page_content["obstacles"][20]
+    # pdf_extractor._find_connected_text_boxes(page, margins)
 
     # def _cluster_and_normalize_fonts(self, page_content: dict) -> dict:
     #     """
@@ -1069,7 +1049,7 @@ class PDFExtractor:
     #     return page_content
 
     # def _normalize_font_sizes(self, page_content: dict) -> dict:
-    #     """
+    #  """
     #     Normalizes font sizes across the extracted text blocks within the page_content dictionary.
 
     #     Args:
@@ -1079,10 +1059,10 @@ class PDFExtractor:
     #         dict: The updated page_content dictionary with normalized font size information added
     #             to each text block under the key 'normalized_font_size'.
     #     """
-    #     text_blocks = page_content["text_data"][0]  # Extract text_blocks from page_content
+    #   text_blocks = page_content["text_data"][0]  # Extract text_blocks from page_content
 
-    #     # Ensure max_font_size and min_font_size are set as object variables
-    #     if not hasattr(self, "_max_font_size") or not hasattr(self, "_min_font_size"):
+    #    # Ensure max_font_size and min_font_size are set as object variables
+    #    if not hasattr(self, "_max_font_size") or not hasattr(self, "_min_font_size"):
     #         raise AttributeError(
     #             "Object variables '_max_font_size' and '_min_font_size' must be set before calling this method."
     #         )
@@ -1100,132 +1080,3 @@ class PDFExtractor:
     #     page_content["text_data"] = (text_blocks, page_content["text_data"][1])
 
     #     return page_content
-
-    def _calculate_min_max_font_size(self) -> None:
-        """
-        Calculates the minimum and maximum font sizes across the entire document
-        using the precomputed data stored in `self._document_content`.
-
-        This method updates the following object variables:
-            - self._max_font_size: The largest font size found in the document.
-            - self._min_font_size: The smallest font size found in the document.
-
-        Raises:
-            AttributeError: If `self._document_content` is not initialized or if the
-                            constants for allowed font sizes are not set.
-        """
-        if not hasattr(self, "_document_content") or not self._document_content:
-            raise AttributeError(
-                "The document content 'self._document_content' is not initialized or empty."
-            )
-
-        # Ensure constants for allowed font sizes are defined
-        if not hasattr(self, "_min_allowed_font_size") or not hasattr(self, "_max_allowed_font_size"):
-            raise AttributeError(
-                "The object must have '_min_allowed_font_size' and '_max_allowed_font_size' constants defined."
-            )
-
-        # Initialize global min and max font sizes with object constants
-        # Start with the maximum allowed value
-        global_min_font_size = self._max_allowed_font_size
-        # Start with the minimum allowed value
-        global_max_font_size = self._min_allowed_font_size
-
-        # Iterate through page-level max and min font sizes
-        for page_content in self._document_content:
-            page_max = page_content.get(
-                "max_font_size", self._min_allowed_font_size)
-            page_min = page_content.get(
-                "min_font_size", self._max_allowed_font_size)
-
-            # Update global max and min font sizes
-            global_max_font_size = max(global_max_font_size, page_max)
-            global_min_font_size = min(global_min_font_size, page_min)
-
-        # Handle case where no valid font sizes are found
-        if global_max_font_size == self._min_allowed_font_size and global_min_font_size == self._max_allowed_font_size:
-            # No font sizes found in the document
-            self._max_font_size = 0
-            self._min_font_size = 0
-        else:
-            self._max_font_size = global_max_font_size
-            self._min_font_size = global_min_font_size
-
-    #!just for debugging
-
-    def visualize_bboxes(self, page, page_content: dict) -> None:
-        """
-        Visualizes bounding boxes on the given page by drawing rectangles and writing the index
-        of each box in its center.
-
-        Args:
-            page (Page): The PyMuPDF page object to annotate.
-            page_content (dict): A dictionary containing page data including 'text_data' and 'obstacles'.
-        """
-        text_bboxes = page_content["text_data"][1]  # Extract text_bboxes from text_data
-        obstacle_bboxes = page_content["obstacles"]
-
-        # Create a shape object for drawing text_boxes
-        shape = page.new_shape()
-
-        for index, bbox in enumerate(text_bboxes):
-            # Draw the bounding box in red
-            shape.draw_rect(bbox)
-
-            # Write the index number (+1) in the center of the box
-            center_x = (bbox.x0 + bbox.x1) / 2
-            center_y = (bbox.y0 + bbox.y1) / 2
-            shape.insert_text((center_x, center_y), str(
-                index + 1), fontsize=20, color=(1, 0, 0))
-
-        # Commit the drawings to the page
-        shape.finish(color=(1, 0, 0), fill=None, width=1)
-        shape.commit()
-
-        # Create a shape object for drawing obstacles
-        shape = page.new_shape()
-
-        for index, bbox in enumerate(obstacle_bboxes):
-            # Draw the bounding box in green
-            shape.draw_rect(bbox)
-
-            # Write the index number (+1) in the center of the box
-            center_x = (bbox.x0 + bbox.x1) / 2
-            center_y = (bbox.y0 + bbox.y1) / 2
-            shape.insert_text((center_x, center_y), str(
-                index + 1), fontsize=20, color=(0, 1, 0))
-
-        # Commit the drawings to the page
-        shape.finish(color=(0, 1, 0), fill=None, width=1)
-        shape.commit()
-
-        # Render the page as a pixmap
-        pix = page.get_pixmap()
-
-        # Convert the pixmap to a Pillow image
-        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-
-        # Show the image using Pillow
-        img.show()
-
-
-# Example usage:
-if __name__ == "__main__":
-
-    test_pdf_path = "test_data/pdf"
-    test_docs = [
-        "Grundwasser-Überwachungsprogramm - 2022.pdf",
-        "Auf zu neuen Wegen – gemeinschaftlich und nachhaltig wirtschaften!_2022.pdf",
-        "10274-Sondermessungen_2020_Abschlussbericht.pdf",
-        "Energie-_und_Stoffstrommanagement._Praxisbeispiel_Kunststofflackierung.pdf",
-    ]
-    DOCUMENT = 0
-    TEST_PAGE = 9
-    margins = [10, 10, 10, 10]
-    pdf_extractor = PDFExtractor(
-        pdf_path=f"{test_pdf_path}/{test_docs[DOCUMENT]}")
-    page = pdf_extractor.doc[TEST_PAGE-1]
-    page_content = pdf_extractor._document_content[TEST_PAGE-1]
-    pdf_extractor.visualize_bboxes(page=page, page_content=page_content)
-    obstacle = page_content["obstacles"][20]
-    # pdf_extractor._find_connected_text_boxes(page, margins)

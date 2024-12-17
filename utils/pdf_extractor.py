@@ -2,9 +2,10 @@
 
 from io import BytesIO
 import re
+from typing import List
 from PIL import Image
 from pprint import pprint
-from pymupdf import Rect
+from pymupdf import Rect, IRect
 import pymupdf
 from pathlib import Path
 
@@ -53,7 +54,7 @@ class PDFExtractor:
 
         # Background bounding box thresholds
         # Minimum area for considering a bounding box as part of the background
-        self._min_area_for_background = 1000
+        self._min_area_for_background = 100
         # Minimum size (width or height) for considering a bounding box as part of the background
         self._min_size_for_background = 10
 
@@ -74,15 +75,26 @@ class PDFExtractor:
         self._max_allowed_font_size = 100
 
         # Table detection
-        # Number of narrow spans required to consider a block as a potential table
-        self._min_potential_table_entries = 8
-
-        # Maximum relative width of a narrow span (relative to page width)
-        self._max_relative_span_width = 0.2
+        # Maximum width for a box to be considered a vertical line (in pixels)
+        self._max_width_for_vertical_line = 5
+        # Minimum height for a box to be considered a vertical line (in pixels)
+        self._min_height_for_vertical_line = 20
+        # Tolerance for determining similar vertical position of lines or background_bboxes (in pixels)
+        self._table_vertical_position_tolerance = 5
+        # Tolerance for determining similar horizontal position of lines or background_bboxes (in pixels)
+        self._table_horizontal_position_tolerance = 5
+        # Minimum number of parallel vertical lines required to indicate a table
+        self._min_parallel_lines_for_table = 3
+        # Minimum number of background blocks in a row required to indicate a table
+        self._min_table_rows = 2
+        # Minimum number of background blocks in a colun required to indicate a table
+        self._min_table_cols = 2
 
         # Document-level data
-        self.doc = None  # The PDF document object loaded with pymupdf
-        self.pdf_path = None  # Path to the currently loaded PDF file
+        # The PDF document object loaded with pymupdf
+        self.doc = None
+        # Path to the currently loaded PDF file
+        self.pdf_path = None
         # Margins for each page, specified as a list of lists [[left, top, right, bottom]]
         self._pages_margins = None
 
@@ -164,13 +176,6 @@ class PDFExtractor:
         # Cluster fonts and normalize font sizes per page
         for page_content in self._document_content:
 
-            #! depr
-            # Cluster and normalize fonts
-            # page_content = self._cluster_and_normalize_fonts(page_content)
-            # Normalize font sizes
-            # page_content = self._cluster_fonts(page_content)
-            # page_content = self._normalize_font_sizes(page_content)
-
             # Count font and font size combinations
             text_blocks = page_content["text_data"][0]
             for block in text_blocks:
@@ -214,9 +219,8 @@ class PDFExtractor:
 
         self._document_content = []  # Initialize the container for all page contents
 
-        for page_number, (page, page_margins) in enumerate(zip(self.doc, self._pages_margins)):
+        for page, page_margins in zip(self.doc, self._pages_margins):
             # Extract and sort page content
-            print(f"{page_number=}")
             page_content = self._extract_page_content(page, page_margins)
             page_content = self._sort_text_data(page_content)
 
@@ -385,18 +389,14 @@ class PDFExtractor:
     #         "min_font_size": min_font_size,
     #     }
 
-    @measure_exec_time
+    # @measure_exec_time
     def _extract_page_content(self, page: pymupdf.Page, page_margins: list[int]) -> dict:
         """
         Extracts content from a PDF page within the specified margins and organizes it into
         geometric data, text blocks, obstacle information, and font-size distribution.
         """
-        # Page width for relative span width calculation
-        page_width = page.rect.width
-        max_absolute_span_width = self._max_relative_span_width*page_width
-
         # Geometry data
-        clip_rect = Rect(page_margins[0], page_margins[1], page_width -
+        clip_rect = Rect(page_margins[0], page_margins[1], page.rect.width -
                          page_margins[2], page.rect.height - page_margins[3])
 
         # Extract text blocks
@@ -420,31 +420,57 @@ class PDFExtractor:
         max_font_size = self._min_allowed_font_size
         min_font_size = self._max_allowed_font_size
 
-        # Find image, and graphic boxes
-        # tables = page.find_tables()
-        # table_bboxes = [Rect(table.bbox).irect for table in tables]
+        # Extract images
         images = page.get_images()
         image_bboxes = [page.get_image_rects(
             image)[0].irect for image in images]
+        # Extract graphics
         graphics = page.get_drawings()
         graphic_bboxes = [graphic["rect"].irect for graphic in graphics]
 
+        # Initialize lists for background, filtered graphics, and vertical lines
         background_bboxes = []
         filtered_graphic_bboxes = []
+        vertical_lines = []
 
-        # start_time = time.perf_counter()
-        for box in graphic_bboxes:
-            if box.width * box.height > self._min_area_for_background and min(box.width, box.height) > self._min_size_for_background:
-                background_bboxes.append(box)
+        # Classify graphics into background, filtered graphics, and vertical lines
+        for bbox in graphic_bboxes:
+            bbox_width = bbox.width
+            bbox_height = bbox.height
+
+            # Check for background graphics
+            if bbox_width * bbox_height > self._min_area_for_background and min(bbox_width, bbox_height) > self._min_size_for_background:
+                background_bboxes.append(bbox)
+                continue
             else:
-                filtered_graphic_bboxes.append(box)
-        graphic_bboxes = filtered_graphic_bboxes
+                filtered_graphic_bboxes.append(bbox)
+
+            # Check for vertical lines using absolute pixel tolerances
+            if bbox_width <= self._max_width_for_vertical_line and bbox_height >= self._min_height_for_vertical_line:
+                vertical_lines.append(bbox)
+
+        graphic_bboxes = list(set(filtered_graphic_bboxes))
+        background_bboxes = list(set(background_bboxes))
+        vertical_lines = list(set(vertical_lines))
+
+        # Check for potential tables
+        print(f"Page {page.number+1}")
+        potential_table = self._are_tables_on_page(
+            vertical_lines, background_bboxes)
+
+        # Extract tables
+        if potential_table:
+            start = time.perf_counter()
+            tables = page.find_tables()
+            table_bboxes = [Rect(table.bbox).irect for table in tables]
+            print(f"Time to find table:{time.perf_counter()-start:.3f}s")
+        else:
+            table_bboxes = []
 
         # Text blocks
         text_bboxes = []
         non_horizontal_text_bboxes = []
         filtered_text_blocks = []
-        table_bboxes = []
 
         for block in text_blocks:
             if not block.get("lines", []):
@@ -454,29 +480,12 @@ class PDFExtractor:
             if block["lines"][0]["dir"] != (1.0, 0.0):
                 non_horizontal_text_bboxes.append(Rect(block["bbox"]).irect)
                 continue
-            # todo improve performance table detection
-            if not table_bboxes:
-                # Check if the block might contain a table
-                # Count the number of lines with spans narrower than the threshold
-                narrow_span_count = sum(
-                    len([span for span in line.get("spans", []) if (
-                        span["bbox"][2] - span["bbox"][0]) <= max_absolute_span_width])
-                    for line in block["lines"]
-                )
-
-                # Determine if the block is a potential table
-                potential_table = narrow_span_count > self._min_potential_table_entries
-
-                # Detect tables if the block is a potential table
-                if potential_table:
-                    print("TABLE FOUND!")
-                    tables = page.find_tables()
-                    table_bboxes = [Rect(table.bbox).irect for table in tables]
 
             # Skip the block if it is within a detected table
-            if any(self._is_bbox_within(Rect(block["bbox"]).irect, table_bbox) for table_bbox in table_bboxes):
+            if table_bboxes and any(self._is_bbox_within(Rect(block["bbox"]).irect, table_bbox) for table_bbox in table_bboxes):
                 continue
 
+            # Textblock is relevant
             filtered_text_blocks.append(block)
 
             # Process spans for font and size distribution
@@ -521,7 +530,7 @@ class PDFExtractor:
         if self.consider_bg_colors:
             obstacle_bboxes += background_bboxes
 
-        return {
+        page_content = {
             "geometry": clip_rect,
             "text_data": (filtered_text_blocks, text_bboxes),
             "obstacles": obstacle_bboxes,
@@ -530,6 +539,7 @@ class PDFExtractor:
             "max_font_size": max_font_size,
             "min_font_size": min_font_size,
         }
+        return page_content
 
     def _cluster_span_font(self, font_name: str, clusters: dict) -> str:
         """
@@ -552,116 +562,183 @@ class PDFExtractor:
         clusters[font_name] = root
         return root
 
-    # def _extract_page_content(self, page: pymupdf.Page, page_margins: list[int]) -> dict:
-    #     """
-    #     Extracts content from a PDF page within the specified margins and organizes it into
-    #     geometric data, text blocks, and obstacle information.
+    def _are_tables_on_page(self, vertical_lines: List[IRect], background_bboxes: List[IRect]) -> bool:
+        # # Check for parallel vertical lines of similar length
+        if vertical_lines and len(vertical_lines) >= self._min_parallel_lines_for_table:
+            # Compare lines to find similar lengths
+            for i in range(len(vertical_lines)-1):
+                same_vertical_position_count = 1
+                line = vertical_lines[i]
+                for j in range(i+1, len(vertical_lines)):
+                    other_line = vertical_lines[j]
+                    if abs(line.y0-other_line.y0) <= self._table_vertical_position_tolerance and abs(line.y1-other_line.y1) <= self._table_vertical_position_tolerance:
+                        same_vertical_position_count += 1
+                    if same_vertical_position_count >= self._min_parallel_lines_for_table:
+                        return True
 
-    #     Args:
-    #         page (pymupdf.Page): The page object to extract content from.
-    #         page_margins (list[int]): A list of integers specifying margins (left, top, right, bottom)
-    #                                 for clipping the page content.
+        # todo testtables needed
+        if background_bboxes and len(background_bboxes) >= self._min_table_cols*self._min_table_rows:
+            # Find rows
+            rows = []
+            background_bboxes.sort(
+                key=lambda background_bbox: background_bbox.y0)
 
-    #     Returns:
-    #         dict: A dictionary containing the following keys:
-    #             - "geometry" (Rect): The rectangular area used for clipping the content.
-    #             - "text_data" (tuple): A tuple containing:
-    #                 * A list of dictionaries representing text blocks within the clipped area.
-    #                 * A list of Rect objects representing the bounding boxes of the text blocks.
-    #             - "obstacles" (list[Rect]): A list of Rect objects representing obstacles
-    #                                         such as non-horizontal text, tables, images, and graphics.
-    #             - "backgrounds" (list[Rect]): A list of Rect objects representing background graphics
-    #                                         meeting the specified size and area criteria.
-    #     """
-    #     # geometric data
-    #     left = page_margins[0]
-    #     top = page_margins[1]
-    #     right = page.rect.width - page_margins[2]
-    #     bottom = page.rect.height - page_margins[3]
-    #     clip_rect = Rect(left, top, right, bottom)
+            first_bbox = background_bboxes[0]
+            row = [first_bbox]
+            for background_bbox in background_bboxes[1:]:
+                if self._are_in_row(first_bbox, background_bbox):
+                    row.append(background_bbox)
+                else:
+                    if len(row) >= self._min_table_cols:
+                        rows.append(row)
+                    first_bbox = background_bbox
+                    row = [first_bbox]
 
-    #     # Get text blocks within clipped area
-    #     text_blocks = page.get_text("dict", clip=clip_rect)["blocks"]
+            if len(rows) < self._min_table_rows:
+                return False
 
-    #     # If no text found on this page
-    #     if not text_blocks:
-    #         {
-    #             "geometry": clip_rect,
-    #             "text_data": ([{"font_name": "", "lines": []}], []),
-    #             "obstacles": [],
-    #             "backgrounds": [],
-    #         }
+            # Group rows to potential tables
+            potential_tables = []
+            potential_table = [rows[0]]
+            for i in range(len(rows)-1):
+                # Check is rows are directly consecutive
+                if abs(rows[i][0].y1-rows[i+1][0].y0) <= self._table_vertical_position_tolerance and len(rows[i]) == len(rows[i+1]):
+                    potential_table.append(rows[i+1])
+                else:
+                    # Ensure that potential table has sufficient number of rows
+                    if len(potential_table) >= self._min_table_rows:
+                        potential_tables.append(potential_table)
+                    potential_table = [rows[i+1]]
 
-    #     # Separate horizontal and non-horizontal text blocks in one pass
-    #     non_horizontal_text_bboxes = []
-    #     filtered_text_blocks = []
+            if not potential_tables:
+                return False
 
-    #     for block in text_blocks:
-    #         if block.get("lines") and len(block["lines"]) > 0 and block["lines"][0]["dir"] != (1.0, 0.0):
-    #             non_horizontal_text_bboxes.append(Rect(block["bbox"]).irect)
-    #         else:
-    #             filtered_text_blocks.append(block)
+            # Check if cols in potential tables are aligned
+            tables = []
 
-    #     # Update text_blocks to only contain horizontal text blocks
-    #     text_blocks = filtered_text_blocks
+            for potential_table in potential_tables:
+                first_row = potential_table[0]
+                table = [first_row]
+                for row in rows[1:]:
+                    # Check if all cols are aligned for pair of rows
+                    if all(self._are_in_col(bbox1, bbox2) for bbox1, bbox2 in zip(first_row, row)):
+                        table.append(row)
+                    else:
+                        if len(table) >= self._min_table_rows:
+                            tables.append(table)
+                        table = [row]
+            return len(tables) > 0
 
-    #     # Find table, image, and graphic boxes
-    #     tables = page.find_tables()
-    #     table_bboxes = [Rect(table.bbox).irect for table in tables]
+            # def _extract_page_content(self, page: pymupdf.Page, page_margins: list[int]) -> dict:
+            #     """
+            #     Extracts content from a PDF page within the specified margins and organizes it into
+            #     geometric data, text blocks, and obstacle information.
 
-    #     images = page.get_images()
-    #     image_bboxes = [page.get_image_rects(
-    #         image)[0].irect for image in images]
+            #     Args:
+            #         page (pymupdf.Page): The page object to extract content from.
+            #         page_margins (list[int]): A list of integers specifying margins (left, top, right, bottom)
+            #                                 for clipping the page content.
 
-    #     graphics = page.get_drawings()
-    #     graphic_bboxes = [graphic["rect"].irect for graphic in graphics]
+            #     Returns:
+            #         dict: A dictionary containing the following keys:
+            #             - "geometry" (Rect): The rectangular area used for clipping the content.
+            #             - "text_data" (tuple): A tuple containing:
+            #                 * A list of dictionaries representing text blocks within the clipped area.
+            #                 * A list of Rect objects representing the bounding boxes of the text blocks.
+            #             - "obstacles" (list[Rect]): A list of Rect objects representing obstacles
+            #                                         such as non-horizontal text, tables, images, and graphics.
+            #             - "backgrounds" (list[Rect]): A list of Rect objects representing background graphics
+            #                                         meeting the specified size and area criteria.
+            #     """
+            #     # geometric data
+            #     left = page_margins[0]
+            #     top = page_margins[1]
+            #     right = page.rect.width - page_margins[2]
+            #     bottom = page.rect.height - page_margins[3]
+            #     clip_rect = Rect(left, top, right, bottom)
 
-    #     background_bboxes = []
-    #     filtered_graphic_bboxes = []
+            #     # Get text blocks within clipped area
+            #     text_blocks = page.get_text("dict", clip=clip_rect)["blocks"]
 
-    #     for box in graphic_bboxes:
-    #         if box.width * box.height > self._min_area_for_background and min(box.width, box.height) > self._min_size_for_background:
-    #             background_bboxes.append(box)
-    #         else:
-    #             filtered_graphic_bboxes.append(box)
+            #     # If no text found on this page
+            #     if not text_blocks:
+            #         {
+            #             "geometry": clip_rect,
+            #             "text_data": ([{"font_name": "", "lines": []}], []),
+            #             "obstacles": [],
+            #             "backgrounds": [],
+            #         }
 
-    #     graphic_bboxes = filtered_graphic_bboxes
+            #     # Separate horizontal and non-horizontal text blocks in one pass
+            #     non_horizontal_text_bboxes = []
+            #     filtered_text_blocks = []
 
-    #     obstacle_bboxes = non_horizontal_text_bboxes + \
-    #         table_bboxes+image_bboxes+graphic_bboxes
-    #     if self.consider_bg_colors:
-    #         obstacle_bboxes += background_bboxes
+            #     for block in text_blocks:
+            #         if block.get("lines") and len(block["lines"]) > 0 and block["lines"][0]["dir"] != (1.0, 0.0):
+            #             non_horizontal_text_bboxes.append(Rect(block["bbox"]).irect)
+            #         else:
+            #             filtered_text_blocks.append(block)
 
-    #     # Ignore tables
-    #     if self.ignore_tables:
-    #         text_blocks = [block for block in text_blocks if not any(
-    #             self._is_bbox_within(Rect(block["bbox"]).irect, table_bbox) for table_bbox in table_bboxes)]
+            #     # Update text_blocks to only contain horizontal text blocks
+            #     text_blocks = filtered_text_blocks
 
-    #     # Combine lines within blocks into bounding boxes
-    #     text_bboxes = []
-    #     for block in text_blocks:
-    #         # Skip blocks without "lines" or empty "lines" lists
-    #         if not block.get("lines") or len(block["lines"]) == 0:
-    #             continue
+            #     # Find table, image, and graphic boxes
+            #     tables = page.find_tables()
+            #     table_bboxes = [Rect(table.bbox).irect for table in tables]
 
-    #         # Use the first line's bbox as initial rect
-    #         initial_rect = list(block["lines"][0]["bbox"])
-    #         for line in block["lines"]:
-    #             # Check for non-empty text spans
-    #             if any(span["text"].strip() for span in line["spans"]):
-    #                 line_bbox = line["bbox"]
-    #                 initial_rect[0] = min(initial_rect[0], line_bbox[0])
-    #                 initial_rect[1] = min(initial_rect[1], line_bbox[1])
-    #                 initial_rect[2] = max(initial_rect[2], line_bbox[2])
-    #                 initial_rect[3] = max(initial_rect[3], line_bbox[3])
-    #         text_bboxes.append(Rect(initial_rect).irect)
+            #     images = page.get_images()
+            #     image_bboxes = [page.get_image_rects(
+            #         image)[0].irect for image in images]
 
-    #     return {
-    #         "geometry": clip_rect,
-    #         "text_data": (text_blocks, text_bboxes),
-    #         "obstacles": obstacle_bboxes,
-    #         "backgrounds": background_bboxes,
-    #     }
+            #     graphics = page.get_drawings()
+            #     graphic_bboxes = [graphic["rect"].irect for graphic in graphics]
+
+            #     background_bboxes = []
+            #     filtered_graphic_bboxes = []
+
+            #     for box in graphic_bboxes:
+            #         if box.width * box.height > self._min_area_for_background and min(box.width, box.height) > self._min_size_for_background:
+            #             background_bboxes.append(box)
+            #         else:
+            #             filtered_graphic_bboxes.append(box)
+
+            #     graphic_bboxes = filtered_graphic_bboxes
+
+            #     obstacle_bboxes = non_horizontal_text_bboxes + \
+            #         table_bboxes+image_bboxes+graphic_bboxes
+            #     if self.consider_bg_colors:
+            #         obstacle_bboxes += background_bboxes
+
+            #     # Ignore tables
+            #     if self.ignore_tables:
+            #         text_blocks = [block for block in text_blocks if not any(
+            #             self._is_bbox_within(Rect(block["bbox"]).irect, table_bbox) for table_bbox in table_bboxes)]
+
+            #     # Combine lines within blocks into bounding boxes
+            #     text_bboxes = []
+            #     for block in text_blocks:
+            #         # Skip blocks without "lines" or empty "lines" lists
+            #         if not block.get("lines") or len(block["lines"]) == 0:
+            #             continue
+
+            #         # Use the first line's bbox as initial rect
+            #         initial_rect = list(block["lines"][0]["bbox"])
+            #         for line in block["lines"]:
+            #             # Check for non-empty text spans
+            #             if any(span["text"].strip() for span in line["spans"]):
+            #                 line_bbox = line["bbox"]
+            #                 initial_rect[0] = min(initial_rect[0], line_bbox[0])
+            #                 initial_rect[1] = min(initial_rect[1], line_bbox[1])
+            #                 initial_rect[2] = max(initial_rect[2], line_bbox[2])
+            #                 initial_rect[3] = max(initial_rect[3], line_bbox[3])
+            #         text_bboxes.append(Rect(initial_rect).irect)
+
+            #     return {
+            #         "geometry": clip_rect,
+            #         "text_data": (text_blocks, text_bboxes),
+            #         "obstacles": obstacle_bboxes,
+            #         "backgrounds": background_bboxes,
+            #     }
 
     def _extend_bounding_boxes(self, page_content: dict) -> dict:
         """
@@ -814,6 +891,40 @@ class PDFExtractor:
             and inner_bbox.y0 >= outer_bbox.y0
             and inner_bbox.x1 <= outer_bbox.x1
             and inner_bbox.y1 <= outer_bbox.y1
+        )
+
+    def _are_in_row(self, bbox: IRect, other_bbox: IRect) -> bool:
+        """
+        Checks if two bounding boxes are within the same row.
+
+        Args:
+            bbox (IRect): The first bounding box to compare.
+            other_bbox (IRect): The second bounding box to compare.
+
+        Returns:
+            bool: True if the two bounding boxes are within the same row based on vertical position tolerance, 
+                False otherwise.
+        """
+        return (
+            abs(bbox.y0 - other_bbox.y0) <= self._table_vertical_position_tolerance
+            and abs(bbox.y1 - other_bbox.y1) <= self._table_vertical_position_tolerance
+        )
+
+    def _are_in_col(self, bbox: IRect, other_bbox: IRect) -> bool:
+        """
+        Checks if two bounding boxes are within the same column.
+
+        Args:
+            bbox (IRect): The first bounding box to compare.
+            other_bbox (IRect): The second bounding box to compare.
+
+        Returns:
+            bool: True if the two bounding boxes are within the same column based on horizontal position tolerance, 
+                False otherwise.
+        """
+        return (
+            abs(bbox.x0 - other_bbox.x0) <= self._table_horizontal_position_tolerance
+            and abs(bbox.x1 - other_bbox.x1) <= self._table_horizontal_position_tolerance
         )
 
     def _has_bg_color(self, bbox, background_bboxes):
@@ -1105,11 +1216,16 @@ if __name__ == "__main__":
     test_docs = [
         "Grundwasser-Überwachungsprogramm - 2022.pdf",
         "Auf zu neuen Wegen – gemeinschaftlich und nachhaltig wirtschaften!_2022.pdf",
+        "10274-Sondermessungen_2020_Abschlussbericht.pdf",
+        "Energie-_und_Stoffstrommanagement._Praxisbeispiel_Kunststofflackierung.pdf",
     ]
     DOCUMENT = 0
-    TEST_PAGE = 31
+    TEST_PAGE = 9
     margins = [10, 10, 10, 10]
     pdf_extractor = PDFExtractor(
         pdf_path=f"{test_pdf_path}/{test_docs[DOCUMENT]}")
-    # page = pdf_extractor.doc[TEST_PAGE]
+    page = pdf_extractor.doc[TEST_PAGE-1]
+    page_content = pdf_extractor._document_content[TEST_PAGE-1]
+    pdf_extractor.visualize_bboxes(page=page, page_content=page_content)
+    obstacle = page_content["obstacles"][20]
     # pdf_extractor._find_connected_text_boxes(page, margins)

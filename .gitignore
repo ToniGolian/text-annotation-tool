@@ -164,3 +164,4 @@ cython_debug/
 /.VSCodeCounter
 todo.txt
 /test_data
+/test_img

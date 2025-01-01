@@ -1,6 +1,6 @@
 
 
-from io import BytesIO
+import os
 import re
 from typing import List
 from PIL import Image
@@ -33,7 +33,7 @@ def measure_exec_time(func):
 
 
 class PDFExtractor:
-    def __init__(self, pdf_path: str = "", consider_bg_colors: bool = False, ignore_tables: bool = True, ignore_headlines: bool = True):
+    def __init__(self, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, ignore_headlines: bool = True):
         """
         Initializes the PDFExtractor with the given PDF path and various processing options.
 
@@ -68,12 +68,6 @@ class PDFExtractor:
         # Column gap tolerance (in pixels) for preventing merging across columns
         self._column_gap_tolerance = 1
 
-        # Allowed font sizes
-        # Minimum allowed font size
-        self._min_allowed_font_size = 0
-        # Maximum allowed font size
-        self._max_allowed_font_size = 100
-
         # Table detection
         # Maximum width for a box to be considered a vertical line (in pixels)
         self._max_width_for_vertical_line = 5
@@ -95,24 +89,25 @@ class PDFExtractor:
         self.doc = None
         # Path to the currently loaded PDF file
         self.pdf_path = None
+        # List of relevant pages
+        self._relevant_pages = None
         # Margins for each page, specified as a list of lists [[left, top, right, bottom]]
         self._pages_margins = None
+        # Default value vor not specified page margins
+        self._default_margins = [10, 10, 10, 10]
 
         # Processed data
         self._document_content = []  # List storing extracted and processed data for each page
         # Dictionary tracking the frequency of (clustered_font, normalized_font_size) combinations
         self._font_size_distribution = {}
 
-        # Font size metadata
-        self._max_font_size = 0  # The largest font size found in the document
-        self._min_font_size = 0  # The smallest font size found in the document
-
         # Load the PDF document if a path is provided
         if pdf_path:
-            self._load_document(pdf_path)
+            self.load_document(
+                pdf_path=pdf_path, pages_margins=pages_margins, pages=pages)
 
     @measure_exec_time
-    def _load_document(self, pdf_path: str, pages_margins: list = None) -> None:
+    def load_document(self, pdf_path: str, pages_margins: list = None, pages: str = None) -> None:
         """
         Loads a new PDF document, initializes margins, extracts document data,
         and computes font clustering, font size normalization, and their distribution.
@@ -130,77 +125,151 @@ class PDFExtractor:
         self.doc = pymupdf.open(self.pdf_path)
 
         self._initialize_pages_margins(pages_margins)
+        self._initialize_relevant_pages(pages)
         self._extract_document()
-        self._calculate_min_max_font_size()
-        self._analyze_font_size_distribution()
+        self._accumulate_font_size_distribution()
+        self._filter_by_font_and_size()
+        if self.ignore_headlines:
+            self._filter_headlines()
 
-    def _initialize_pages_margins(self, pages_margins: list = None) -> None:
+    def _initialize_pages_margins(self, pages_margins: str = None) -> None:
         """
         Initializes the page margins for the document.
 
-        If `pages_margins` is provided, it validates that its length matches the number
-        of pages in the document. Otherwise, it assigns a default margin of [10, 10, 10, 10]
-        to all pages.
+        If `pages_margins` is provided as a string, it applies specific margin values 
+        to designated pages based on the string format "<pages>:<margins>;<pages>:<margins>".
+        If no string is provided, all pages are initialized with the default margins.
 
         Args:
-            pages_margins (list, optional): A list of margin definitions for each page,
-                                            where each entry is a list of four integers.
-                                            Defaults to None.
+            pages_margins (str, optional): A string defining margins for specific pages.
+                                        The format is "<pages>:<margins>", where <pages>
+                                        can be individual page numbers or ranges, and
+                                        <margins> can be a single value or four comma-separated values.
+                                        Defaults to None.
 
         Raises:
-            ValueError: If the number of margin entries in `pages_margins` does not match
-                        the number of pages in the document.
+            ValueError: If the format of the pages or margins is incorrect. Specific errors are raised for:
+                        - Invalid page specification
+                        - Incorrect margin format (not 1 or 4 values)
+                        - Missing margin specification for given pages
         """
-        if pages_margins:
-            if len(pages_margins) != len(self.doc):
+        # Initialize all pages with the default margins
+        self._pages_margins = [self._default_margins] * len(self.doc)
+
+        if not pages_margins:
+            return
+
+        # Process the string and apply custom margins
+        margin_instructions = pages_margins.split(";")
+
+        for instruction in margin_instructions:
+            # Handle missing ":" error
+            if ":" not in instruction:
                 raise ValueError(
-                    "The number of margin entries in 'pages_margins' must match the number of pages in the document."
-                )
-            self._pages_margins = pages_margins
-        else:
-            self._pages_margins = [[10, 10, 10, 10]] * len(self.doc)
+                    f"Missing margin specification for pages in '{instruction.strip()}'")
 
-    def _analyze_font_size_distribution(self) -> None:
+            pages_part, margins_part = map(str.strip, instruction.split(":"))
+
+            # Validate that both parts are present
+            if not pages_part or not margins_part:
+                raise ValueError(
+                    f"Incomplete instruction '{instruction.strip()}'. Both pages and margins must be specified.")
+
+            # Parse page numbers
+            page_numbers = set()
+            for part in pages_part.split(","):
+                part = part.strip()
+                if '-' in part:
+                    try:
+                        start, end = map(int, part.split("-"))
+                        if start > end:
+                            raise ValueError(
+                                f"Invalid page range '{part}' (start must be <= end).")
+                        page_numbers.update(range(start, end + 1))
+                    except ValueError:
+                        raise ValueError(
+                            f"Invalid page range format: '{part}'. Expected format 'start-end'.")
+                else:
+                    try:
+                        page_numbers.add(int(part))
+                    except ValueError:
+                        raise ValueError(
+                            f"Invalid page number '{part}'. Page numbers must be integers.")
+
+            # Parse margins
+            margins = list(map(str.strip, margins_part.split(",")))
+            try:
+                margins = list(map(int, margins))
+            except ValueError:
+                raise ValueError(
+                    f"Invalid margin values '{margins_part}'. Margins must be integers.")
+
+            if len(margins) not in {1, 4}:
+                raise ValueError(
+                    f"Invalid margin format '{margins_part}'. Must be 1 or 4 values.")
+
+            if len(margins) == 1:
+                margins = margins * 4  # Expand single value to [x, x, x, x]
+
+            # Apply margins to the relevant pages
+            for page in page_numbers:
+                if 1 <= page <= len(self.doc):
+                    self._pages_margins[page - 1] = margins
+                else:
+                    raise ValueError(
+                        f"Page number '{page}' is out of document range (1-{len(self.doc)}).")
+
+    def _initialize_relevant_pages(self, pages: str = None) -> None:
         """
-        Normalizes font sizes and computes the cumulative distribution of
-        (clustered_font, normalized_font_size) combinations across all pages.
+        Initializes the relevant pages list by parsing a string of page ranges and individual pages.
 
-        This method updates:
-            - self._font_size_distribution: A dictionary where keys are tuples
-            of (clustered_font, normalized_font_size) and values are the cumulative
-            character counts for those combinations.
-
-        Raises:
-            ValueError: If global minimum or maximum font sizes are not calculated.
+        Args:
+            pages (str, optional): A string describing page ranges and individual pages. Defaults to None.
         """
-        # Ensure that global min and max font sizes are available
-        if not hasattr(self, "_min_font_size") or not hasattr(self, "_max_font_size"):
-            raise ValueError(
-                "Global minimum and maximum font sizes must be calculated before analyzing distribution.")
-        if self._min_font_size >= self._max_font_size:
-            raise ValueError(
-                "Invalid font size range: minimum font size must be smaller than maximum font size.")
+        if pages is None:
+            self._relevant_pages = []
+            return
+
+        page_numbers = set()  # Use a set to avoid duplicates
+
+        # Replace ; with , to standardize the delimiter
+        parts = pages.replace(";", ",").split(",")
+
+        for part in parts:
+            if '-' in part:
+                # Handle range, e.g., "6-11"
+                start, end = part.split("-")
+                page_numbers.update(range(int(start), int(end) + 1))
+            else:
+                # Handle single page entry
+                page_numbers.add(int(part))
+
+        # Sort and assign to the instance variable
+        self._relevant_pages = sorted(page_numbers)
+
+    def _accumulate_font_size_distribution(self) -> None:
+        """
+        Accumulates the total character counts for each combination of 
+        clustered font and normalized font size across all pages.
+
+        Updates:
+            - self._font_size_distribution: A dictionary mapping 
+            (clustered_font, normalized_font_size) to the cumulative character count.
+        """
 
         # Initialize the cumulative font size distribution
         self._font_size_distribution = {}
-        font_size_range = (self._max_font_size - self._min_font_size)
 
         # Normalize and aggregate font size distribution
         for page_content in self._document_content:
             page_font_distribution = page_content.get(
                 "font_and_size_distribution", {})
 
-            for (clustered_font, raw_font_size), count in page_font_distribution.items():
-                # Normalize font size using global min and max font sizes
-                normalized_font_size = round(
-                    (raw_font_size - self._min_font_size) / font_size_range, 2
-                )
-                normalized_font_size = max(0, min(1, normalized_font_size))
-
-                # Update cumulative distribution
-                key = (clustered_font, normalized_font_size)
+            for key, count in page_font_distribution.items():
                 self._font_size_distribution[key] = self._font_size_distribution.get(
                     key, 0) + count
+
+        pprint(self._font_size_distribution)
 
     def _extract_document(self) -> None:
         """
@@ -219,22 +288,73 @@ class PDFExtractor:
 
         if not hasattr(self, "_pages_margins"):
             raise AttributeError(
-                "The margins object '_pages_margins' is not initialized.")
+                "The variable '_pages_margins' is not initialized.")
+
+        if not hasattr(self, "_relevant_pages"):
+            raise AttributeError(
+                "The variable '_relevant_pages' is not initialized.")
 
         # Validate that the number of margin entries matches the number of pages
         if len(self._pages_margins) != len(self.doc):
             raise ValueError(
                 "The number of margins in '_pages_margins' must match the number of pages in the document.")
 
-        self._document_content = []  # Initialize the container for all page contents
+        self._document_content = []
+
+        if self._relevant_pages:
+            self.doc = [self.doc[i-1] for i in self._relevant_pages]
+            self._pages_margins = [self._pages_margins[i-1]
+                                   for i in self._relevant_pages]
 
         for page, page_margins in zip(self.doc, self._pages_margins):
-            # Extract and sort page content
             page_content = self._extract_page_content(page, page_margins)
             page_content = self._sort_text_data(page_content)
-
-            # Append the processed page content to the document container
             self._document_content.append(page_content)
+
+    def _filter_by_font_and_size(self, maximum_different_fonts=1) -> None:
+        """
+        Filters the font size distribution to retain entries with the highest frequency,
+        ensuring that no more than the specified number of different fonts are selected.
+
+        The selected font keys are used to filter the page content, removing any text blocks
+        that do not match the selected (font, size) combinations.
+
+        Args:
+            maximum_different_fonts (int): The maximum number of different fonts to retain.
+                                        The entries with the highest frequency for each
+                                        selected font are chosen.
+        """
+        # Sort font size distribution by frequency (value) in descending order
+        sorted_distribution = sorted(
+            self._font_size_distribution.items(), key=lambda x: x[1], reverse=True)
+
+        selected_fonts = []
+        selected_fonts_set = set()  # For faster lookup
+
+        # Select entries until the desired number of different fonts is reached
+        for font, size in sorted_distribution:
+            if font not in selected_fonts_set:
+                selected_fonts.append((font, size))
+                selected_fonts_set.add(font)
+
+            if len(selected_fonts_set) == maximum_different_fonts:
+                break
+
+        # Filter page content based on selected fonts and sizes
+        for page_content in self._document_content:
+            filtered_data = [
+                (block, bbox) for block, bbox in zip(page_content["text_data"][0], page_content["text_data"][1])
+                if (block["clustered_font"], block["normalized_font_size"]) in selected_fonts
+            ]
+
+        # Update the page with filtered text blocks and bounding boxes
+        page_content["text_data"] = (
+            [block for block, _ in filtered_data],  # filtered_text_blocks
+            [bbox for _, bbox in filtered_data]     # text_bboxes
+        )
+
+    def _filter_headlines() -> None:
+        pass
 
     def _find_connected_text_boxes(self, page_content):
         """
@@ -270,15 +390,13 @@ class PDFExtractor:
                 "obstacles": [],
                 "backgrounds": [],
                 "font_and_size_distribution": {},
-                "max_font_size": 0,
-                "min_font_size": 0,
+                # "max_font_size": 0,
+                # "min_font_size": 0,
             }
 
         # Initialize variables
         font_and_size_distribution = {}
         clusters = {}
-        max_font_size = self._min_allowed_font_size
-        min_font_size = self._max_allowed_font_size
 
         # Extract images
         images = page.get_images()
@@ -338,8 +456,17 @@ class PDFExtractor:
                 non_horizontal_text_bboxes.append(Rect(block["bbox"]).irect)
                 continue
 
+            text_bbox = Rect(block["bbox"]).irect
+            # Skip the block if it is within a detected image
+            if image_bboxes and any(self._is_bbox_within(text_bbox, image_bbox) for image_bbox in image_bboxes):
+                continue
+
+            # Skip the block if it is within a detected graphic
+            if graphic_bboxes and any(self._is_bbox_within(text_bbox, graphic_bbox) for graphic_bbox in graphic_bboxes):
+                continue
+
             # Skip the block if it is within a detected table
-            if table_bboxes and any(self._is_bbox_within(Rect(block["bbox"]).irect, table_bbox) for table_bbox in table_bboxes):
+            if table_bboxes and any(self._is_bbox_within(text_bbox, table_bbox) for table_bbox in table_bboxes):
                 continue
 
             # Textblock is relevant
@@ -352,18 +479,12 @@ class PDFExtractor:
                     font_size = span.get("size", None)
                     if font_name is None or font_size is None:
                         continue
-                    font_size = round(font_size, 2)
-                    font_size = max(font_size, self._min_allowed_font_size)
-                    font_size = min(font_size, self._max_allowed_font_size)
-
-                    # Update min and max font sizes
-                    max_font_size = max(max_font_size, font_size)
-                    min_font_size = min(min_font_size, font_size)
+                    normalized_font_size = round(font_size*2, 0)/2
 
                     # Cluster font and count distribution
                     clustered_font = self._cluster_span_font(
                         font_name, clusters)
-                    key = (clustered_font, font_size)
+                    key = (clustered_font, normalized_font_size)
                     char_count = len(span.get("text", "").strip())
                     font_and_size_distribution[key] = font_and_size_distribution.get(
                         key, 0) + char_count
@@ -393,8 +514,6 @@ class PDFExtractor:
             "obstacles": obstacle_bboxes,
             "backgrounds": background_bboxes,
             "font_and_size_distribution": font_and_size_distribution,
-            "max_font_size": max_font_size,
-            "min_font_size": min_font_size,
         }
         return page_content
 
@@ -797,53 +916,9 @@ class PDFExtractor:
         """
         return any(self._is_bbox_within(bbox, bg_bbox) for bg_bbox in background_bboxes)
 
-    def _calculate_min_max_font_size(self) -> None:
-        """
-        Calculates the minimum and maximum font sizes across the entire document
-        using the precomputed data stored in `self._document_content`.
-
-        This method updates the following object variables:
-            - self._max_font_size: The largest font size found in the document.
-            - self._min_font_size: The smallest font size found in the document.
-
-        Raises:
-            AttributeError: If `self._document_content` is not initialized or if the
-                            constants for allowed font sizes are not set.
-        """
-        if not hasattr(self, "_document_content") or not self._document_content:
-            raise AttributeError(
-                "The document content 'self._document_content' is not initialized or empty."
-            )
-
-        # Ensure constants for allowed font sizes are defined
-        if not hasattr(self, "_min_allowed_font_size") or not hasattr(self, "_max_allowed_font_size"):
-            raise AttributeError(
-                "The object must have '_min_allowed_font_size' and '_max_allowed_font_size' constants defined."
-            )
-
-        # Initialize global min and max font sizes with object constants
-        # Start with the maximum allowed value
-        global_min_font_size = self._max_allowed_font_size
-        # Start with the minimum allowed value
-        global_max_font_size = self._min_allowed_font_size
-
-        # Iterate through page-level max and min font sizes
-        for page_content in self._document_content:
-            page_max = page_content.get(
-                "max_font_size", self._min_allowed_font_size)
-            page_min = page_content.get(
-                "min_font_size", self._max_allowed_font_size)
-
-            # Update global max and min font sizes
-            global_max_font_size = max(global_max_font_size, page_max)
-            global_min_font_size = min(global_min_font_size, page_min)
-
-        self._max_font_size = global_max_font_size
-        self._min_font_size = global_min_font_size
-
     #!just for debugging
 
-    def visualize_bboxes(self, page, page_content: dict) -> None:
+    def visualize_bboxes(self, page, page_content: dict, store: bool = False) -> None:
         """
         Visualizes bounding boxes on the given page by drawing rectangles and writing the index
         of each box in its center.
@@ -895,6 +970,20 @@ class PDFExtractor:
         # Convert the pixmap to a Pillow image
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
+        if store:
+            # Ensure the directory exists
+            output_dir = "test_img"
+            os.makedirs(output_dir, exist_ok=True)
+
+            # Define the output file path
+            output_path = os.path.join(
+                output_dir, f"page_{page.number + 1}.png")
+
+            # Save the image
+            img.save(output_path)
+
+            return
+
         # Show the image using Pillow
         img.show()
 
@@ -910,14 +999,20 @@ if __name__ == "__main__":
         "Energie-_und_Stoffstrommanagement._Praxisbeispiel_Kunststofflackierung.pdf",
     ]
     DOCUMENT = 0
-    TEST_PAGE = 9
     margins = [10, 10, 10, 10]
+    pages = "6-36"
     pdf_extractor = PDFExtractor(
-        pdf_path=f"{test_pdf_path}/{test_docs[DOCUMENT]}")
-    page = pdf_extractor.doc[TEST_PAGE-1]
-    page_content = pdf_extractor._document_content[TEST_PAGE-1]
-    pdf_extractor.visualize_bboxes(page=page, page_content=page_content)
-    obstacle = page_content["obstacles"][20]
+        pdf_path=f"{test_pdf_path}/{test_docs[DOCUMENT]}", pages=pages)
+    for index, page in enumerate(pdf_extractor.doc):
+        page_content = pdf_extractor._document_content[index]
+        pdf_extractor.visualize_bboxes(
+            page=page, page_content=page_content, store=True)
+
+    # TEST_PAGE = 14
+    # page = pdf_extractor.doc[TEST_PAGE-1]
+    # page_content = pdf_extractor._document_content[TEST_PAGE-1]
+    # pdf_extractor.visualize_bboxes(page=page, page_content=page_content)
+    # obstacle = page_content["obstacles"][20]
     # pdf_extractor._find_connected_text_boxes(page, margins)
 
     # def _cluster_and_normalize_fonts(self, page_content: dict) -> dict:
@@ -1080,3 +1175,47 @@ if __name__ == "__main__":
     #     page_content["text_data"] = (text_blocks, page_content["text_data"][1])
 
     #     return page_content
+
+    # def _calculate_min_max_font_size(self) -> None:
+    #     """
+    #     Calculates the minimum and maximum font sizes across the entire document
+    #     using the precomputed data stored in `self._document_content`.
+
+    #     This method updates the following object variables:
+    #         - self._max_font_size: The largest font size found in the document.
+    #         - self._min_font_size: The smallest font size found in the document.
+
+    #     Raises:
+    #         AttributeError: If `self._document_content` is not initialized or if the
+    #                         constants for allowed font sizes are not set.
+    #     """
+    #     if not hasattr(self, "_document_content") or not self._document_content:
+    #         raise AttributeError(
+    #             "The document content 'self._document_content' is not initialized or empty."
+    #         )
+
+    #     # Ensure constants for allowed font sizes are defined
+    #     if not hasattr(self, "_min_allowed_font_size") or not hasattr(self, "_max_allowed_font_size"):
+    #         raise AttributeError(
+    #             "The object must have '_min_allowed_font_size' and '_max_allowed_font_size' constants defined."
+    #         )
+
+    #     # Initialize global min and max font sizes with object constants
+    #     # Start with the maximum allowed value
+    #     global_min_font_size = self._max_allowed_font_size
+    #     # Start with the minimum allowed value
+    #     global_max_font_size = self._min_allowed_font_size
+
+    #     # Iterate through page-level max and min font sizes
+    #     for page_content in self._document_content:
+    #         page_max = page_content.get(
+    #             "max_font_size", self._min_allowed_font_size)
+    #         page_min = page_content.get(
+    #             "min_font_size", self._max_allowed_font_size)
+
+    #         # Update global max and min font sizes
+    #         global_max_font_size = max(global_max_font_size, page_max)
+    #         global_min_font_size = min(global_min_font_size, page_min)
+
+    #     self._max_font_size = global_max_font_size
+    #     self._min_font_size = global_min_font_size

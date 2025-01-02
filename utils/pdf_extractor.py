@@ -39,7 +39,7 @@ def measure_exec_time(func):
 
 
 class PDFExtractor:
-    def __init__(self, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, keep_headlines: bool = False):
+    def __init__(self, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, keep_headlines: bool = True):
         """
         Initializes the PDFExtractor with the given PDF path and various processing options.
 
@@ -154,6 +154,8 @@ class PDFExtractor:
         if self.keep_headlines:
             self._mark_headlines()
         self._filter_by_font_and_size()
+        self._extend_bounding_boxes()
+        self._merge_bounding_boxes()
         self.visualize_all_bboxes()
 
     def _extract_clean_toc(self) -> None:
@@ -497,20 +499,6 @@ class PDFExtractor:
             # Update the page with filtered text blocks and bounding boxes
             page_content["text_data"] = (
                 filtered_text_blocks, filtered_text_bboxes)
-
-    def _find_connected_text_boxes(self, page_content):
-        """
-        Finds connected text boxes on a page, considering margins and optional background colors.
-
-        Args:
-            page: The page object to analyze.
-            consider_bg_colors (bool): Whether to consider background colors in the analysis.
-        """
-        page_content = self._sort_text_data(page_content)
-        page_content = self._extend_bounding_boxes(page_content)
-        page_content = self._sort_text_data(page_content)
-        page_content = self._merge_text_boxes(page_content)
-        # self.visualize_bboxes(page, page_content)
 
     def _extract_page_content(self, page: pymupdf.Page, page_margins: list[int]) -> dict:
         """
@@ -971,7 +959,22 @@ class PDFExtractor:
 
         return False
 
-    def _extend_bounding_boxes(self, page_content: dict) -> dict:
+    def _extend_bounding_boxes(self) -> None:
+        """
+        Extends the bounding boxes of text blocks for all pages in the document content.
+
+        This method iterates over each page in self._document_content and applies the
+        _extend_bounding_boxes_on_page method to adjust the text bounding boxes, ensuring
+        they extend to the right edge of the page while respecting obstacles and column boundaries.
+
+        Updates:
+            - self._document_content: The 'text_data' for each page is updated with extended bounding boxes.
+        """
+        for page_index, page_content in enumerate(self._document_content):
+            self._document_content[page_index] = self._extend_bounding_boxes_on_page(
+                page_content)
+
+    def _extend_bounding_boxes_on_page(self, page_content: dict) -> dict:
         """
         Extends the text bounding boxes within the page_content dictionary to the right edge of the page,
         stopping at obstacles and adjusting for columns.
@@ -1021,7 +1024,23 @@ class PDFExtractor:
 
         return page_content
 
-    def _merge_text_boxes(self, page_content: dict) -> dict:
+    def _merge_bounding_boxes(self) -> None:
+        """
+        Extends the text and bounding boxes of text blocks for all pages in the document content.
+
+        This method iterates over each page in self._document_content and applies the
+        _merge_text_boxes_on_page method to adjust and merge text bounding boxes, ensuring
+        overlapping or closely aligned boxes are combined.
+
+        Updates:
+            - self._document_content: The 'text_data' for each page is updated with merged bounding boxes.
+        """
+        for page_index, page_content in enumerate(self._document_content):
+            if page_content["text_data"][0]:  # Ensure the page has text blocks
+                self._document_content[page_index] = self._merge_text_boxes_on_page(
+                    page_content)
+
+    def _merge_text_boxes_on_page(self, page_content: dict) -> dict:
         """
         Merges close or overlapping text blocks within the page_content dictionary.
 
@@ -1033,6 +1052,9 @@ class PDFExtractor:
         """
         text_blocks, text_bboxes = page_content["text_data"]
 
+        if not text_blocks:
+            return page_content
+
         # Initialize merged lists with the first block and bounding box
         merged_text_blocks = [text_blocks[0]]
         merged_text_bboxes = [text_bboxes[0]]
@@ -1041,6 +1063,7 @@ class PDFExtractor:
         for block, text_bbox in zip(text_blocks[1:], text_bboxes[1:]):
             # Get the last merged bounding box
             last_text_bbox = merged_text_bboxes[-1]
+            last_block = merged_text_blocks[-1]
 
             # Check if the rectangles intersect or are left-aligned with a small horizontal gap
             intersects = text_bbox.intersects(last_text_bbox)
@@ -1051,8 +1074,16 @@ class PDFExtractor:
                 text_bbox.x0 - last_text_bbox.x0) <= self._left_alignment_tolerance
             within_max_spacing = horizontal_gap <= self._max_line_vertical_spacing
 
+            # Check if all lines in both blocks share the same 'headline' value
+            headline_match = all(
+                line.get("headline", False) == line_in_last_block.get(
+                    "headline", False)
+                for line, line_in_last_block in zip(block["lines"], last_block["lines"])
+            )
+
             # Merge condition: rectangles intersect or are left-aligned and within spacing
-            if intersects or (left_alignment and within_max_spacing):
+            # AND headline values must match
+            if (intersects or (left_alignment and within_max_spacing)) and headline_match:
                 # Merge the bounding box
                 merged_bbox = Rect(
                     min(last_text_bbox.x0, text_bbox.x0),
@@ -1264,219 +1295,3 @@ if __name__ == "__main__":
     pages = "6-36"
     pdf_extractor = PDFExtractor(
         pdf_path=f"{test_pdf_path}/{test_docs[DOCUMENT]}", pages=pages)
-    # for index, page in enumerate(pdf_extractor._doc):
-    #     page_content = pdf_extractor._document_content[index]
-    #     pdf_extractor.visualize_bboxes(
-    #         page=page, page_content=page_content, store=True)
-
-    # TEST_PAGE = 14
-    # page = pdf_extractor.doc[TEST_PAGE-1]
-    # page_content = pdf_extractor._document_content[TEST_PAGE-1]
-    # pdf_extractor.visualize_bboxes(page=page, page_content=page_content)
-    # obstacle = page_content["obstacles"][20]
-    # pdf_extractor._find_connected_text_boxes(page, margins)
-
-    # def _cluster_and_normalize_fonts(self, page_content: dict) -> dict:
-    #     """
-    #     Analyzes font data (clustering and size normalization) for all spans in the page_content dictionary.
-
-    #     This method clusters fonts and normalizes font sizes, combining the responsibilities of
-    #     two separate tasks into one for performance reasons.
-
-    #     Args:
-    #         page_content (dict): A dictionary containing page data, including 'text_data'.
-
-    #     Returns:
-    #         dict: The updated page_content dictionary with font clustering and normalized font size
-    #             information added to each span.
-    #     """
-    #     text_blocks = page_content["text_data"][0]  # Extract text_blocks from page_content
-
-    #     # Ensure max_font_size and min_font_size are set as object variables
-    #     if not hasattr(self, "_max_font_size") or not hasattr(self, "_min_font_size"):
-    #         raise AttributeError(
-    #             "Object variables '_max_font_size' and '_min_font_size' must be set before calling this method."
-    #         )
-
-    #     # Calculate font size range
-    #     font_size_range = self._max_font_size - self._min_font_size
-
-    #     # Initialize font clusters
-    #     font_list = []
-    #     for block in text_blocks:
-    #         for line in block.get("lines", []):
-    #             for span in line.get("spans", []):
-    #                 if "font" in span:
-    #                     font_list.append(span["font"])
-    #     font_list = list(set(font_list))  # Remove duplicates
-
-    #     # Generate font clusters
-    #     clusters = {}
-    #     def find_shortest_word(word_list): return min(word_list, key=len)
-
-    #     def find_root(word):
-    #         match = re.match(r'([A-Za-z][A-Za-z]+)', word)
-    #         return match.group(1) if match else word
-
-    #     while font_list:
-    #         shortest_word = find_shortest_word(font_list)
-    #         root = find_root(shortest_word)
-    #         for word in font_list.copy():
-    #             if root in word:
-    #                 clusters[word] = root
-    #                 font_list.remove(word)
-
-    #     # Process spans: Normalize font sizes and cluster fonts
-    #     for block in text_blocks:
-    #         for line in block.get("lines", []):
-    #             for span in line.get("spans", []):
-    #                 # Normalize font size
-    #                 if "size" in span:
-    #                     normalized_size = round(
-    #                         (span["size"] - self._min_font_size) /
-    #                         font_size_range, 2
-    #                     )
-    #                     span["normalized_font_size"] = normalized_size
-    #                 # Apply font clustering
-    #                 if "font" in span and span["font"] in clusters:
-    #                     span["font_cluster"] = clusters[span["font"]]
-
-    #     # Update the page_content dictionary with the modified text blocks
-    #     page_content["text_data"] = (text_blocks, page_content["text_data"][1])
-
-    #     return page_content
-
-    # def _cluster_fonts(self, page_content: dict) -> dict:
-    #     """
-    #     Clusters fonts found in spans and updates the spans to reflect font families.
-
-    #     This method lists all occurring fonts from the spans, creates a dictionary mapping
-    #     individual fonts to their stems, and updates the spans to use these stems. This aids
-    #     in the identification of headings by normalizing font variations.
-
-    #     Args:
-    #         page_content (dict): A dictionary containing page data, including 'text_data'.
-
-    #     Returns:
-    #         dict: The updated page_content dictionary with font clusters added to the spans.
-    #     """
-    #     text_blocks = page_content["text_data"][0]  # Extract text_blocks from page_content
-
-    #     # Extract all unique fonts from spans
-    #     font_list = []
-    #     for block in text_blocks:
-    #         for line in block.get("lines", []):
-    #             for span in line.get("spans", []):
-    #                 if "font" in span:
-    #                     font_list.append(span["font"])
-    #     font_list = list(set(font_list))  # Remove duplicates
-
-    #     # Initialize a dictionary to hold clusters
-    #     clusters = {}
-
-    #     # Custom function to find the shortest word in a list
-    #     def find_shortest_word(word_list):
-    #         return min(word_list, key=len)
-
-    #     # Custom function to find the root of a word using regex
-    #     def find_root(word):
-    #         match = re.match(r'([A-Za-z][A-Za-z]+)', word)
-    #         return match.group(1) if match else word
-
-    #     # Cluster fonts based on their root
-    #     while font_list:
-    #         shortest_word = find_shortest_word(font_list)
-    #         root = find_root(shortest_word)
-    #         for word in font_list.copy():  # Iterate over a copy to safely modify the original list
-    #             if root in word:
-    #                 clusters[word] = root
-    #                 font_list.remove(word)
-
-    #     # Update spans with the font clusters
-    #     for block in text_blocks:
-    #         for line in block.get("lines", []):
-    #             for span in line.get("spans", []):
-    #                 if "font" in span and span["font"] in clusters:
-    #                     span["font_cluster"] = clusters[span["font"]]
-
-    #     # Update page_content with the modified text blocks
-    #     page_content["text_data"] = (text_blocks, page_content["text_data"][1])
-
-    #     return page_content
-
-    # def _normalize_font_sizes(self, page_content: dict) -> dict:
-    #  """
-    #     Normalizes font sizes across the extracted text blocks within the page_content dictionary.
-
-    #     Args:
-    #         page_content (dict): A dictionary containing page data, including 'text_data'.
-
-    #     Returns:
-    #         dict: The updated page_content dictionary with normalized font size information added
-    #             to each text block under the key 'normalized_font_size'.
-    #     """
-    #   text_blocks = page_content["text_data"][0]  # Extract text_blocks from page_content
-
-    #    # Ensure max_font_size and min_font_size are set as object variables
-    #    if not hasattr(self, "_max_font_size") or not hasattr(self, "_min_font_size"):
-    #         raise AttributeError(
-    #             "Object variables '_max_font_size' and '_min_font_size' must be set before calling this method."
-    #         )
-
-    #     # Normalize font sizes and add them to the text blocks
-    #     font_size_range = self._max_font_size - self._min_font_size
-    #     for block in text_blocks:
-    #         normalized_size = round(
-    #             (block['font_size'] - self._min_font_size) /
-    #             font_size_range, 2
-    #         )
-    #         block['normalized_font_size'] = normalized_size
-
-    #     # Update the page_content dictionary with the modified text blocks
-    #     page_content["text_data"] = (text_blocks, page_content["text_data"][1])
-
-    #     return page_content
-
-    # def _calculate_min_max_font_size(self) -> None:
-    #     """
-    #     Calculates the minimum and maximum font sizes across the entire document
-    #     using the precomputed data stored in `self._document_content`.
-
-    #     This method updates the following object variables:
-    #         - self._max_font_size: The largest font size found in the document.
-    #         - self._min_font_size: The smallest font size found in the document.
-
-    #     Raises:
-    #         AttributeError: If `self._document_content` is not initialized or if the
-    #                         constants for allowed font sizes are not set.
-    #     """
-    #     if not hasattr(self, "_document_content") or not self._document_content:
-    #         raise AttributeError(
-    #             "The document content 'self._document_content' is not initialized or empty."
-    #         )
-
-    #     # Ensure constants for allowed font sizes are defined
-    #     if not hasattr(self, "_min_allowed_font_size") or not hasattr(self, "_max_allowed_font_size"):
-    #         raise AttributeError(
-    #             "The object must have '_min_allowed_font_size' and '_max_allowed_font_size' constants defined."
-    #         )
-
-    #     # Initialize global min and max font sizes with object constants
-    #     # Start with the maximum allowed value
-    #     global_min_font_size = self._max_allowed_font_size
-    #     # Start with the minimum allowed value
-    #     global_max_font_size = self._min_allowed_font_size
-
-    #     # Iterate through page-level max and min font sizes
-    #     for page_content in self._document_content:
-    #         page_max = page_content.get(
-    #             "max_font_size", self._min_allowed_font_size)
-    #         page_min = page_content.get(
-    #             "min_font_size", self._max_allowed_font_size)
-
-    #         # Update global max and min font sizes
-    #         global_max_font_size = max(global_max_font_size, page_max)
-    #         global_min_font_size = min(global_min_font_size, page_min)
-
-    #     self._max_font_size = global_max_font_size
-    #     self._min_font_size = global_min_font_size

@@ -12,6 +12,12 @@ from pathlib import Path
 
 import time
 
+#! for debug
+import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8')
+#! end for debug
+
 
 def measure_exec_time(func):
     """
@@ -33,7 +39,7 @@ def measure_exec_time(func):
 
 
 class PDFExtractor:
-    def __init__(self, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, keep_headlines: bool = False):
+    def __init__(self, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, keep_headlines: bool = True):
         """
         Initializes the PDFExtractor with the given PDF path and various processing options.
 
@@ -41,7 +47,7 @@ class PDFExtractor:
             pdf_path (str, optional): Path to the PDF file. Default is an empty string.
             consider_bg_colors (bool, optional): Whether to consider background colors during processing. Default is False.
             ignore_tables (bool, optional): Whether to ignore tables when extracting text. Default is True.
-            ignore_headlines (bool, optional): Whether to ignore headlines when processing text. Default is True.
+            keep_headlines (bool, optional): Whether to keep headlines when processing text. Default is False.
         """
 
         # Processing options
@@ -86,9 +92,15 @@ class PDFExtractor:
 
         # Headline detection
         # Min length for headlines
-        self._min_headline_length = 10
+        self._min_headline_length = 8
         # most common font size
         self._most_common_fontsize = None
+        # Maximum Number of regarded fonts (except headlinefonts)
+        self._maximum_different_fonts = 1
+        # store all font data associated with headlines
+        self._toc_font_data = []
+        # Max tolerance for headlines being smaller than normal text
+        self.max_size_headline_tolerance = 1
 
         # Document-level data
         # Path to the currently loaded PDF file
@@ -108,8 +120,6 @@ class PDFExtractor:
         self._toc = None
         # Dictionary tracking the frequency of (clustered_font, normalized_font_size) combinations
         self._font_size_distribution = {}
-        # List of the fontdata of potential headlines
-        self._headline_font_data = []
 
         # Load the PDF document if a path is provided
         if pdf_path:
@@ -134,14 +144,17 @@ class PDFExtractor:
         self.pdf_path = Path(pdf_path)
         self._doc = pymupdf.open(self.pdf_path)
 
-        self._process_clean_toc()
+        self._extract_clean_toc()
         self._initialize_pages_margins(pages_margins)
         self._initialize_relevant_pages(pages)
         self._extract_document()
+        self.visualize_all_bboxes()
         self._accumulate_font_size_distribution()
+        if self.keep_headlines:
+            self._mark_headlines()
         self._filter_by_font_and_size()
 
-    def _process_clean_toc(self) -> None:
+    def _extract_clean_toc(self) -> None:
         """
         Extracts and processes the table of contents (TOC) from the document,
         formatting it for direct use in headline detection.
@@ -353,15 +366,96 @@ class PDFExtractor:
         self._most_common_fontsize = max(
             self._font_size_distribution, key=lambda x: self._font_size_distribution[x])[1]
 
-    def _filter_by_font_and_size(self, maximum_different_fonts: int = 1) -> None:
+    def _mark_headlines(self) -> None:
+        """
+        Marks potential headlines by checking each line, blocks of lines, and consecutive lines 
+        with matching font_data against the table of contents (TOC).
+
+        The method performs three levels of checks to identify headlines:
+        1. Individual line check.
+        2. Block-level check (combining all lines in a text block).
+        3. Consecutive line check for lines with the same font_data.
+
+        Updates:
+            - Each line is marked with the key 'headline' set to True if it is recognized as a headline, 
+            otherwise False.
+        """
+        for page in self._document_content:
+            for text_block in page.get("text_data", ([], []))[0]:
+
+                # Step 1: Check each individual line for headline match
+                for line in text_block.get("lines", []):
+                    line["text"] = " ".join(span.get("text", "").strip()
+                                            for span in line.get("spans", []))
+                    if self._is_headline(line):
+                        line["headline"] = True
+                    else:
+                        line["headline"] = False
+
+                # Step 2: Check entire text block by combining all lines
+                combined_block_text = " ".join(
+                    line["text"] for line in text_block.get("lines", [])
+                ).strip()
+
+                if combined_block_text:
+                    combined_line_data = {
+                        "text": combined_block_text,
+                        "font_data": text_block.get("font_data", (None, 0))
+                    }
+                    if self._is_headline(combined_line_data):
+                        # Mark all lines in the block as headline
+                        for line in text_block.get("lines", []):
+                            line["headline"] = True
+                        continue  # Skip further checks if block-level headline is found
+
+                # Step 3: Check consecutive lines with the same font_data
+                consecutive_lines = []
+                previous_font_data = None
+
+                for line in text_block.get("lines", []):
+                    if line["headline"]:
+                        # Skip already marked headlines
+                        continue
+
+                    current_font_data = line.get("font_data", (None, 0))
+
+                    # Check if the line's font_data matches the previous one
+                    if current_font_data == previous_font_data:
+                        consecutive_lines.append(line)
+                    else:
+                        # If new font_data is encountered, process the accumulated lines
+                        if len(consecutive_lines) > 1:
+                            combined_text = " ".join(
+                                l["text"] for l in consecutive_lines).strip()
+                            combined_data = {
+                                "text": combined_text,
+                                "font_data": current_font_data
+                            }
+                            if self._is_headline(combined_data):
+                                for l in consecutive_lines:
+                                    l["headline"] = True
+
+                        # Reset the consecutive list and start tracking the new line
+                        consecutive_lines = [line]
+                        previous_font_data = current_font_data
+
+                # Final check for remaining consecutive lines at the end of the block
+                if len(consecutive_lines) > 1:
+                    combined_text = " ".join(l["text"]
+                                             for l in consecutive_lines).strip()
+                    combined_data = {
+                        "text": combined_text,
+                        "font_data": previous_font_data
+                    }
+                    if self._is_headline(combined_data):
+                        for l in consecutive_lines:
+                            l["headline"] = True
+
+    def _filter_by_font_and_size(self) -> None:
         """
         Filters the font size distribution to retain entries with the highest frequency,
         ensuring that no more than the specified number of different fonts are selected.
 
-        Args:
-            maximum_different_fonts (int): The maximum number of different fonts to retain
-                                        based on frequency. The entries with the highest 
-                                        frequency for each selected font are chosen.
         Updates:
             - self._document_content: The page content is filtered such that only text blocks
                                     and lines with the selected fonts and sizes are retained.
@@ -375,16 +469,14 @@ class PDFExtractor:
         selected_fonts_set = set()  # For faster lookup
 
         # Select entries until the desired number of different fonts is reached
-        for font, size in sorted_distribution:
-            if font not in selected_fonts_set:
-                selected_fonts.append((font, size))
-                selected_fonts_set.add(font)
+        for font_data, count in sorted_distribution:
+            if font_data not in selected_fonts_set:
+                selected_fonts_set.add(font_data)
 
-            if len(selected_fonts_set) == maximum_different_fonts:
+            if len(selected_fonts_set) == self._maximum_different_fonts:
                 break
 
-        if self.keep_headlines and self._headline_font_data:
-            selected_fonts = list(set(selected_fonts+self._headline_font_data))
+        selected_fonts = list(selected_fonts_set)
 
         # Filter page content based on selected fonts and sizes
         for page_content in self._document_content:
@@ -394,7 +486,7 @@ class PDFExtractor:
             for block, bbox in zip(page_content["text_data"][0], page_content["text_data"][1]):
                 filtered_lines = [
                     line for line in block.get("lines", [])
-                    if line.get("font_data") in selected_fonts
+                    if (line.get("font_data") in selected_fonts or line["headline"])
                 ]
 
                 if filtered_lines:
@@ -405,9 +497,6 @@ class PDFExtractor:
             # Update the page with filtered text blocks and bounding boxes
             page_content["text_data"] = (
                 filtered_text_blocks, filtered_text_bboxes)
-
-    def _filter_headlines() -> None:
-        pass
 
     def _find_connected_text_boxes(self, page_content):
         """
@@ -613,16 +702,6 @@ class PDFExtractor:
                 dominant_font_data = max(
                     line_font_distribution.items(), key=lambda x: x[1])[0]
                 line["font_data"] = dominant_font_data
-
-                # Check if the line text matches a TOC entry
-                if self.keep_headlines:
-                    line["text"] = " ".join(span.get("text", "").strip()
-                                            for span in line.get("spans", []))
-                    if self._is_headline(line):
-                        line["headline"] = True
-                        self._toc_font_data.append(dominant_font_data)
-                    else:
-                        line["headline"] = False
 
             # Combine lines within blocks into bounding boxes
             # Use the first line's bbox as initial rect
@@ -867,28 +946,41 @@ class PDFExtractor:
         """
 
         text = line_data["text"]
+        print(text)
         font_size = line_data["font_data"][1]
         # Guard clause: Check if TOC exists
         if not self._toc:
             return False
+        print("Toc yes")
 
+        if text == "Regionale Grundwasserverhältnisse":
+            print(f"\n{len(text)=}")
+            print(f"{self._min_headline_length=}\n")
         # Guard clause: Check minimum length
         if len(text) < self._min_headline_length:
             return False
+        print("len yes")
 
         # Clean the input text by removing digits, whitespaces, and special characters
         clean_text = re.sub(r'[\d\s\W_]+', '', text).lower()
 
+        if text == "Regionale Grundwasserverhältnisse":
+            print(f"\n{font_size=}")
+            print(f"{self._most_common_fontsize=}\n")
         # Guard clause: Check minimum font size
-        if font_size < self._most_common_fontsize:
+        if font_size < self._most_common_fontsize-self.max_size_headline_tolerance:
             return False
+        print("fontsize yes")
 
+        print(f"{clean_text=}\n")
         # Compare the cleaned text with preprocessed TOC entries
         for toc_entry in self._toc:
             if clean_text == toc_entry["text"] and not toc_entry["used"]:
                 toc_entry["used"] = True  # Mark TOC entry as used
+                print(f"Headline: {text}")
                 return True
 
+        print("No Entry in toc")
         return False
 
     def _extend_bounding_boxes(self, page_content: dict) -> dict:
@@ -1162,6 +1254,12 @@ class PDFExtractor:
         # Show the image using Pillow
         img.show()
 
+    def visualize_all_bboxes(self) -> None:
+        for index, page in enumerate(self._doc):
+            page_content = self._document_content[index]
+            self.visualize_bboxes(
+                page=page, page_content=page_content, store=True)
+
 
 # Example usage:
 if __name__ == "__main__":
@@ -1178,10 +1276,10 @@ if __name__ == "__main__":
     pages = "6-36"
     pdf_extractor = PDFExtractor(
         pdf_path=f"{test_pdf_path}/{test_docs[DOCUMENT]}", pages=pages)
-    for index, page in enumerate(pdf_extractor._doc):
-        page_content = pdf_extractor._document_content[index]
-        pdf_extractor.visualize_bboxes(
-            page=page, page_content=page_content, store=True)
+    # for index, page in enumerate(pdf_extractor._doc):
+    #     page_content = pdf_extractor._document_content[index]
+    #     pdf_extractor.visualize_bboxes(
+    #         page=page, page_content=page_content, store=True)
 
     # TEST_PAGE = 14
     # page = pdf_extractor.doc[TEST_PAGE-1]

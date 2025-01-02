@@ -33,7 +33,7 @@ def measure_exec_time(func):
 
 
 class PDFExtractor:
-    def __init__(self, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, ignore_headlines: bool = True):
+    def __init__(self, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, keep_headlines: bool = False):
         """
         Initializes the PDFExtractor with the given PDF path and various processing options.
 
@@ -50,7 +50,7 @@ class PDFExtractor:
         # Whether to ignore tables during text extraction
         self.ignore_tables = ignore_tables
         # Whether to ignore headlines during text extraction
-        self.ignore_headlines = ignore_headlines
+        self.keep_headlines = keep_headlines
 
         # Background bounding box thresholds
         # Minimum area for considering a bounding box as part of the background
@@ -84,11 +84,17 @@ class PDFExtractor:
         # Minimum number of background blocks in a colun required to indicate a table
         self._min_table_cols = 2
 
+        # Headline detection
+        # Min length for headlines
+        self._min_headline_length = 10
+        # most common font size
+        self._most_common_fontsize = None
+
         # Document-level data
-        # The PDF document object loaded with pymupdf
-        self.doc = None
         # Path to the currently loaded PDF file
         self.pdf_path = None
+        # The PDF document object loaded with pymupdf
+        self._doc = None
         # List of relevant pages
         self._relevant_pages = None
         # Margins for each page, specified as a list of lists [[left, top, right, bottom]]
@@ -98,15 +104,19 @@ class PDFExtractor:
 
         # Processed data
         self._document_content = []  # List storing extracted and processed data for each page
+        # Formatted table of Content
+        self._toc = None
         # Dictionary tracking the frequency of (clustered_font, normalized_font_size) combinations
         self._font_size_distribution = {}
+        # List of the fontdata of potential headlines
+        self._headline_font_data = []
 
         # Load the PDF document if a path is provided
         if pdf_path:
             self.load_document(
                 pdf_path=pdf_path, pages_margins=pages_margins, pages=pages)
 
-    @measure_exec_time
+    @ measure_exec_time
     def load_document(self, pdf_path: str, pages_margins: list = None, pages: str = None) -> None:
         """
         Loads a new PDF document, initializes margins, extracts document data,
@@ -122,21 +132,51 @@ class PDFExtractor:
         """
         # Load the document
         self.pdf_path = Path(pdf_path)
-        self.doc = pymupdf.open(self.pdf_path)
+        self._doc = pymupdf.open(self.pdf_path)
 
+        self._process_clean_toc()
         self._initialize_pages_margins(pages_margins)
         self._initialize_relevant_pages(pages)
         self._extract_document()
         self._accumulate_font_size_distribution()
         self._filter_by_font_and_size()
-        if self.ignore_headlines:
-            self._filter_headlines()
+
+    def _process_clean_toc(self) -> None:
+        """
+        Extracts and processes the table of contents (TOC) from the document,
+        formatting it for direct use in headline detection.
+
+        The TOC is retrieved from self._doc, cleaned by removing digits, 
+        whitespace, and special characters, and stored in self._toc as a list of 
+        dictionaries with the keys 'text' and 'used'.
+
+        Updates:
+            - self._toc: List of dictionaries representing the cleaned TOC entries.
+                        Each entry has the format:
+                        [
+                            {'text': 'chapterone', 'used': False},
+                            {'text': 'introduction', 'used': False},
+                            ...
+                        ]
+        """
+        # Extract the raw TOC from the document
+        raw_toc = self._doc.get_toc()
+
+        # Process and clean each TOC entry
+        self._toc = [
+            {
+                # Clean and normalize TOC title
+                'text': re.sub(r'[\d\s\W_]+', '', entry[1]).lower(),
+                'used': False
+            }
+            for entry in raw_toc
+        ]
 
     def _initialize_pages_margins(self, pages_margins: str = None) -> None:
         """
         Initializes the page margins for the document.
 
-        If `pages_margins` is provided as a string, it applies specific margin values 
+        If `pages_margins` is provided as a string, it applies specific margin values
         to designated pages based on the string format "<pages>:<margins>;<pages>:<margins>".
         If no string is provided, all pages are initialized with the default margins.
 
@@ -154,7 +194,7 @@ class PDFExtractor:
                         - Missing margin specification for given pages
         """
         # Initialize all pages with the default margins
-        self._pages_margins = [self._default_margins] * len(self.doc)
+        self._pages_margins = [self._default_margins] * len(self._doc)
 
         if not pages_margins:
             return
@@ -213,11 +253,11 @@ class PDFExtractor:
 
             # Apply margins to the relevant pages
             for page in page_numbers:
-                if 1 <= page <= len(self.doc):
+                if 1 <= page <= len(self._doc):
                     self._pages_margins[page - 1] = margins
                 else:
                     raise ValueError(
-                        f"Page number '{page}' is out of document range (1-{len(self.doc)}).")
+                        f"Page number '{page}' is out of document range (1-{len(self._doc)}).")
 
     def _initialize_relevant_pages(self, pages: str = None) -> None:
         """
@@ -247,6 +287,46 @@ class PDFExtractor:
         # Sort and assign to the instance variable
         self._relevant_pages = sorted(page_numbers)
 
+    def _extract_document(self) -> None:
+        """
+        Extracts content from each page of the document using the margins specified
+        in the object variable `_pages_margins`, sorts the text data, and stores
+        the results in an object variable.
+
+        Raises:
+            AttributeError: If `self.doc` or `_pages_margins` is not initialized.
+            ValueError: If the number of margins in `_pages_margins` does not match
+                        the number of pages in the document.
+        """
+        if not hasattr(self, "_doc"):
+            raise AttributeError(
+                "The document object 'self._doc' is not initialized.")
+
+        if not hasattr(self, "_pages_margins"):
+            raise AttributeError(
+                "The variable '_pages_margins' is not initialized.")
+
+        if not hasattr(self, "_relevant_pages"):
+            raise AttributeError(
+                "The variable '_relevant_pages' is not initialized.")
+
+        # Validate that the number of margin entries matches the number of pages
+        if len(self._pages_margins) != len(self._doc):
+            raise ValueError(
+                "The number of margins in '_pages_margins' must match the number of pages in the document.")
+
+        self._document_content = []
+
+        if self._relevant_pages:
+            self._doc = [self._doc[i-1] for i in self._relevant_pages]
+            self._pages_margins = [self._pages_margins[i-1]
+                                   for i in self._relevant_pages]
+
+        for page, page_margins in zip(self._doc, self._pages_margins):
+            page_content = self._extract_page_content(page, page_margins)
+            page_content = self._sort_text_data(page_content)
+            self._document_content.append(page_content)
+
     def _accumulate_font_size_distribution(self) -> None:
         """
         Accumulates the total character counts for each combination of 
@@ -269,61 +349,24 @@ class PDFExtractor:
                 self._font_size_distribution[key] = self._font_size_distribution.get(
                     key, 0) + count
 
-        pprint(self._font_size_distribution)
+        # Set the most common fontsize
+        self._most_common_fontsize = max(
+            self._font_size_distribution, key=lambda x: self._font_size_distribution[x])[1]
 
-    def _extract_document(self) -> None:
-        """
-        Extracts content from each page of the document using the margins specified
-        in the object variable `_pages_margins`, sorts the text data, and stores
-        the results in an object variable.
-
-        Raises:
-            AttributeError: If `self.doc` or `_pages_margins` is not initialized.
-            ValueError: If the number of margins in `_pages_margins` does not match
-                        the number of pages in the document.
-        """
-        if not hasattr(self, "doc"):
-            raise AttributeError(
-                "The document object 'self.doc' is not initialized.")
-
-        if not hasattr(self, "_pages_margins"):
-            raise AttributeError(
-                "The variable '_pages_margins' is not initialized.")
-
-        if not hasattr(self, "_relevant_pages"):
-            raise AttributeError(
-                "The variable '_relevant_pages' is not initialized.")
-
-        # Validate that the number of margin entries matches the number of pages
-        if len(self._pages_margins) != len(self.doc):
-            raise ValueError(
-                "The number of margins in '_pages_margins' must match the number of pages in the document.")
-
-        self._document_content = []
-
-        if self._relevant_pages:
-            self.doc = [self.doc[i-1] for i in self._relevant_pages]
-            self._pages_margins = [self._pages_margins[i-1]
-                                   for i in self._relevant_pages]
-
-        for page, page_margins in zip(self.doc, self._pages_margins):
-            page_content = self._extract_page_content(page, page_margins)
-            page_content = self._sort_text_data(page_content)
-            self._document_content.append(page_content)
-
-    def _filter_by_font_and_size(self, maximum_different_fonts=1) -> None:
+    def _filter_by_font_and_size(self, maximum_different_fonts: int = 1) -> None:
         """
         Filters the font size distribution to retain entries with the highest frequency,
         ensuring that no more than the specified number of different fonts are selected.
 
-        The selected font keys are used to filter the page content, removing any text blocks
-        that do not match the selected (font, size) combinations.
-
         Args:
-            maximum_different_fonts (int): The maximum number of different fonts to retain.
-                                        The entries with the highest frequency for each
-                                        selected font are chosen.
+            maximum_different_fonts (int): The maximum number of different fonts to retain
+                                        based on frequency. The entries with the highest 
+                                        frequency for each selected font are chosen.
+        Updates:
+            - self._document_content: The page content is filtered such that only text blocks
+                                    and lines with the selected fonts and sizes are retained.
         """
+
         # Sort font size distribution by frequency (value) in descending order
         sorted_distribution = sorted(
             self._font_size_distribution.items(), key=lambda x: x[1], reverse=True)
@@ -340,18 +383,28 @@ class PDFExtractor:
             if len(selected_fonts_set) == maximum_different_fonts:
                 break
 
+        if self.keep_headlines and self._headline_font_data:
+            selected_fonts = list(set(selected_fonts+self._headline_font_data))
+
         # Filter page content based on selected fonts and sizes
         for page_content in self._document_content:
-            filtered_data = [
-                (block, bbox) for block, bbox in zip(page_content["text_data"][0], page_content["text_data"][1])
-                if (block["clustered_font"], block["normalized_font_size"]) in selected_fonts
-            ]
+            filtered_text_blocks = []
+            filtered_text_bboxes = []
 
-        # Update the page with filtered text blocks and bounding boxes
-        page_content["text_data"] = (
-            [block for block, _ in filtered_data],  # filtered_text_blocks
-            [bbox for _, bbox in filtered_data]     # text_bboxes
-        )
+            for block, bbox in zip(page_content["text_data"][0], page_content["text_data"][1]):
+                filtered_lines = [
+                    line for line in block.get("lines", [])
+                    if line.get("font_data") in selected_fonts
+                ]
+
+                if filtered_lines:
+                    block["lines"] = filtered_lines
+                    filtered_text_blocks.append(block)
+                    filtered_text_bboxes.append(bbox)
+
+            # Update the page with filtered text blocks and bounding boxes
+            page_content["text_data"] = (
+                filtered_text_blocks, filtered_text_bboxes)
 
     def _filter_headlines() -> None:
         pass
@@ -372,8 +425,66 @@ class PDFExtractor:
 
     def _extract_page_content(self, page: pymupdf.Page, page_margins: list[int]) -> dict:
         """
-        Extracts content from a PDF page within the specified margins and organizes it into
-        geometric data, text blocks, obstacle information, and font-size distribution.
+        Extracts and processes content from a PDF page within specified margins.
+
+        This method clips the page based on the provided margins, extracts text blocks, images, 
+        and graphical elements, and filters them based on their position and relevance. It also 
+        computes the distribution of fonts and font sizes across the page and annotates each line 
+        with the most frequent font and size combination.
+
+        Args:
+            page (pymupdf.Page): The PDF page to extract content from.
+            page_margins (list[int]): A list of four integers representing margins in the order 
+                                    [left, top, right, bottom]. These margins define the area 
+                                    of the page to process.
+
+        Returns:
+            dict: A dictionary containing the extracted and filtered content from the page. The 
+                dictionary is structured as follows:
+
+                {
+                    "geometry": pymupdf.Rect,
+                        - A rectangle representing the clipped region of the page based on the margins.
+
+                    "text_data": (list, list),
+                        - A tuple consisting of:
+                            1. A list of filtered text blocks (dicts) that contain "lines" and 
+                                "spans" with associated text and font information. 
+                                Each **line** within a block may include the key `font_data`, 
+                                indicating the dominant font and size combination for that line. 
+                                Example:
+                                {
+                                    "lines": [
+                                        {
+                                            "spans": [...],
+                                            "font_data": ('ArialMT', 10.0)
+                                        }
+                                    ]
+                                }
+                            2. A list of bounding boxes (irect format) for the text blocks.
+
+                    "obstacles": list,
+                        - A list of bounding boxes (irect format) representing elements that could 
+                            obstruct text or indicate table structures. This includes:
+                            * Non-horizontal text
+                            * Table bounding boxes
+                            * Images
+                            * Graphics
+                            * (Optional) Background graphics if self.consider_bg_colors is enabled
+
+                    "backgrounds": list,
+                        - A list of bounding boxes (irect format) representing background graphics 
+                            that exceed the minimum size or area thresholds.
+
+                    "font_and_size_distribution": dict,
+                        - A dictionary mapping tuples of (clustered_font, normalized_font_size) 
+                            to the total character count for that font and size across the page.
+                            Example:
+                            {
+                                ('ArialMT', 10.0): 125,
+                                ('TimesNewRoman', 12.0): 400
+                            }
+                }
         """
         # Geometry data
         clip_rect = Rect(page_margins[0], page_margins[1], page.rect.width -
@@ -390,8 +501,6 @@ class PDFExtractor:
                 "obstacles": [],
                 "backgrounds": [],
                 "font_and_size_distribution": {},
-                # "max_font_size": 0,
-                # "min_font_size": 0,
             }
 
         # Initialize variables
@@ -474,20 +583,46 @@ class PDFExtractor:
 
             # Process spans for font and size distribution
             for line in block.get("lines", []):
+                line_font_distribution = {}
+
                 for span in line.get("spans", []):
                     font_name = span.get("font", None)
                     font_size = span.get("size", None)
                     if font_name is None or font_size is None:
                         continue
-                    normalized_font_size = round(font_size*2, 0)/2
 
-                    # Cluster font and count distribution
+                    # process font data
                     clustered_font = self._cluster_span_font(
                         font_name, clusters)
-                    key = (clustered_font, normalized_font_size)
+                    normalized_font_size = round(font_size * 2, 0) / 2
+                    font_data = (clustered_font, normalized_font_size)
+
+                    # Count occurences
                     char_count = len(span.get("text", "").strip())
-                    font_and_size_distribution[key] = font_and_size_distribution.get(
-                        key, 0) + char_count
+
+                    # Accumulate counts for each (font, size) pair
+                    line_font_distribution[font_data] = line_font_distribution.get(
+                        font_data, 0) + char_count
+                    font_and_size_distribution[font_data] = font_and_size_distribution.get(
+                        font_data, 0) + char_count
+
+                # Determine the most frequent (font, size) pair in the line
+                if not line_font_distribution:
+                    continue
+
+                dominant_font_data = max(
+                    line_font_distribution.items(), key=lambda x: x[1])[0]
+                line["font_data"] = dominant_font_data
+
+                # Check if the line text matches a TOC entry
+                if self.keep_headlines:
+                    line["text"] = " ".join(span.get("text", "").strip()
+                                            for span in line.get("spans", []))
+                    if self._is_headline(line):
+                        line["headline"] = True
+                        self._toc_font_data.append(dominant_font_data)
+                    else:
+                        line["headline"] = False
 
             # Combine lines within blocks into bounding boxes
             # Use the first line's bbox as initial rect
@@ -715,6 +850,46 @@ class PDFExtractor:
             #         "obstacles": obstacle_bboxes,
             #         "backgrounds": background_bboxes,
             #     }
+
+    def _is_headline(self, line_data: dict) -> bool:
+        """
+        Determines if a given text is a headline by checking against the preprocessed table of contents (TOC).
+
+        This method verifies if the text is long enough, matches an entry in the TOC (ignoring numbers,
+        whitespaces, and special characters), and is written in a sufficiently large font.
+
+        Args:
+            line (dict): The line text to be checked.
+
+        Returns:
+            bool: True if the text matches an entry in the TOC and meets the length and font size criteria, 
+                False otherwise.
+        """
+
+        text = line_data["text"]
+        font_size = line_data["font_data"][1]
+        # Guard clause: Check if TOC exists
+        if not self._toc:
+            return False
+
+        # Guard clause: Check minimum length
+        if len(text) < self._min_headline_length:
+            return False
+
+        # Clean the input text by removing digits, whitespaces, and special characters
+        clean_text = re.sub(r'[\d\s\W_]+', '', text).lower()
+
+        # Guard clause: Check minimum font size
+        if font_size < self._most_common_fontsize:
+            return False
+
+        # Compare the cleaned text with preprocessed TOC entries
+        for toc_entry in self._toc:
+            if clean_text == toc_entry["text"] and not toc_entry["used"]:
+                toc_entry["used"] = True  # Mark TOC entry as used
+                return True
+
+        return False
 
     def _extend_bounding_boxes(self, page_content: dict) -> dict:
         """
@@ -1003,7 +1178,7 @@ if __name__ == "__main__":
     pages = "6-36"
     pdf_extractor = PDFExtractor(
         pdf_path=f"{test_pdf_path}/{test_docs[DOCUMENT]}", pages=pages)
-    for index, page in enumerate(pdf_extractor.doc):
+    for index, page in enumerate(pdf_extractor._doc):
         page_content = pdf_extractor._document_content[index]
         pdf_extractor.visualize_bboxes(
             page=page, page_content=page_content, store=True)

@@ -56,11 +56,11 @@ class TestCalculateMinMaxFontSize(unittest.TestCase):
         self.extractor = PDFExtractor()
 
         # Mock the doc object using MagicMock for iteration
-        self.extractor.doc = MagicMock()
+        self.extractor._doc = MagicMock()
 
     def test_calculate_min_max_font_size(self):
         # Mock page objects with font sizes
-        self.extractor.doc.__iter__.return_value = iter([
+        self.extractor._doc.__iter__.return_value = iter([
             MagicMock(get_text=MagicMock(return_value={
                 "blocks": [
                     {"lines": [{"spans": [{"size": 12}, {"size": 10}]}]},
@@ -85,7 +85,7 @@ class TestCalculateMinMaxFontSize(unittest.TestCase):
 
     def test_empty_document(self):
         # Mock an empty document
-        self.extractor.doc.__iter__.return_value = iter([])
+        self.extractor._doc.__iter__.return_value = iter([])
 
         # Run the method
         self.extractor._calculate_min_max_font_size()
@@ -98,7 +98,7 @@ class TestCalculateMinMaxFontSize(unittest.TestCase):
 
     def test_missing_lines_or_spans(self):
         # Mock a document with no valid font size data
-        self.extractor.doc.__iter__.return_value = iter([
+        self.extractor._doc.__iter__.return_value = iter([
             MagicMock(get_text=MagicMock(
                 return_value={"blocks": [{"lines": []}]})),
             MagicMock(get_text=MagicMock(return_value={"blocks": []})),

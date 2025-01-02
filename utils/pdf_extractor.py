@@ -39,7 +39,7 @@ def measure_exec_time(func):
 
 
 class PDFExtractor:
-    def __init__(self, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, keep_headlines: bool = True):
+    def __init__(self, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, keep_headlines: bool = False):
         """
         Initializes the PDFExtractor with the given PDF path and various processing options.
 
@@ -67,6 +67,8 @@ class PDFExtractor:
         # Text processing tolerances
         # Maximum vertical spacing between lines within the same text block
         self._max_line_vertical_spacing = 5
+        # Maximum horizontal spacing between lines within the same text block
+        self._max_line_horizontal_spacing = 20
         # Tolerance for considering two text blocks to be left-aligned
         self._left_alignment_tolerance = 2
         # Vertical overlap tolerance (in pixels) for obstacles when extending bounding boxes
@@ -148,11 +150,11 @@ class PDFExtractor:
         self._initialize_pages_margins(pages_margins)
         self._initialize_relevant_pages(pages)
         self._extract_document()
-        self.visualize_all_bboxes()
         self._accumulate_font_size_distribution()
         if self.keep_headlines:
             self._mark_headlines()
         self._filter_by_font_and_size()
+        self.visualize_all_bboxes()
 
     def _extract_clean_toc(self) -> None:
         """
@@ -368,88 +370,86 @@ class PDFExtractor:
 
     def _mark_headlines(self) -> None:
         """
-        Marks potential headlines by checking each line, blocks of lines, and consecutive lines 
-        with matching font_data against the table of contents (TOC).
+        Marks potential headlines by checking each line or combined block of lines against the table of contents (TOC).
 
-        The method performs three levels of checks to identify headlines:
-        1. Individual line check.
-        2. Block-level check (combining all lines in a text block).
-        3. Consecutive line check for lines with the same font_data.
+        This method first attempts to identify multi-line headlines by combining all lines in a text block
+        and comparing the aggregated text to TOC entries. If no match is found, individual lines are checked
+        as potential headlines.
 
         Updates:
-            - Each line is marked with the key 'headline' set to True if it is recognized as a headline, 
-            otherwise False.
+            - Each line in the text block is marked with the key 'headline' set to True if it is recognized
+            as a headline, otherwise False.
         """
         for page in self._document_content:
             for text_block in page.get("text_data", ([], []))[0]:
 
-                # Step 1: Check each individual line for headline match
-                for line in text_block.get("lines", []):
-                    line["text"] = " ".join(span.get("text", "").strip()
-                                            for span in line.get("spans", []))
-                    if self._is_headline(line):
-                        line["headline"] = True
-                    else:
-                        line["headline"] = False
-
-                # Step 2: Check entire text block by combining all lines
-                combined_block_text = " ".join(
-                    line["text"] for line in text_block.get("lines", [])
+                # Combine all lines into a single line for headline detection
+                combined_line_text = " ".join(
+                    " ".join(span.get("text", "").strip()
+                             for span in line.get("spans", []))
+                    for line in text_block.get("lines", [])
                 ).strip()
 
-                if combined_block_text:
+                # Check the entire combined text block against the TOC
+                if combined_line_text:
                     combined_line_data = {
-                        "text": combined_block_text,
+                        "text": combined_line_text,
                         "font_data": text_block.get("font_data", (None, 0))
                     }
                     if self._is_headline(combined_line_data):
-                        # Mark all lines in the block as headline
+                        # Mark all lines in the block as headlines
                         for line in text_block.get("lines", []):
                             line["headline"] = True
-                        continue  # Skip further checks if block-level headline is found
+                        continue  # Skip individual line checks if the block is identified as a headline
+
+                # If no headline match is found, check individual lines
+                for line in text_block.get("lines", []):
+                    line["text"] = " ".join(span.get("text", "").strip()
+                                            for span in line.get("spans", []))
+                    line["headline"] = self._is_headline(line)
 
                 # Step 3: Check consecutive lines with the same font_data
-                consecutive_lines = []
-                previous_font_data = None
+                # consecutive_lines = []
+                # previous_font_data = None
 
-                for line in text_block.get("lines", []):
-                    if line["headline"]:
-                        # Skip already marked headlines
-                        continue
+                # for line in text_block.get("lines", []):
+                #     if line["headline"]:
+                #         # Skip already marked headlines
+                #         continue
 
-                    current_font_data = line.get("font_data", (None, 0))
+                #     current_font_data = line.get("font_data", (None, 0))
 
-                    # Check if the line's font_data matches the previous one
-                    if current_font_data == previous_font_data:
-                        consecutive_lines.append(line)
-                    else:
-                        # If new font_data is encountered, process the accumulated lines
-                        if len(consecutive_lines) > 1:
-                            combined_text = " ".join(
-                                l["text"] for l in consecutive_lines).strip()
-                            combined_data = {
-                                "text": combined_text,
-                                "font_data": current_font_data
-                            }
-                            if self._is_headline(combined_data):
-                                for l in consecutive_lines:
-                                    l["headline"] = True
+                #     # Check if the line's font_data matches the previous one
+                #     if current_font_data == previous_font_data:
+                #         consecutive_lines.append(line)
+                #     else:
+                #         # If new font_data is encountered, process the accumulated lines
+                #         if len(consecutive_lines) > 1:
+                #             combined_text = " ".join(
+                #                 l["text"] for l in consecutive_lines).strip()
+                #             combined_data = {
+                #                 "text": combined_text,
+                #                 "font_data": current_font_data
+                #             }
+                #             if self._is_headline(combined_data):
+                #                 for l in consecutive_lines:
+                #                     l["headline"] = True
 
-                        # Reset the consecutive list and start tracking the new line
-                        consecutive_lines = [line]
-                        previous_font_data = current_font_data
+                #         # Reset the consecutive list and start tracking the new line
+                #         consecutive_lines = [line]
+                #         previous_font_data = current_font_data
 
-                # Final check for remaining consecutive lines at the end of the block
-                if len(consecutive_lines) > 1:
-                    combined_text = " ".join(l["text"]
-                                             for l in consecutive_lines).strip()
-                    combined_data = {
-                        "text": combined_text,
-                        "font_data": previous_font_data
-                    }
-                    if self._is_headline(combined_data):
-                        for l in consecutive_lines:
-                            l["headline"] = True
+                # # Final check for remaining consecutive lines at the end of the block
+                # if len(consecutive_lines) > 1:
+                #     combined_text = " ".join(l["text"]
+                #                              for l in consecutive_lines).strip()
+                #     combined_data = {
+                #         "text": combined_text,
+                #         "font_data": previous_font_data
+                #     }
+                #     if self._is_headline(combined_data):
+                #         for l in consecutive_lines:
+                #             l["headline"] = True
 
     def _filter_by_font_and_size(self) -> None:
         """
@@ -702,6 +702,7 @@ class PDFExtractor:
                 dominant_font_data = max(
                     line_font_distribution.items(), key=lambda x: x[1])[0]
                 line["font_data"] = dominant_font_data
+                line["headline"] = False
 
             # Combine lines within blocks into bounding boxes
             # Use the first line's bbox as initial rect
@@ -946,41 +947,28 @@ class PDFExtractor:
         """
 
         text = line_data["text"]
-        print(text)
         font_size = line_data["font_data"][1]
         # Guard clause: Check if TOC exists
         if not self._toc:
             return False
-        print("Toc yes")
 
-        if text == "Regionale Grundwasserverhältnisse":
-            print(f"\n{len(text)=}")
-            print(f"{self._min_headline_length=}\n")
         # Guard clause: Check minimum length
         if len(text) < self._min_headline_length:
             return False
-        print("len yes")
 
         # Clean the input text by removing digits, whitespaces, and special characters
         clean_text = re.sub(r'[\d\s\W_]+', '', text).lower()
 
-        if text == "Regionale Grundwasserverhältnisse":
-            print(f"\n{font_size=}")
-            print(f"{self._most_common_fontsize=}\n")
         # Guard clause: Check minimum font size
         if font_size < self._most_common_fontsize-self.max_size_headline_tolerance:
             return False
-        print("fontsize yes")
 
-        print(f"{clean_text=}\n")
         # Compare the cleaned text with preprocessed TOC entries
         for toc_entry in self._toc:
             if clean_text == toc_entry["text"] and not toc_entry["used"]:
                 toc_entry["used"] = True  # Mark TOC entry as used
-                print(f"Headline: {text}")
                 return True
 
-        print("No Entry in toc")
         return False
 
     def _extend_bounding_boxes(self, page_content: dict) -> dict:

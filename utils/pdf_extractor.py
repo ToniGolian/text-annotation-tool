@@ -122,6 +122,8 @@ class PDFExtractor:
         self._toc = None
         # Dictionary tracking the frequency of (clustered_font, normalized_font_size) combinations
         self._font_size_distribution = {}
+        # extracted text
+        self._extracted_text = None
 
         # Load the PDF document if a path is provided
         if pdf_path:
@@ -145,6 +147,7 @@ class PDFExtractor:
         # Load the document
         self.pdf_path = Path(pdf_path)
         self._doc = pymupdf.open(self.pdf_path)
+        self._update_abbreviations()
 
         self._extract_clean_toc()
         self._initialize_pages_margins(pages_margins)
@@ -156,7 +159,35 @@ class PDFExtractor:
         self._filter_by_font_and_size()
         self._extend_bounding_boxes()
         self._merge_bounding_boxes()
-        self.visualize_all_bboxes()
+        # self.visualize_all_bboxes()
+        self._extract_and_process_text()
+
+    # todo implement
+
+    def _update_abbreviations(self) -> None:
+        """
+        Loads the list of abbreviations from a placeholder file path and updates
+        the self._abbreviations attribute. Currently uses a hardcoded path and is
+        meant to be replaced with the actual path in a real implementation.
+        """
+        adress_dict_path = "/app_data/app_paths.json"
+
+        # In an actual implementation, you'd open the file and read its contents.
+        # For example:
+        #
+        # with open(placeholder_path, "r", encoding="utf-8") as f:
+        #     lines = [line.strip() for line in f if line.strip()]
+        # self._abbreviations = lines
+        #
+        # For now, we'll just set a dummy list.
+
+        self._abbreviations = [
+            "z.B.",
+            "u.a.",
+            "d.h.",
+            "etc.",
+            "evtl."
+        ]
 
     def _extract_clean_toc(self) -> None:
         """
@@ -1136,6 +1167,153 @@ class PDFExtractor:
             list, zip(*combined))) if combined else ([], [])
 
         return page_content
+
+    def _extract_and_process_text(self) -> None:
+        """
+        Extracts and processes text from self._document_content to generate a structured and clean text output.
+
+        The method iterates through the entire document content, extracting text block by block. If a block is 
+        marked as a headline, it is added directly to the list. Non-headline text is merged until a new headline 
+        or the end of the document is reached, at which point the accumulated text is added as a single entry.
+
+        After the initial extraction, each element in the list is further split into sentences using 
+        the _split_into_sentences method. The resulting sentences are collected and finally joined into a 
+        single string with blank lines separating each entry. This final output is stored in self._extracted_text.
+
+        Updates:
+            - self._extracted_text: Contains the final processed text as a single string.
+        """
+        extracted_strings = []
+        current_text = []
+
+        # Iterate through document content to extract text
+        for page_content in self._document_content:
+            text_blocks, _ = page_content["text_data"]
+
+            for block in text_blocks:
+                block_lines = []
+
+                # Extract text line by line and handle hyphenation
+                for line in block["lines"]:
+                    line_text = " ".join(span.get("text", "").strip()
+                                         for span in line.get("spans", []))
+                    block_lines.append(line_text)
+
+                # Merge lines within the block, handling hyphenation across lines
+                block_text = []
+                for i, line in enumerate(block_lines):
+                    if i > 0 and block_text:
+                        # Check if the previous line ends with "-" and the current starts with lowercase
+                        if block_text[-1].endswith("-") and line and line[0].islower():
+                            # Remove the trailing "-" and merge with current line (skip leading whitespaces)
+                            block_text[-1] = block_text[-1][:-1] + \
+                                line.lstrip()
+                            continue
+
+                    block_text.append(line)
+
+                block_text = " ".join(block_text)
+
+                # Check if the block or any line is marked as a headline
+                if any(line.get("headline", False) for line in block["lines"]):
+                    # If there is accumulated text, add it first
+                    if current_text:
+                        extracted_strings.append(" ".join(current_text))
+                        current_text = []
+
+                    # Add the headline directly to the list
+                    extracted_strings.append(block_text)
+                else:
+                    # Accumulate non-headline text
+                    current_text.append(block_text)
+
+        # Append any remaining accumulated text
+        if current_text:
+            extracted_strings.append(" ".join(current_text))
+
+        # Process each extracted string into sentences
+        processed_strings = []
+        for entry in extracted_strings:
+            processed_strings.extend(self._split_into_sentences(entry))
+
+        # Join the processed strings into the final output with a blank line in between
+        self._extracted_text = "\n\n".join(processed_strings)
+        print(self._extracted_text)
+
+    def _split_into_sentences(self, text: str) -> List[str]:
+        """
+        Splits the given text into sentences based on punctuation marks (".", "!", "?").
+        Ignores punctuation that is part of numeric endings (e.g., "20000."), known
+        abbreviations in `self._abbreviations`, or matches patterns in a regex list
+        (e.g., single-letter abbreviations like "z.b.").
+
+        The text remains unchanged apart from splitting it into separate segments
+        (no additional spaces added), and trailing spaces are removed in each returned sentence.
+
+        Args:
+            text (str): The input text to be split into sentences.
+
+        Returns:
+            List[str]: A list of sentence-like segments.
+        """
+        sentences = []
+        punctuation_marks = {'.', '!', '?'}
+        sentence_start = 0
+        current_index = 0
+        text_length = len(text)
+
+        # Define the regex list for dynamic abbreviation pattern checks
+        regex_list = [
+            # Matches "z.b.", "d.h.", "u.s.w."
+            re.compile(r'^[a-zA-Z](\.\s?[a-zA-Z])*\.$')
+        ]
+
+        while current_index < text_length:
+            current_char = text[current_index]
+
+            if current_char in punctuation_marks:
+                # Check if punctuation is surrounded by non-space characters
+                left_not_space = current_index > 0 and not text[current_index - 1].isspace(
+                )
+                right_not_space = current_index + \
+                    1 < text_length and not text[current_index + 1].isspace()
+                if left_not_space and right_not_space:
+                    current_index += 1
+                    continue
+
+                # Find the word before the punctuation
+                preceding_index = current_index - 1
+                while preceding_index >= sentence_start and not text[preceding_index].isspace():
+                    preceding_index -= 1
+                preceding_word = text[preceding_index + 1:current_index]
+
+                # Check if the word is numeric
+                if preceding_word.isdigit():
+                    current_index += 1
+                    continue
+
+                # Check if the word is in the abbreviation list
+                abbreviation_candidate = preceding_word + current_char
+                if abbreviation_candidate in self._abbreviations:
+                    current_index += 1
+                    continue
+
+                # Check if the word matches any regex in the regex list
+                if any(regex.match(abbreviation_candidate) for regex in regex_list):
+                    current_index += 1
+                    continue
+
+                # Treat as sentence boundary
+                sentences.append(text[sentence_start:current_index + 1])
+                sentence_start = current_index + 1
+
+            current_index += 1
+
+        # Add remaining text as the last sentence
+        if sentence_start < text_length:
+            sentences.append(text[sentence_start:])
+
+        return [sentence.strip() for sentence in sentences]
 
     def _is_bbox_within(self, inner_bbox, outer_bbox):
         """

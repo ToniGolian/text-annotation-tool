@@ -25,7 +25,7 @@ class ConfigurationModel(ILayoutPublisher):
 
         # load default app paths
         self._app_paths = self._filehandler.read_file(
-            "app_data/app.paths.json")
+            "app_data/app_paths.json")
 
         # load the stored layout information
         self._saved_layout_path = self._app_paths["saved_layout"]

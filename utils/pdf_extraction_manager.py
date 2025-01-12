@@ -1174,6 +1174,8 @@ class PDFExtractionManager:
         """
         extracted_strings = []
         current_text = []
+        # Define a set of common word-breaking characters in PDFs
+        word_break_chars = {"\xad", "-", "\u200B", "\u2060", "\uFEFF"}
 
         # Iterate through document content to extract text
         for page_content in self._document_content:
@@ -1184,14 +1186,36 @@ class PDFExtractionManager:
 
                 # Extract text line by line and handle hyphenation
                 for line in block["lines"]:
-                    line_text = " ".join(span.get("text", "").strip()
-                                         for span in line.get("spans", []))
-                    block_lines.append(line_text)
+                    line_text = []
+                    spans = line.get("spans", [])
+                    index = 0
+
+                    while index < len(spans):
+                        span = spans[index]
+                        span_text = span.get("text", "").strip()
+                        span_size = span.get("size", 0)
+
+                        # Check if the span is too small to include
+                        if span_size < 0.75 * self._most_common_fontsize:
+                            # Merge the previous and next spans into one entry
+                            if line_text and index + 1 < len(spans):
+                                merged_text = line_text[-1] + \
+                                    spans[index + 1]["text"].strip()
+                                line_text[-1] = merged_text
+                                # Skip the next span
+                                index += 1
+                            index += 1
+                            continue
+
+                        # Add the current span's text to the line
+                        line_text.append(span_text)
+                        index += 1
+
+                    # Combine the processed spans into a single line
+                    block_lines.append(" ".join(line_text))
 
                 # Merge lines within the block, handling hyphenation across lines
                 block_text = []
-                # Define a set of common word-breaking characters in PDFs
-                word_break_chars = {"\xad", "-", "\u200B", "\u2060", "\uFEFF"}
                 for i, line in enumerate(block_lines):
                     if i > 0 and block_text:
                         # Check if the previous line ends with a word-breaking character
@@ -1209,7 +1233,19 @@ class PDFExtractionManager:
                 if any(line.get("headline", False) for line in block["lines"]):
                     # If there is accumulated text, add it first
                     if current_text:
-                        extracted_strings.append(" ".join(current_text))
+                        merged_text = current_text[0]
+
+                        for line in current_text[1:]:
+                            # Check if the previous line ends with a word-breaking character
+                            if merged_text[-1] in word_break_chars:
+                                # Remove the word-breaking character and merge with the current line
+                                merged_text = merged_text[:-1] + line.lstrip()
+                            else:
+                                # Otherwise, add a space before appending
+                                merged_text += " " + line
+
+                        # Append the processed text
+                        extracted_strings.append(merged_text)
                         current_text = []
 
                     # Add the headline directly to the list
@@ -1220,7 +1256,20 @@ class PDFExtractionManager:
 
         # Append any remaining accumulated text
         if current_text:
-            extracted_strings.append(" ".join(current_text))
+            word_break_chars = {"\xad", "-", "\u200B", "\u2060", "\uFEFF"}
+            merged_text = current_text[0]
+
+            for line in current_text[1:]:
+                # Check if the previous line ends with a word-breaking character
+                if merged_text[-1] in word_break_chars:
+                    # Remove the word-breaking character and merge with the current line
+                    merged_text = merged_text[:-1] + line.lstrip()
+                else:
+                    # Otherwise, add a space before appending
+                    merged_text += " " + line
+
+            # Append the processed text
+            extracted_strings.append(merged_text)
 
         # Process each extracted string into sentences
         processed_strings = []

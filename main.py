@@ -12,6 +12,7 @@ def main():
     tag_model = MockTagModel()
     comparison_model = MockComparisonModel()
     configuration_model = ConfigurationModel()
+
     controller = MockController(
         document_model=text_model, comparison_model=comparison_model, configuration_model=configuration_model)
     app_view = MainWindow(controller)

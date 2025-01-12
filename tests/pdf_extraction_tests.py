@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, Mock
-from utils.pdf_extractor import PDFExtractor
+from utils.pdf_extraction_manager import PDFExtractionManager
 
 
 class TestClusterFonts(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestClusterFonts(unittest.TestCase):
         }
 
         # Instantiate the class
-        extractor = PDFExtractor()
+        extractor = PDFExtractionManager()
 
         # Run the method
         updated_page_content = extractor._cluster_fonts(page_content)
@@ -53,7 +53,7 @@ class TestClusterFonts(unittest.TestCase):
 class TestCalculateMinMaxFontSize(unittest.TestCase):
     def setUp(self):
         # Create a PDFExtractor instance
-        self.extractor = PDFExtractor()
+        self.extractor = PDFExtractionManager()
 
         # Mock the doc object using MagicMock for iteration
         self.extractor._doc = MagicMock()

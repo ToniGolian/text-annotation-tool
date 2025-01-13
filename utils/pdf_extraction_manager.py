@@ -4,8 +4,6 @@ import os
 import re
 from typing import List
 from PIL import Image
-from pprint import pprint
-from controller.interfaces import IController
 from pymupdf import Rect, IRect
 import pymupdf
 from pathlib import Path
@@ -16,6 +14,8 @@ import time
 #! for debug
 import sys
 import io
+
+from utils.interfaces import IListManager
 sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8')
 #! end for debug
 
@@ -40,7 +40,7 @@ def measure_exec_time(func):
 
 
 class PDFExtractionManager:
-    def __init__(self, controller: IController, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, keep_headlines: bool = True):
+    def __init__(self, list_manager: IListManager, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, keep_headlines: bool = True):
         """
         Initializes the PDFExtractor with the given PDF path and various processing options.
 
@@ -51,7 +51,7 @@ class PDFExtractionManager:
             keep_headlines (bool, optional): Whether to keep headlines when processing text. Default is False.
         """
 
-        self._controller = controller
+        self._list_manager = list_manager
 
         # Processing options
         # Whether to consider background colors in bounding box decisions
@@ -171,12 +171,12 @@ class PDFExtractionManager:
     def _update_abbreviations(self) -> None:
         """        
         Updates the internal abbreviations cache by fetching the latest data 
-        from the controller.
+        from the list_manager.
 
-        This method retrieves abbreviations using the controller's `get_abbreviations`
+        This method retrieves abbreviations using the list_manager's `get_abbreviations`
         method and stores them in the `_abbreviations` attribute for internal use.
         """
-        self._abbreviations = self._controller.get_abbreviations()
+        self._abbreviations = self._list_manager.get_abbreviations()
 
     def _extract_clean_toc(self) -> None:
         """

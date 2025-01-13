@@ -4,10 +4,13 @@ from commands.delete_tag_command import DeleteTagCommand
 from commands.edit_tag_command import EditTagCommand
 from controller.interfaces import IController
 from commands.interfaces import ICommand
+from input_output.file_handler import FileHandler
+from mockclasses.mock_list_manager import ListManager
 from model.interfaces import IComparisonModel, IDocumentModel
 from observer.interfaces import IDataObserver, IDataPublisher, ILayoutObserver, ILayoutPublisher, IObserver, IPublisher
 from typing import Dict, List
 
+from utils.pdf_extraction_manager import PDFExtractionManager
 from utils.tag_manager import TagManager
 from utils.tag_processor import TagProcessor
 from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplayFrame, IComparisonTextDisplays, IMetaTagsFrame, ITextDisplayFrame
@@ -20,6 +23,10 @@ class Controller(IController):
         self._tag_processor = TagProcessor()
         self._tag_manager = TagManager(self._tag_processor)
         self._configuration_manager: ILayoutPublisher = configuration_model
+        self._file_handler = FileHandler()
+        self._list_manager = ListManager(self._file_handler)
+        self._pdf_extraction_manager = PDFExtractionManager(
+            list_manager=self._list_manager)
 
         # state
         self._dynamic_observer_index: int = 0

@@ -5,6 +5,14 @@ from typing import Dict, List
 from model.interfaces import ITagModel
 
 
+class IListManager(ABC):
+    @abstractmethod
+    def get_abbreviations(self) -> set[str]:
+        """
+        Loads abbreviations
+        """
+
+
 class ITagManager(ABC):
     @abstractmethod
     def add_tag(self, tag_data: dict) -> None:

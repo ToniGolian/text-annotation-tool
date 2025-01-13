@@ -5,19 +5,22 @@ from commands.edit_tag_command import EditTagCommand
 from controller.interfaces import IController
 from commands.interfaces import ICommand
 from input_output.file_handler import FileHandler
-from mockclasses.mock_list_manager import ListManager
 from model.interfaces import IComparisonModel, IDocumentModel
 from observer.interfaces import IDataObserver, IDataPublisher, ILayoutObserver, ILayoutPublisher, IObserver, IPublisher
 from typing import Dict, List
 
+from utils.list_manager import ListManager
 from utils.pdf_extraction_manager import PDFExtractionManager
 from utils.tag_manager import TagManager
 from utils.tag_processor import TagProcessor
+from view.annotation_text_display_frame import AnnotationTextDisplayFrame
+from view.comparison_text_display_frame import ComparisonTextDisplayFrame
 from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplayFrame, IComparisonTextDisplays, IMetaTagsFrame, ITextDisplayFrame
+from view.preview_text_display_frame import PreviewTextDisplayFrame
 
 
 class Controller(IController):
-    def __init__(self, configuration_model: ILayoutPublisher, document_model: IDataPublisher = None, preview_document_model: IDataPublisher = None, comparison_model: IDataPublisher = None):
+    def __init__(self, configuration_model: ILayoutPublisher, preview_document_model: IDataPublisher = None, annotation_document_model: IDataPublisher = None, comparison_document_model: IDataPublisher = None, selection_model: IDataPublisher = None, comparison_model: IDataPublisher = None):
 
         # dependencies
         self._tag_processor = TagProcessor()
@@ -34,13 +37,83 @@ class Controller(IController):
         self._observer_layout_map: Dict[ILayoutObserver, Dict] = {}
         self._observers_to_finalize: List = []
 
-        self._document_model: IDocumentModel = document_model
         self._preview_document_model: IDocumentModel = preview_document_model
+        self._annotation_document_model: IDocumentModel = annotation_document_model
+        self._comparison_document_model: IDocumentModel = comparison_document_model
         self._comparison_model: IComparisonModel = comparison_model
+        self._selection_model: IDataPublisher = selection_model
 
         # collections
         self._undo_stack = []
         self._redo_stack = []
+
+        # Mapping observer classes to their respective data sources, keys, and finalize status
+        self._data_source_mapping = {
+            PreviewTextDisplayFrame: {
+                "sources": [self._preview_document_model],
+                "keys": ["text"],
+                "finalize": False
+            },
+            AnnotationTextDisplayFrame: {
+                "sources": [self._annotation_document_model],
+                "keys": ["text"],
+                "finalize": False
+            },
+            ComparisonTextDisplayFrame: {
+                "sources": [self._comparison_document_model],
+                "keys": ["text"],
+                "finalize": False
+            },
+            IMetaTagsFrame: {
+                "sources": [self._comparison_model],
+                "keys": ["file_names"],
+                "finalize": True
+            },
+            IComparisonTextDisplays: {
+                "sources": [self._comparison_model],
+                "keys": ["file_names"],
+                "finalize": True
+            },
+            IComparisonHeaderFrame: {
+                "sources": [self._comparison_model],
+                "keys": ["num_sentences", "current_sentence_index"],
+                "finalize": True
+            },
+            IComparisonTextDisplayFrame: {
+                "sources": [self._comparison_model],
+                "keys": ["comparison_sentences"],
+                "finalize": False
+            },
+            IAnnotationMenuFrame: {
+                "sources": [self._selection_model],
+                "keys": ["selected_text"],
+                "finalize": False
+            }
+        }
+
+        # Mapping layout observer classes to their respective data sources, keys, and finalize status
+        self._layout_source_mapping = {
+            IComparisonTextDisplays: {
+                "sources": [self._configuration_manager],
+                "keys": ["filenames", "num_files"],
+                "finalize": True
+            },
+            IComparisonHeaderFrame: {
+                "sources": [self._configuration_manager],
+                "keys": ["filenames", "num_files"],
+                "finalize": True
+            },
+            IMetaTagsFrame: {
+                "sources": [self._configuration_manager],
+                "keys": ["tag_types"],
+                "finalize": True
+            },
+            IAnnotationMenuFrame: {
+                "sources": [self._configuration_manager],
+                "keys": ["template_groups"],
+                "finalize": True
+            }
+        }
 
     # command pattern
 
@@ -77,130 +150,140 @@ class Controller(IController):
     # observer pattern
     def add_data_observer(self, observer: IDataObserver) -> None:
         """
-        Registers a data observer and maps its data-fetching logic.
+        Registers a data observer and maps its data-fetching logic using the predefined mapping.
 
         Args:
             observer (IDataObserver): The data observer to be added.
         """
-        if isinstance(observer, ITextDisplayFrame):
-            keys = ["text"]
-            sources = [self._document_model]
-            self._set_observer_mapping(observer, keys, sources, "data")
-            self._document_model.add_data_observer(observer)
+        # Retrieve the mapping by finding the appropriate key based on isinstance
+        mapping = None
+        for cls, value in self._data_source_mapping.items():
+            if isinstance(observer, cls):
+                mapping = value
+                break
 
-        elif isinstance(observer, IMetaTagsFrame):
-            keys = ["file_names"]
-            sources = [self._comparison_model]
-            self._set_observer_mapping(observer, keys, sources, "data")
-            self._comparison_model.add_data_observer(observer)
-            self._observers_to_finalize.append(observer)
-        elif isinstance(observer, IComparisonTextDisplays):
-            keys = ["file_names"]
-            sources = [self._comparison_model]
-            self._set_observer_mapping(observer, keys, sources, "data")
-            self._comparison_model.add_data_observer(observer)
-            self._observers_to_finalize.append(observer)
+        if not mapping:
+            print(f"Unknown Data Observer {type(observer)} registered")
+            return
 
-        elif isinstance(observer, IComparisonHeaderFrame):
-            keys = ["num_sentences", "current_sentence_index"]
-            sources = [self._comparison_model]
-            self._set_observer_mapping(observer, keys, sources, "data")
-            self._comparison_model.add_data_observer(observer)
-            self._observers_to_finalize.append(observer)
+        sources = mapping["sources"]
+        keys = mapping["keys"]
 
-        elif isinstance(observer, IComparisonTextDisplayFrame):
-            # Dynamically map the observer to a specific sentence in the list
-            index = self._dynamic_observer_index  # Use the current dynamic observer index
+        # Handle specific logic for IComparisonTextDisplayFrame
+        if isinstance(observer, IComparisonTextDisplayFrame):
+            index = self._dynamic_observer_index
             self._dynamic_observer_index += 1
 
-            # Use a lambda to extract the specific sentence based on the index
+            # Add observer-specific data mapping
             self._observer_data_map[observer] = lambda index=index: {
-                "sentence": self._comparison_model.get_data_state()["comparison_sentences"][index]
+                "sentence": sources[0].get_data_state()["comparison_sentences"][index]
             }
 
-            self._comparison_model.add_data_observer(observer)
+        # Register the observer to the sources
+        self._set_observer_mapping(observer, keys, sources, "data")
+        for source in sources:
+            source.add_data_observer(observer)
 
-        else:
-            print(f"Unknown Data Observer {type(observer)} registered")
+        # Add to finalize list if the mapping specifies it
+        if mapping["finalize"]:
+            self._observers_to_finalize.append(observer)
 
     def add_layout_observer(self, observer: ILayoutObserver) -> None:
         """
-        Registers a layout observer and maps its layout-fetching logic.
+        Registers a layout observer and maps its layout-fetching logic using the predefined mapping.
 
         Args:
             observer (ILayoutObserver): The layout observer to be added.
         """
-        # standard source. observers can add additional sources
-        sources = [self._configuration_manager]
+        # Retrieve the mapping by finding the appropriate key based on isinstance
+        mapping = None
+        for cls, value in self._layout_source_mapping.items():
+            if isinstance(observer, cls):
+                mapping = value
+                break
 
-        if isinstance(observer, (IComparisonTextDisplays, IComparisonHeaderFrame)):
-            keys = ["filenames", "num_files"]
-        elif isinstance(observer, IMetaTagsFrame):
-            keys = ["tag_types"]
-        elif isinstance(observer, IAnnotationMenuFrame):
-            keys = ["template_groups"]
-        else:
-            keys = []
+        if not mapping:
             print(f"Unknown Layout Observer {type(observer)} registered")
+            return
 
+        sources = mapping["sources"]
+        keys = mapping["keys"]
+
+        # Register the observer to the sources
         self._set_observer_mapping(observer, keys, sources, "layout")
-        self._comparison_model.add_layout_observer(observer)
-        self._observers_to_finalize.append(observer)
+        for source in sources:
+            source.add_layout_observer(observer)
+
+        # Add to finalize list if the mapping specifies it
+        if mapping["finalize"]:
+            self._observers_to_finalize.append(observer)
 
     def remove_data_observer(self, observer: IDataObserver) -> None:
         """
-        Removes a data observer and clears any associated mappings or registrations.
+        Removes a data observer and clears any associated mappings or registrations using the predefined mapping.
 
         Args:
             observer (IDataObserver): The data observer to be removed.
         """
+        # Retrieve the mapping by finding the appropriate key based on isinstance
+        mapping = None
+        for cls, value in self._data_source_mapping.items():
+            if isinstance(observer, cls):
+                mapping = value
+                break
+
+        if not mapping:
+            print(f"Unknown Data Observer {type(observer)} cannot be removed")
+            return
+
+        sources = mapping["sources"]
+
         # Remove the observer from the data map if it exists
         if observer in self._observer_data_map:
             del self._observer_data_map[observer]
 
         # If the observer was added to finalize list, remove it
-        if observer in self._observers_to_finalize:
+        if mapping["finalize"] and observer in self._observers_to_finalize:
             self._observers_to_finalize.remove(observer)
 
-        # Remove observer from associated data publishers
-        if isinstance(observer, ITextDisplayFrame):
-            self._document_model.remove_data_observer(observer)
-        elif isinstance(observer, IMetaTagsFrame):
-            self._comparison_model.remove_data_observer(observer)
-        elif isinstance(observer, IComparisonTextDisplays):
-            self._comparison_model.remove_data_observer(observer)
-        elif isinstance(observer, IComparisonHeaderFrame):
-            self._comparison_model.remove_data_observer(observer)
-        elif isinstance(observer, IComparisonTextDisplayFrame):
-            self._comparison_model.remove_data_observer(observer)
+        # Remove the observer from all associated data sources
+        for source in sources:
+            source.remove_data_observer(observer)
 
         print(f"Data observer {type(observer)} removed.")
 
     def remove_layout_observer(self, observer: ILayoutObserver) -> None:
         """
-        Removes a layout observer and clears any associated mappings or registrations.
+        Removes a layout observer and clears any associated mappings or registrations using the predefined mapping.
 
         Args:
             observer (ILayoutObserver): The layout observer to be removed.
         """
+        # Retrieve the mapping by finding the appropriate key based on isinstance
+        mapping = None
+        for cls, value in self._layout_source_mapping.items():
+            if isinstance(observer, cls):
+                mapping = value
+                break
+
+        if not mapping:
+            print(
+                f"Unknown Layout Observer {type(observer)} cannot be removed")
+            return
+
+        sources = mapping["sources"]
+
         # Remove the observer from the layout map if it exists
         if observer in self._observer_layout_map:
             del self._observer_layout_map[observer]
 
         # If the observer was added to finalize list, remove it
-        if observer in self._observers_to_finalize:
+        if mapping["finalize"] and observer in self._observers_to_finalize:
             self._observers_to_finalize.remove(observer)
 
-        # Remove observer from associated layout publishers
-        self._configuration_manager.remove_layout_observer(observer)
-
-        # Additional specific removals based on observer type
-        if isinstance(observer, (IComparisonTextDisplays, IComparisonHeaderFrame)):
-            self._comparison_model.remove_layout_observer(observer)
-        elif isinstance(observer, IMetaTagsFrame):
-            self._comparison_model.remove_layout_observer(observer)
-        elif isinstance(observer, IAnnotationMenuFrame):
-            self._comparison_model.remove_layout_observer(observer)
+        # Remove the observer from all associated layout sources
+        for source in sources:
+            source.remove_layout_observer(observer)
 
         print(f"Layout observer {type(observer)} removed.")
 
@@ -223,7 +306,13 @@ class Controller(IController):
 
         Raises:
             ValueError: If `mapping` is not "data" or "layout".
+            ValueError: If `keys` or `sources` are empty.
         """
+        if not keys:
+            raise ValueError("Keys cannot be empty.")
+        if not sources:
+            raise ValueError("Sources cannot be empty.")
+
         if mapping == "data":
             data = {key: value for source in sources for key,
                     value in source.get_data_state().items()}

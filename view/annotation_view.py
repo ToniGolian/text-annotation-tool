@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from controller.interfaces import IController
+from view.annotation_text_display_frame import AnnotationTextDisplayFrame
 from view.meta_tags_frame import MetaTagsFrame
 from view.text_display_frame import TextDisplayFrame
 from view.annotation_menu_frame import AnnotationMenuFrame
@@ -40,7 +41,7 @@ class AnnotationView(tk.Frame):
         self.upper_frame.pack(fill=tk.X, expand=False, side="top")
 
         # Pack the lower_frame below the upper_frame
-        self.lower_frame = TextDisplayFrame(
+        self.lower_frame = AnnotationTextDisplayFrame(
             self.left_frame, controller=self._controller)
         self.lower_frame.pack(fill=tk.BOTH, expand=True, side="top")
 

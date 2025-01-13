@@ -7,36 +7,7 @@ from PIL import Image
 from pymupdf import Rect, IRect
 import pymupdf
 from pathlib import Path
-
-
-import time
-
-#! for debug
-import sys
-import io
-
 from utils.interfaces import IListManager
-sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8')
-#! end for debug
-
-
-def measure_exec_time(func):
-    """
-    Decorator to measure the execution time of a function in milliseconds.
-
-    Args:
-        func (function): The function whose execution time is to be measured.
-
-    Returns:
-        function: The wrapped function with execution time measurement.
-    """
-    def wrapper(*args, **kwargs):
-        start_time = time.perf_counter()  # High-precision timer
-        result = func(*args, **kwargs)
-        print(
-            f"Execution time of {func.__name__}: {time.perf_counter() - start_time:.3f} seconds\n")
-        return result
-    return wrapper
 
 
 class PDFExtractionManager:
@@ -136,7 +107,6 @@ class PDFExtractionManager:
             self.load_document(
                 pdf_path=pdf_path, pages_margins=pages_margins, pages=pages)
 
-    @ measure_exec_time
     def load_document(self, pdf_path: str, pages_margins: list = None, pages: str = None) -> None:
         """
         Loads a new PDF document, initializes margins, extracts document data,
@@ -1278,7 +1248,6 @@ class PDFExtractionManager:
 
         # Join the processed strings into the final output with a blank line in between
         self._extracted_text = "\n\n".join(processed_strings)
-        print(self._extracted_text)
 
     def _split_into_sentences(self, text: str) -> List[str]:
         """

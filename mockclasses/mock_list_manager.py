@@ -4,9 +4,6 @@ from utils.interfaces import IListManager
 
 
 class ListManager(IListManager):
-    def __init__(self, file_handler: IFileHandler):
-        self._file_handler = file_handler
-
     def get_abbreviations(self) -> set[str]:
         """
             Loads abbreviations from a JSON file and returns the list of German abbreviations.

@@ -17,7 +17,7 @@ from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, ICompa
 
 
 class Controller(IController):
-    def __init__(self, configuration_model: ILayoutPublisher, document_model: IDataPublisher = None, comparison_model: IDataPublisher = None):
+    def __init__(self, configuration_model: ILayoutPublisher, document_model: IDataPublisher = None, preview_document_model: IDataPublisher = None, comparison_model: IDataPublisher = None):
 
         # dependencies
         self._tag_processor = TagProcessor()
@@ -35,6 +35,7 @@ class Controller(IController):
         self._observers_to_finalize: List = []
 
         self._document_model: IDocumentModel = document_model
+        self._preview_document_model: IDocumentModel = preview_document_model
         self._comparison_model: IComparisonModel = comparison_model
 
         # collections

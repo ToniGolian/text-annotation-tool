@@ -3,7 +3,7 @@ from commands.interfaces import ICommand
 from utils.interfaces import ITagManager
 
 
-class ChangeTagCommand(ICommand):
+class EditTagCommand(ICommand):
     """
     A command to change the data of an existing tag using the TagManager.
     Supports undo and redo functionality.

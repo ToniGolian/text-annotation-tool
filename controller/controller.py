@@ -1,3 +1,7 @@
+import json
+from commands.add_tag_command import AddTagCommand
+from commands.delete_tag_command import DeleteTagCommand
+from commands.edit_tag_command import EditTagCommand
 from controller.interfaces import IController
 from commands.interfaces import ICommand
 from model.interfaces import IComparisonModel, IDocumentModel
@@ -23,8 +27,8 @@ class Controller(IController):
         self._observer_layout_map: Dict[ILayoutObserver, Dict] = {}
         self._observers_to_finalize: List = []
 
-        self._document_model: IDocumentModel = None
-        self._comparison_model: IComparisonModel = None
+        self._document_model: IDocumentModel = document_model
+        self._comparison_model: IComparisonModel = comparison_model
 
         # collections
         self._undo_stack = []
@@ -136,10 +140,61 @@ class Controller(IController):
         self._observers_to_finalize.append(observer)
 
     def remove_data_observer(self, observer: IDataObserver) -> None:
-        print(f"{type(observer)} removed")
+        """
+        Removes a data observer and clears any associated mappings or registrations.
+
+        Args:
+            observer (IDataObserver): The data observer to be removed.
+        """
+        # Remove the observer from the data map if it exists
+        if observer in self._observer_data_map:
+            del self._observer_data_map[observer]
+
+        # If the observer was added to finalize list, remove it
+        if observer in self._observers_to_finalize:
+            self._observers_to_finalize.remove(observer)
+
+        # Remove observer from associated data publishers
+        if isinstance(observer, ITextDisplayFrame):
+            self._document_model.remove_data_observer(observer)
+        elif isinstance(observer, IMetaTagsFrame):
+            self._comparison_model.remove_data_observer(observer)
+        elif isinstance(observer, IComparisonTextDisplays):
+            self._comparison_model.remove_data_observer(observer)
+        elif isinstance(observer, IComparisonHeaderFrame):
+            self._comparison_model.remove_data_observer(observer)
+        elif isinstance(observer, IComparisonTextDisplayFrame):
+            self._comparison_model.remove_data_observer(observer)
+
+        print(f"Data observer {type(observer)} removed.")
 
     def remove_layout_observer(self, observer: ILayoutObserver) -> None:
-        print(f"{type(observer)} removed")
+        """
+        Removes a layout observer and clears any associated mappings or registrations.
+
+        Args:
+            observer (ILayoutObserver): The layout observer to be removed.
+        """
+        # Remove the observer from the layout map if it exists
+        if observer in self._observer_layout_map:
+            del self._observer_layout_map[observer]
+
+        # If the observer was added to finalize list, remove it
+        if observer in self._observers_to_finalize:
+            self._observers_to_finalize.remove(observer)
+
+        # Remove observer from associated layout publishers
+        self._configuration_manager.remove_layout_observer(observer)
+
+        # Additional specific removals based on observer type
+        if isinstance(observer, (IComparisonTextDisplays, IComparisonHeaderFrame)):
+            self._comparison_model.remove_layout_observer(observer)
+        elif isinstance(observer, IMetaTagsFrame):
+            self._comparison_model.remove_layout_observer(observer)
+        elif isinstance(observer, IAnnotationMenuFrame):
+            self._comparison_model.remove_layout_observer(observer)
+
+        print(f"Layout observer {type(observer)} removed.")
 
     def _set_observer_mapping(self, observer: IObserver, keys: List[str], sources: List[IPublisher], mapping: str) -> None:
         """
@@ -174,7 +229,7 @@ class Controller(IController):
         else:
             raise ValueError("Invalid mapping type. Use 'data' or 'layout'.")
 
-    def get_data_state(self, observer: IDataObserver) -> None:
+    def get_data_state(self, observer: IDataObserver) -> any:
         """
         Retrieves the updated data for a specific data observer.
 
@@ -195,7 +250,7 @@ class Controller(IController):
         """
         return self._observer_data_map[observer]()
 
-    def get_layout_state(self, observer: ILayoutObserver) -> None:
+    def get_layout_state(self, observer: ILayoutObserver) -> any:
         """
         Retrieves the updated layout information for a specific layout observer.
 
@@ -215,6 +270,41 @@ class Controller(IController):
             `_observer_layout_map`.
         """
         return self._observer_layout_map[observer]()
+
+    #!
+    # todo Mockmethod
+    def get_abbreviations(self) -> set[str]:
+        """
+        Loads abbreviations from a JSON file and returns the list of German abbreviations.
+
+        Arguments:
+            file_path (str): The path to the JSON file containing abbreviations. 
+                            Defaults to "app_data/abbreviations.json".
+
+        Returns:
+            List[str]: A list of German abbreviations as strings.
+
+        Raises:
+            FileNotFoundError: If the file does not exist.
+            json.JSONDecodeError: If the file is not valid JSON.
+            KeyError: If the "german" key is missing in the JSON file.
+        """
+        file_path = "app_data/abbreviations.json"
+        try:
+            # Load the JSON file
+            with open(file_path, "r") as file:
+                data = json.load(file)
+
+            # Extract and return the list of German abbreviations
+            return set(data["german"])
+        except FileNotFoundError:
+            raise FileNotFoundError(f"The file '{file_path}' does not exist.")
+        except json.JSONDecodeError as e:
+            raise json.JSONDecodeError(
+                f"Invalid JSON in '{file_path}': {e.msg}", e.doc, e.pos)
+        except KeyError:
+            raise KeyError(
+                f"The key 'german' is missing in the JSON file '{file_path}'.")
 
     # initialization
 

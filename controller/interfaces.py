@@ -1,18 +1,17 @@
 from abc import ABC, abstractmethod
 from commands.interfaces import ICommand
 from observer.interfaces import IDataObserver, ILayoutObserver, IObserver, IPublisher
-from typing import List
+from typing import List, Dict, Any
 
 
 class IController(ABC):
     @abstractmethod
-    def __init__(self, text_model: IPublisher, ) -> None:
+    def __init__(self, text_model: IPublisher) -> None:
         """
         Initializes the controller with text and tag model dependencies.
 
         Args:
             text_model (ITextModel): The text model dependency.
-            tag_model (ITagModel): The tag model dependency.
         """
         pass
 
@@ -23,13 +22,13 @@ class IController(ABC):
         pass
 
     @abstractmethod
-    def _undo_command(self, command: ICommand) -> None:
-        """Reverses the actions of the specified command."""
+    def _undo_command(self) -> None:
+        """Reverses the last executed command."""
         pass
 
     @abstractmethod
-    def _redo_command(self, command: ICommand) -> None:
-        """Reapplies the actions of the specified command."""
+    def _redo_command(self) -> None:
+        """Reapplies the last undone command."""
         pass
 
     # observer pattern
@@ -54,27 +53,39 @@ class IController(ABC):
         pass
 
     @abstractmethod
-    def get_data_state(self, observer: IDataObserver):
-        """Retrieves the data from observed publisher"""
+    def get_data_state(self, observer: IDataObserver) -> Any:
+        """Retrieves the data from observed publisher."""
         pass
 
     @abstractmethod
-    def get_layout_state(self, observer: ILayoutObserver):
-        """Retrieves the layout data from observed publisher"""
+    def get_layout_state(self, observer: ILayoutObserver) -> Any:
+        """Retrieves the layout data from observed publisher."""
         pass
 
-    # initializiations
+    # abbreviation handling
+    @abstractmethod
+    def get_abbreviations(self) -> set[str]:
+        """
+        Loads and retrieves a set of German abbreviations from a predefined source.
+
+        Returns:
+            set[str]: A set of German abbreviations.
+        """
+        pass
+
+    # initializations
     @abstractmethod
     def finalize_views(self) -> None:
         """
         Finalizes the initialization of all views that were previously 
-        not fully initialized."""
+        not fully initialized.
+        """
         pass
 
     # performances
     @abstractmethod
     def perform_text_selected(self, text: str) -> None:
-        """Performs the action if a text is selected in the main text display"""
+        """Performs the action if a text is selected in the main text display."""
         pass
 
     @abstractmethod

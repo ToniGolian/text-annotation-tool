@@ -3,7 +3,7 @@ from commands.interfaces import ICommand
 from utils.interfaces import ITagManager
 
 
-class RemoveTagCommand(ICommand):
+class DeleteTagCommand(ICommand):
     """
     A command to remove a tag using the TagManager.
     Supports undo and redo functionality.

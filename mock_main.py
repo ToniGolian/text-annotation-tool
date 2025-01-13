@@ -11,7 +11,7 @@ test_docs = [
     "10274-Sondermessungen_2020_Abschlussbericht.pdf",
     "Energie-_und_Stoffstrommanagement._Praxisbeispiel_Kunststofflackierung.pdf",
 ]
-DOCUMENT = 2
+DOCUMENT = 1
 margins = [10, 10, 10, 10]
 pages = "6-36"
 text_model = MockDocumentModel()

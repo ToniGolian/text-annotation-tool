@@ -422,6 +422,14 @@ class Controller(IController):
         for observer in self._observers_to_finalize:
             observer.update_layout()
 
+# Perform methods
+
+    def perform_pdf_extraction(self, extraction_data: dict) -> None:
+        page_ranges_string = extraction_data["page_ranges"]
+        page_margins_string = extraction_data["page_margins"]
+        page_ranges = self._formatter._format_ranges(page_ranges_string)
+        page_margins = self._formatter._format_margins(page_margins_string)
+
     def perform_add_tag(self, tag_data: dict) -> None:
         """
         Creates and executes an AddTagCommand to add a new tag.

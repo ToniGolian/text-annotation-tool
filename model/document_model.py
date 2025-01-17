@@ -13,10 +13,10 @@ class DocumentModel(IDocumentModel):
         """
         Initializes the DocumentModel with default values for its attributes.
         """
+        super().__init__()
         self._filename: str = ""
         self._meta_tags: Dict = {}
         self._text: str = ""
-        self._tags: List[ITagModel] = []
 
     # Getters and Setters
 
@@ -74,20 +74,18 @@ class DocumentModel(IDocumentModel):
         """
         self._text = text
 
-    def get_tags(self) -> list:
+    def get_data_state(self) -> dict:
         """
-        Retrieves the tags associated with the document.
+        Retrieves a dictionary representation of the object's attributes.
+
+        The dictionary includes the following attributes:
+            - "filename": The name of the file associated with the object.
+            - "meta_tags": The metadata tags associated with the object.
+            - "text": The textual content managed by the object.
 
         Returns:
-            list: A list of tags represented as ITagModel objects.
+            dict: A dictionary containing the object's attributes as keys and their corresponding values.
         """
-        return self._tags
-
-    def set_tags(self, tags: list) -> None:
-        """
-        Sets the tags associated with the document.
-
-        Args:
-            tags (list): A list of tags represented as ITagModel objects to set.
-        """
-        self._tags = tags
+        return {"filename": self._filename,
+                "meta_tags": self._meta_tags,
+                "text": self._text}

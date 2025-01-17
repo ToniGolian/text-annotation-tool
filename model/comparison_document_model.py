@@ -1,7 +1,7 @@
 from model.document_model import DocumentModel
 
 
-class PreviewDocumentModel(DocumentModel):
+class ComparisonDocumentModel(DocumentModel):
     """
     A specialized DocumentModel for managing comparison text.
     """

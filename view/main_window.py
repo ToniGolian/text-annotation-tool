@@ -87,7 +87,7 @@ class MainWindow(tk.Tk):
 
         # Choose the second page as default
         #! change
-        notebook.select(2)
+        notebook.select(0)
 
     def _on_open(self):
         """Handles the 'Open' action from the File menu."""

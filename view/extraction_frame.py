@@ -114,7 +114,8 @@ class ExtractionFrame(tk.Frame):
         """
         Handler for the extract button. Invokes the controller's method for PDF extraction.
         """
-        extraction_data = {"page_range": self.page_range_entry.get(),
+        extraction_data = {"pdf_path": self.pdf_path_entry.get(),
+                           "page_range": self.page_range_entry.get(),
                            "page_margins": self.page_margins_entry.get()
                            }
         self._controller.perform_pdf_extraction(extraction_data)

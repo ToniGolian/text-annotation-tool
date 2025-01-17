@@ -1,23 +1,22 @@
 from input_output.interfaces import IFileHandler
-from utils.interfaces import IListManager
+from utils.interfaces import IListManager, ISettingsManager
 
 
 class ListManager(IListManager):
-    def __init__(self, file_handler: IFileHandler):
+    def __init__(self, file_handler: IFileHandler, settings_manager: ISettingsManager):
         """
-        Initializes the ListManager with a file handler for file operations.
+        Initializes the ListManager with a file handler for file operations and a settings manager.
 
         Args:
             file_handler (IFileHandler): An instance of a file handler to manage file reading and writing operations.
+            settings_manager (ISettingsManager): An instance of a settings manager to manage the application settings.
         """
         self._file_handler = file_handler
+        self._settings_manager = settings_manager
 
-    def get_abbreviations(self, languages: list[str]) -> set[str]:
+    def get_abbreviations(self) -> set[str]:
         """
         Loads abbreviations for the specified languages from a JSON file and combines them into a single set.
-
-        Args:
-            languages (list[str]): A list of language keys to fetch abbreviations for.
 
         Returns:
             set[str]: A set containing all abbreviations for the specified languages.
@@ -25,19 +24,16 @@ class ListManager(IListManager):
         Raises:
             KeyError: If any of the provided keys are missing in the JSON file.
         """
-        # todo get file path from config
-        file_path = "app_data/abbreviations.json"
+        languages = self._settings_manager.get_current_languages()
+        abbreviations_data = self._file_handler.read_file("abbreviations")
         abbreviations = set()
-
-        # Use the file handler to read the file
-        data = self._file_handler.read_file(file_path)
 
         # Combine abbreviations for all specified languages
         for language in languages:
-            if language in data:
-                abbreviations.update(data[language])
+            if language in abbreviations_data:
+                abbreviations.update(abbreviations_data[language])
             else:
                 raise KeyError(
-                    f"The key '{language}' is missing in the JSON file '{file_path}'.")
+                    f"The key '{language}' is missing")
 
         return abbreviations

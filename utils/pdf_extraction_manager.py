@@ -104,30 +104,42 @@ class PDFExtractionManager:
 
         # Load the PDF document if a path is provided
         if pdf_path:
-            self.load_document(
+            self.extract_document(
                 pdf_path=pdf_path, pages_margins=pages_margins, pages=pages)
 
-    def load_document(self, pdf_path: str, pages_margins: list = None, pages: str = None) -> None:
+    def extract_document(self, extraction_data: dict = None) -> str:
         """
-        Loads a new PDF document, initializes margins, extracts document data,
-        and computes font clustering, font size normalization, and their distribution.
+        Extracts and processes text from a PDF document based on the provided extraction parameters.
 
         Args:
-            pdf_path (str): Path to the new PDF document.
-            pages_margins (list, optional): Margins for each page, specified as a list of lists.
-                                            Defaults to None, which applies a default margin to all pages.
+            extraction_data (dict, optional): A dictionary containing the following keys:
+                - "pdf_path" (str): Path to the PDF file (required).
+                - "page_margins" (str): Page margins data (optional).
+                - "page_ranges" (str): Page ranges data (optional).
 
         Raises:
-            ValueError: If the length of `pages_margins` does not match the number of pages in the document.
+            ValueError: If the "pdf_path" key is missing or empty in the extraction_data.
+
+        Returns:
+            str: The extracted and processed text from the PDF document.
         """
+        pdf_path = extraction_data.get("pdf_path")
+        if not pdf_path:
+            raise ValueError("Path must be specified.")
+
         # Load the document
         self.pdf_path = Path(pdf_path)
         self._doc = pymupdf.open(self.pdf_path)
         self._update_abbreviations()
 
+        # Optionally update page margins and ranges
+        page_margins = extraction_data.get("page_margins")
+        page_ranges = extraction_data.get("page_ranges")
+
+        self._initialize_pages_margins(page_margins)
+        self._initialize_relevant_pages(page_ranges)
+
         self._extract_clean_toc()
-        self._initialize_pages_margins(pages_margins)
-        self._initialize_relevant_pages(pages)
         self._extract_document()
         self._accumulate_font_size_distribution()
         if self.keep_headlines:
@@ -137,6 +149,7 @@ class PDFExtractionManager:
         self._merge_bounding_boxes()
         # self.visualize_all_bboxes()
         self._extract_and_process_text()
+        return self._extracted_text
 
     def _update_abbreviations(self) -> None:
         """        

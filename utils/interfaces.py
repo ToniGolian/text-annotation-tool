@@ -13,6 +13,63 @@ class IListManager(ABC):
         """
 
 
+class ISettingsManager(ABC):
+    """
+    Interface for a settings manager that handles application settings, 
+    including managing current and available languages.
+    """
+
+    @abstractmethod
+    def get_current_languages(self) -> List[str]:
+        """
+        Retrieves the current languages from the settings.
+
+        Returns:
+            List[str]: A list of current languages.
+        """
+        pass
+
+    @abstractmethod
+    def set_current_languages(self, current_languages: List[str]) -> None:
+        """
+        Updates the current languages in the settings and ensures they are also available.
+
+        Args:
+            current_languages (List[str]): A list of new current languages.
+        """
+        pass
+
+    @abstractmethod
+    def get_available_languages(self) -> List[str]:
+        """
+        Retrieves the available languages from the settings.
+
+        Returns:
+            List[str]: A list of available languages.
+        """
+        pass
+
+    @abstractmethod
+    def set_available_languages(self, additional_languages: List[str]) -> None:
+        """
+        Adds new languages to the available languages list.
+
+        Args:
+            additional_languages (List[str]): A list of languages to add.
+        """
+        pass
+
+    @abstractmethod
+    def delete_available_languages(self, languages_to_remove: List[str]) -> None:
+        """
+        Removes specified languages from the available languages list.
+
+        Args:
+            languages_to_remove (List[str]): A list of languages to remove.
+        """
+        pass
+
+
 class ITagManager(ABC):
     @abstractmethod
     def add_tag(self, tag_data: dict) -> None:

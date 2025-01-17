@@ -14,6 +14,7 @@ class FileHandler:
         Args:
             encoding (str): The default file encoding to use for all strategies. Default is 'utf-8'.
         """
+        self._app_paths_file = "app_data/app_paths.json"
         self.encoding = encoding
         self._strategies = {
             '.json': JsonReadWriteStrategy(encoding=self.encoding),
@@ -40,7 +41,7 @@ class FileHandler:
                 f"No strategy found for file extension: {file_extension}")
         return strategy
 
-    def read_file(self, file_path: str) -> Dict:
+    def read_file(self, file_path: str, extension: str = "") -> Dict:
         """
         Reads a file using the appropriate strategy based on file extension.
 
@@ -50,12 +51,13 @@ class FileHandler:
         Returns:
             Dict: The content of the file as a dictionary.
         """
-        file_path = self._convert_path_to_os_specific(file_path)
+        file_path = self._load_path(file_path, extension)
+        print(f"{file_path=}")
         file_extension = f".{file_path.split('.')[-1]}"
         strategy = self._get_strategy(file_extension)
         return strategy.read(file_path)
 
-    def write_file(self, file_path: str, data: Dict) -> None:
+    def write_file(self, file_path: str, data: Dict, extension: str = "") -> None:
         """
         Writes data to a file using the appropriate strategy based on file extension.
 
@@ -63,10 +65,20 @@ class FileHandler:
             file_path (str): Path to the file to be written.
             data (Dict): Data to be written to the file.
         """
-        file_path = self._convert_path_to_os_specific(file_path)
+        # Attempt to load file_path from the app paths file
+        app_paths = self._get_strategy('.json').read(self._app_paths_file)
+        file_path = app_paths.get(file_path, file_path)
+
+        file_path = self._load_path(file_path, extension)
         file_extension = f".{file_path.split('.')[-1]}"
         strategy = self._get_strategy(file_extension)
         strategy.write(file_path, data)
+
+    def _load_path(self, file_path: str, extension: str) -> str:
+        app_paths = self._get_strategy('.json').read(self._app_paths_file)
+        file_path = app_paths.get(file_path, file_path)
+        file_path += extension
+        return self._convert_path_to_os_specific(file_path)
 
     def _convert_path_to_os_specific(self, path: str) -> str:
         """

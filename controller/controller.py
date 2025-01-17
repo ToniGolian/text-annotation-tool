@@ -11,6 +11,7 @@ from typing import Dict, List
 
 from utils.list_manager import ListManager
 from utils.pdf_extraction_manager import PDFExtractionManager
+from utils.settings_manager import SettingsManager
 from utils.tag_manager import TagManager
 from utils.tag_processor import TagProcessor
 from view.annotation_text_display_frame import AnnotationTextDisplayFrame
@@ -23,11 +24,13 @@ class Controller(IController):
     def __init__(self, configuration_model: ILayoutPublisher, preview_document_model: IDataPublisher = None, annotation_document_model: IDataPublisher = None, comparison_document_model: IDataPublisher = None, selection_model: IDataPublisher = None, comparison_model: IDataPublisher = None):
 
         # dependencies
+        self._file_handler = FileHandler()
+        self._settings_manager = SettingsManager()
         self._tag_processor = TagProcessor()
         self._tag_manager = TagManager(self._tag_processor)
         self._configuration_manager: ILayoutPublisher = configuration_model
-        self._file_handler = FileHandler()
-        self._list_manager = ListManager(self._file_handler)
+        self._list_manager = ListManager(
+            self._file_handler, self._settings_manager)
         self._pdf_extraction_manager = PDFExtractionManager(
             list_manager=self._list_manager)
 
@@ -425,10 +428,9 @@ class Controller(IController):
 # Perform methods
 
     def perform_pdf_extraction(self, extraction_data: dict) -> None:
-        page_ranges_string = extraction_data["page_ranges"]
-        page_margins_string = extraction_data["page_margins"]
-        page_ranges = self._formatter._format_ranges(page_ranges_string)
-        page_margins = self._formatter._format_margins(page_margins_string)
+        extracted_text = self._pdf_extraction_manager.extract_document(
+            extraction_data=extraction_data)
+        self._preview_document_model.set_text(text=extracted_text)
 
     def perform_add_tag(self, tag_data: dict) -> None:
         """

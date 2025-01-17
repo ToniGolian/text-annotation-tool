@@ -37,6 +37,7 @@ class DocumentModel(IDocumentModel):
             file_name (str): The filename to be set.
         """
         self._filename = file_name
+        self.notify_data_observers()
 
     def get_meta_tags(self) -> dict:
         """
@@ -55,6 +56,7 @@ class DocumentModel(IDocumentModel):
             metatags (dict): A dictionary containing the meta tags to set.
         """
         self._meta_tags = metatags
+        self.notify_data_observers()
 
     def get_text(self) -> str:
         """
@@ -73,6 +75,7 @@ class DocumentModel(IDocumentModel):
             text (str): The new text content to set.
         """
         self._text = text
+        self.notify_data_observers()
 
     def get_data_state(self) -> dict:
         """

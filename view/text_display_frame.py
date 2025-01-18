@@ -69,7 +69,8 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
             data (dict): Data passed from the observed subject.
         """
         # Implement any necessary updates based on the data
-        text = self._controller.get_update_data(self)
+        text = self._controller.get_data_state(self).get("text", "NOTEXT")
+
         if self._editable:
             self.text_widget.config(state="normal")
         self.text_widget.delete("1.0", tk.END)

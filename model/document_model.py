@@ -89,6 +89,7 @@ class DocumentModel(IDocumentModel):
         Returns:
             dict: A dictionary containing the object's attributes as keys and their corresponding values.
         """
+        print(f"DEBUG get_data_state im DocumentModel")
         return {"filename": self._filename,
                 "meta_tags": self._meta_tags,
                 "text": self._text}

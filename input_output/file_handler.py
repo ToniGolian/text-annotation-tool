@@ -52,7 +52,6 @@ class FileHandler:
             Dict: The content of the file as a dictionary.
         """
         file_path = self._load_path(file_path, extension)
-        print(f"{file_path=}")
         file_extension = f".{file_path.split('.')[-1]}"
         strategy = self._get_strategy(file_extension)
         return strategy.read(file_path)

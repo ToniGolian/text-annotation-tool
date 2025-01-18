@@ -64,6 +64,7 @@ class IDataPublisher(IPublisher):
         """
         for observer in self._data_observers:
             observer.update_data()
+            print(f"DEBUG observer {observer} update_data called")
 
     @abstractmethod
     def get_data_state(self) -> Dict:

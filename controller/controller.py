@@ -168,7 +168,6 @@ class Controller(IController):
         if not mapping:
             print(f"Unknown Data Observer {type(observer)} registered")
             return
-
         sources = mapping["sources"]
         keys = mapping["keys"]
 
@@ -328,6 +327,8 @@ class Controller(IController):
                 key: layout[key] for key in keys if key in layout}
         else:
             raise ValueError("Invalid mapping type. Use 'data' or 'layout'.")
+        print(f"DEBUG: Mapping sources for {observer}: {sources}")
+        print(f"DEBUG: Mapping keys for {observer}: {keys}")
 
     def get_data_state(self, observer: IDataObserver) -> any:
         """
@@ -348,7 +349,12 @@ class Controller(IController):
             KeyError: If the provided observer is not registered in the
             `_observer_data_map`.
         """
-        return self._observer_data_map[observer]()
+        mapping = self._data_source_mapping[type(observer)]
+        keys = mapping["keys"]
+        sources = mapping["sources"]
+        data = {key: value for source in sources for key,
+                value in source.get_data_state().items() if key in keys}
+        return data
 
     def get_layout_state(self, observer: ILayoutObserver) -> any:
         """
@@ -428,6 +434,16 @@ class Controller(IController):
 # Perform methods
 
     def perform_pdf_extraction(self, extraction_data: dict) -> None:
+        """
+        Extracts text from a PDF file and updates the preview document model.
+
+        Args:
+            extraction_data (dict): A dictionary containing parameters for PDF extraction:
+                - "pdf_path" (str): Path to the PDF file (required).
+                - "page_margins" (str): Margins to apply to the pages (optional).
+                - "page_ranges" (str): Specific page ranges to extract (optional).
+        """
+
         extracted_text = self._pdf_extraction_manager.extract_document(
             extraction_data=extraction_data)
         self._preview_document_model.set_text(text=extracted_text)

@@ -5,8 +5,8 @@ from commands.edit_tag_command import EditTagCommand
 from controller.interfaces import IController
 from commands.interfaces import ICommand
 from input_output.file_handler import FileHandler
-from model.interfaces import IComparisonModel, IDocumentModel
-from observer.interfaces import IDataObserver, IDataPublisher, ILayoutObserver, ILayoutPublisher, IObserver, IPublisher
+from model.interfaces import IComparisonModel, IDocumentModel, ISelectionModel
+from observer.interfaces import IDataPublisher, ILayoutObserver, ILayoutPublisher, IObserver
 from typing import Dict, List
 
 from utils.list_manager import ListManager
@@ -16,7 +16,7 @@ from utils.tag_manager import TagManager
 from utils.tag_processor import TagProcessor
 from view.annotation_text_display_frame import AnnotationTextDisplayFrame
 from view.comparison_text_display_frame import ComparisonTextDisplayFrame
-from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplayFrame, IComparisonTextDisplays, IMetaTagsFrame, ITextDisplayFrame
+from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplays, IMetaTagsFrame, ITextDisplayFrame
 from view.preview_text_display_frame import PreviewTextDisplayFrame
 
 
@@ -44,7 +44,7 @@ class Controller(IController):
         self._annotation_document_model: IDocumentModel = annotation_document_model
         self._comparison_document_model: IDocumentModel = comparison_document_model
         self._comparison_model: IComparisonModel = comparison_model
-        self._selection_model: IDataPublisher = selection_model
+        self._selection_model: ISelectionModel = selection_model
 
         # collections
         self._undo_stack = []
@@ -258,42 +258,6 @@ class Controller(IController):
         }
         return state
 
-    #!
-    # todo Mockmethod
-
-    def get_abbreviations(self) -> set[str]:
-        """
-        Loads abbreviations from a JSON file and returns the list of German abbreviations.
-
-        Arguments:
-            file_path (str): The path to the JSON file containing abbreviations.
-                            Defaults to "app_data/abbreviations.json".
-
-        Returns:
-            List[str]: A list of German abbreviations as strings.
-
-        Raises:
-            FileNotFoundError: If the file does not exist.
-            json.JSONDecodeError: If the file is not valid JSON.
-            KeyError: If the "german" key is missing in the JSON file.
-        """
-        file_path = "app_data/abbreviations.json"
-        try:
-            # Load the JSON file
-            with open(file_path, "r") as file:
-                data = json.load(file)
-
-            # Extract and return the list of German abbreviations
-            return set(data["german"])
-        except FileNotFoundError:
-            raise FileNotFoundError(f"The file '{file_path}' does not exist.")
-        except json.JSONDecodeError as e:
-            raise json.JSONDecodeError(
-                f"Invalid JSON in '{file_path}': {e.msg}", e.doc, e.pos)
-        except KeyError:
-            raise KeyError(
-                f"The key 'german' is missing in the JSON file '{file_path}'.")
-
     # initialization
 
     def finalize_views(self) -> None:
@@ -392,9 +356,20 @@ class Controller(IController):
         command = DeleteTagCommand(self._tag_manager, tag_id)
         self._execute_command(command)
 
-    # todo implement
     def perform_text_selected(self, text: str) -> None:
-        print(f"Text: {text} selected.")
+        """
+        Updates the selection model with the newly selected text.
+
+        This method is triggered when text is selected in the view and updates
+        the selection model to reflect the new selection.
+
+        Args:
+            text (str): The text that has been selected.
+
+        Updates:
+            - The `selected_text` attribute in the selection model.
+        """
+        self._selection_model.set_selected_text(text)
 
     # todo implement
     def perform_save_document(self, document: Dict):

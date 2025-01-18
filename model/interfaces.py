@@ -110,3 +110,29 @@ class IDocumentModel(IDataPublisher):
             dict: A dictionary containing the object's attributes as keys and their corresponding values.
         """
         pass
+
+
+class ISelectionModel(IDataPublisher):
+    """
+    Interface for the SelectionModel, defining methods to manage and retrieve the selected text.
+    """
+
+    @abstractmethod
+    def set_selected_text(self, text: str) -> None:
+        """
+        Sets the currently selected text and notifies observers.
+
+        Args:
+            text (str): The newly selected text.
+        """
+        pass
+
+    @abstractmethod
+    def get_data_state(self) -> Dict[str, str]:
+        """
+        Retrieves the current selected text as a dictionary.
+
+        Returns:
+            Dict[str, str]: A dictionary containing the selected text.
+        """
+        pass

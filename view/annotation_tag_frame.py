@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
 from typing import Dict
-
 from controller.interfaces import IController
 
 
@@ -19,12 +18,14 @@ class AnnotationTagFrame(tk.Frame):
 
         Args:
             parent (tk.Widget): The parent tkinter container (e.g., Tk, Frame) for this TagFrame.
+            controller (IController): The controller managing interactions.
             template (Dict): The template dictionary defining the tag type and attributes.
         """
         super().__init__(parent)
         self._controller = controller
         self._template = template
         self._data_widgets = {}
+        self._selected_text_entry = None  # Entry for selected text
         self._render()
 
     def _render(self) -> None:
@@ -40,17 +41,20 @@ class AnnotationTagFrame(tk.Frame):
         tag_type = self._template.get("type", "Tag")
         header_label = tk.Label(
             self, text=f"{tag_type[0].upper()+tag_type[1:]}-Tag", font=("Helvetica", 16))
-        header_label.grid(row=0, column=0, columnspan=2, padx=10,
-                          pady=(0, 10), sticky="w")
+        header_label.grid(row=0, column=0, columnspan=2,
+                          padx=10, pady=(0, 10), sticky="w")
 
+        # Add "Selected Text" label and entry at the top
+        selected_text_label = tk.Label(self, text="Selected Text")
+        selected_text_label.grid(
+            row=1, column=0, sticky="w", padx=(15, 5), pady=5)
+
+        self._selected_text_entry = tk.Entry(self, state="disabled")
+        self._selected_text_entry.grid(
+            row=1, column=1, sticky="ew", padx=5, pady=5)
         # Iterate over each attribute in the template
-        row = 1  # Start placing widgets from row 1
+        row = 2  # Start placing widgets from row 2
         for attr_name, attr_data in self._template["attributes"].items():
-            # todo reactivate when configuration menu is implemented
-            # Check if the attribute is active
-            # if not attr_data.get("active", False):
-            #     continue
-
             # Create label for the attribute
             label = tk.Label(self, text=attr_name)
             label.grid(row=row, column=0, sticky="w", padx=(15, 5), pady=5)
@@ -59,12 +63,11 @@ class AnnotationTagFrame(tk.Frame):
             if attr_data["type"].upper() in ["CDATA", "ID"]:
                 # Entry widget for CDATA type
                 widget = tk.Entry(self)
-
             else:
                 # Combobox for other types
                 allowed_values = [""]
                 if "allowedValues" in attr_data:
-                    allowed_values = [""]+attr_data["allowedValues"]
+                    allowed_values = [""] + attr_data["allowedValues"]
                 widget = ttk.Combobox(self, values=allowed_values)
                 widget.set(allowed_values[0])
 
@@ -82,11 +85,10 @@ class AnnotationTagFrame(tk.Frame):
         # Add "Add Tag" button
         add_tag_button = ttk.Button(
             self, text="Add Tag", command=self._button_pressed_add_tag)
-        add_tag_button.grid(row=row, column=1,
-                            sticky="ew", padx=5, pady=5)
+        add_tag_button.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
         row += 1
 
-        # Add label and combobox for "Id to edit"
+        # Add label and combobox for "ID to Edit"
         edit_label = tk.Label(self, text="ID to Edit")
         edit_label.grid(row=row, column=0, sticky="w", padx=(15, 5), pady=5)
 
@@ -98,11 +100,10 @@ class AnnotationTagFrame(tk.Frame):
         # Add "Edit Tag" button
         edit_tag_button = ttk.Button(
             self, text="Edit Tag", command=self._button_pressed_edit_tag)
-        edit_tag_button.grid(row=row, column=1,
-                             sticky="ew", padx=5, pady=5)
+        edit_tag_button.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
         row += 1
 
-        # Add label and combobox for "Id to delete"
+        # Add label and combobox for "ID to Delete"
         delete_label = tk.Label(self, text="ID to Delete")
         delete_label.grid(row=row, column=0, sticky="w", padx=(15, 5), pady=5)
 
@@ -114,9 +115,19 @@ class AnnotationTagFrame(tk.Frame):
         # Add "Delete Tag" button
         delete_tag_button = ttk.Button(
             self, text="Delete Tag", command=self._button_pressed_delete_tag)
-        delete_tag_button.grid(
-            row=row, column=1, sticky="ew", padx=5, pady=5)
-        row += 1
+        delete_tag_button.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
+
+    def set_selected_text(self, text: str) -> None:
+        """
+        Updates the "Selected Text" entry with the given text.
+
+        Args:
+            text (str): The selected text to display.
+        """
+        self._selected_text_entry.config(state="normal")
+        self._selected_text_entry.delete(0, tk.END)
+        self._selected_text_entry.insert(0, text)
+        self._selected_text_entry.config(state="disabled")
 
     def _button_pressed_add_tag(self) -> None:
         """

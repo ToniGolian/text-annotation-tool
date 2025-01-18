@@ -32,6 +32,8 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         self._controller.add_observer(self, "data")
         self._controller.add_observer(self, "layout")
 
+        self._tag_frames = []
+
     def _render(self) -> None:
         """
         Renders pages in the notebook for each template group.
@@ -92,6 +94,7 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
 
             tag_frame.pack(fill="x", padx=5, pady=5,
                            anchor="n", expand=True)
+            self._tag_frames.append(tag_frame)
 
         # Pack the canvas and scrollbar inside the container frame
         canvas.pack(side="left", fill="both", expand=True)
@@ -100,8 +103,10 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         return container_frame
 
     def update_data(self):
-        data = self._controller.get_data_state(self)
-        # todo update data in widgets
+        selected_text = self._controller.get_observer_state(self, "data")[
+            "selected_text"]
+        for tag_frame in self._tag_frames:
+            tag_frame.set_selected_text(selected_text)
 
     def update_layout(self):
         layout = self._controller.get_observer_state(self, "layout")

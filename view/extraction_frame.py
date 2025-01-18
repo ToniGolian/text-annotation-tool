@@ -79,13 +79,13 @@ class ExtractionFrame(tk.Frame):
         self.button_extract = ttk.Button(
             self, text="Extract pages", command=self._on_button_pressed_extract_pages)
         self.button_extract.grid(
-            row=9, column=0, columnspan=2, padx=20, pady=10, sticky='ew')
+            row=9, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
 
         # Button to adopt the text
         self.button_adopt_text = ttk.Button(
             self, text="Adopt text", command=self._on_button_pressed_adopt_text)
         self.button_adopt_text.grid(
-            row=10, column=0, columnspan=2, padx=20, pady=10, sticky='ew')
+            row=10, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
 
     def _on_button_pressed_choose_file(self) -> None:
         """

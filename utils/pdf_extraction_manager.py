@@ -34,6 +34,8 @@ class PDFExtractionManager:
 
         # Sentence splitting
         self._abbreviations = None
+        # Word breaking chars
+        self._word_break_chars = {"\xad", "-", "\u200B", "\u2060", "\uFEFF"}
 
         # Background bounding box thresholds
         # Minimum area for considering a bounding box as part of the background
@@ -103,9 +105,9 @@ class PDFExtractionManager:
         self._extracted_text = None
 
         # Load the PDF document if a path is provided
-        if pdf_path:
-            self.extract_document(
-                pdf_path=pdf_path, pages_margins=pages_margins, pages=pages)
+        # if pdf_path:
+        #     self.extract_document(
+        #         pdf_path=pdf_path, pages_margins=pages_margins, pages=pages)
 
     def extract_document(self, extraction_data: dict = None) -> str:
         """
@@ -1157,9 +1159,6 @@ class PDFExtractionManager:
         """
         extracted_strings = []
         current_text = []
-        # Define a set of common word-breaking characters in PDFs
-        word_break_chars = {"\xad", "-", "\u200B", "\u2060", "\uFEFF"}
-
         # Iterate through document content to extract text
         for page_content in self._document_content:
             text_blocks, _ = page_content["text_data"]
@@ -1203,7 +1202,7 @@ class PDFExtractionManager:
                     if i > 0 and block_text:
                         # Check if the previous line ends with a word-breaking character
                         last_line = block_text[-1]
-                        if last_line and last_line[-1] in word_break_chars:
+                        if last_line and last_line[-1] in self._word_break_chars:
                             # Remove the word-breaking character and merge with current line
                             block_text[-1] = last_line[:-1] + line.lstrip()
                             continue
@@ -1220,7 +1219,7 @@ class PDFExtractionManager:
 
                         for line in current_text[1:]:
                             # Check if the previous line ends with a word-breaking character
-                            if merged_text[-1] in word_break_chars:
+                            if merged_text[-1] in self._word_break_chars:
                                 # Remove the word-breaking character and merge with the current line
                                 merged_text = merged_text[:-1] + line.lstrip()
                             else:
@@ -1239,12 +1238,11 @@ class PDFExtractionManager:
 
         # Append any remaining accumulated text
         if current_text:
-            word_break_chars = {"\xad", "-", "\u200B", "\u2060", "\uFEFF"}
-            merged_text = current_text[0]
+            merged_text = current_text[0] if current_text[0] else ""
 
             for line in current_text[1:]:
-                # Check if the previous line ends with a word-breaking character
-                if merged_text[-1] in word_break_chars:
+                # Ensure merged_text is not empty before accessing its last character
+                if merged_text and merged_text[-1] in self._word_break_chars:
                     # Remove the word-breaking character and merge with the current line
                     merged_text = merged_text[:-1] + line.lstrip()
                 else:

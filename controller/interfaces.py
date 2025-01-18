@@ -47,18 +47,8 @@ class IController(ABC):
         """Retrieves the data from observed publisher."""
         pass
 
-    # abbreviation handling
-    @abstractmethod
-    def get_abbreviations(self) -> set[str]:
-        """
-        Loads and retrieves a set of German abbreviations from a predefined source.
-
-        Returns:
-            set[str]: A set of German abbreviations.
-        """
-        pass
-
     # initializations
+
     @abstractmethod
     def finalize_views(self) -> None:
         """

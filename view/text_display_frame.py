@@ -9,6 +9,8 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
     Includes a scrollbar for the text widget.
     """
 
+    DEBOUNCE_DELAY = 300  # milliseconds
+
     def __init__(self, parent: tk.Widget, controller: IController, editable=False) -> None:
         """
         Initializes the TextDisplayFrame with a text widget, scrollbar, and observer registration.
@@ -16,13 +18,18 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
         Args:
             parent (tk.Widget): The parent tkinter container for this frame.
             controller (IController): The controller managing interactions.
-            selectable (bool): Whether text selection events should trigger actions.
+            editable (bool): Whether the text can be edited.
         """
         super().__init__(parent)
 
         self._controller: IController = controller
         self.text_widget: tk.Text = None
         self._editable: bool = editable
+
+        self._debounce_job = None  # To track the scheduled job
+        self._is_typing = False  # Indicates if the user is typing
+        self._internal_update = False  # Tracks if the update is internal
+        self._cursor_position: str = None  # Stores cursor position for internal updates
 
         # Render the GUI components
         self._render()
@@ -41,8 +48,10 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
         self.text_widget = tk.Text(
             self, wrap="word", yscrollcommand=scrollbar.set, state="disabled")
         scrollbar.config(command=self.text_widget.yview)
+
         if self._editable:
             self.text_widget.config(state="normal")
+            self.text_widget.bind("<KeyRelease>", self._on_text_change)
 
         self.text_widget.bind("<ButtonRelease-1>", self._on_selection)
 
@@ -65,20 +74,65 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
             # No selection exists, so we simply ignore the event
             pass
 
+    def _on_text_change(self, event: tk.Event) -> None:
+        """
+        Handles text change events to implement debouncing and optimistic updates.
+
+        Args:
+            event (tk.Event): The event triggered by text input.
+        """
+        if self._debounce_job:
+            self.after_cancel(self._debounce_job)
+
+        self._is_typing = True  # User is typing
+
+        # Optimistically update the model
+        new_text = self.text_widget.get("1.0", tk.END).strip()
+        self._controller.perform_update_preview_text(new_text)
+
+        # Track the cursor position
+        self._cursor_position = self.text_widget.index(tk.INSERT)
+
+        # Set up debouncing to finalize the changes
+        self._debounce_job = self.after(
+            self.DEBOUNCE_DELAY, self._finalize_update)
+
+    def _finalize_update(self) -> None:
+        """
+        Finalizes updates to the model after debouncing.
+        """
+        self._is_typing = False
+        new_text = self.text_widget.get("1.0", tk.END).strip()
+        self._controller.perform_update_preview_text(
+            new_text)  # Final update to ensure sync
+        self._debounce_job = None  # Reset the job reference
+
     def update_data(self) -> None:
         """
         Observer method to handle updates from subjects.
-
-        Args:
-            data (dict): Data passed from the observed subject.
         """
-        # Implement any necessary updates based on the data
+        if self._is_typing:
+            # Skip updates while the user is typing to prevent overwrites
+            return
+
+        self._internal_update = True  # Mark this as an internal update
+
+        # Fetch the latest text from the model
         text = self._controller.get_observer_state(
             self, "data").get("text", "NOTEXT")
 
+        # Update the display
         if not self._editable:
             self.text_widget.config(state="normal")
         self.text_widget.delete("1.0", tk.END)
         self.text_widget.insert("1.0", text)
+
+        # Restore cursor position if available
+        if self._cursor_position:
+            self.text_widget.mark_set(tk.INSERT, self._cursor_position)
+
         if not self._editable:
             self.text_widget.config(state="disabled")
+
+        self._cursor_position = None  # Reset the cursor position
+        self._internal_update = False  # Reset the internal update flag

@@ -313,9 +313,7 @@ class Controller(IController):
         for observer in self._observers_to_finalize:
             observer.update_layout()
 
-
-# Perform methods
-
+    # Perform methods
 
     def perform_pdf_extraction(self, extraction_data: dict) -> None:
         """
@@ -332,7 +330,38 @@ class Controller(IController):
             extraction_data=extraction_data)
         self._preview_document_model.set_text(text=extracted_text)
 
-    def perform_add_tag(self, tag_data: dict) -> None:
+    def perform_text_adoption(self) -> None:
+        """
+        Adopts the current preview document's data into the annotation document model.
+
+        This method retrieves the data state from the preview document model and updates
+        the annotation document model with the same data. It also saves the adopted
+        document.
+
+        Updates:
+            - The annotation document model is updated with data from the preview document model.
+            - The adopted document is saved.
+        """
+        document = self._preview_document_model.get_data_state()
+        self._annotation_document_model.set_document(document)
+        self.perform_save_document(document)
+
+    def perform_update_preview_text(self, text: str) -> None:
+        """
+        Updates the text content of the preview document model.
+
+        This method sets the provided text as the new content of the preview document model,
+        triggering updates to its observers.
+
+        Args:
+            text (str): The new text content to update in the preview document model.
+
+        Updates:
+            - The text in the preview document model is updated, and its observers are notified.
+        """
+        self._preview_document_model.set_text(text)
+
+    def perform_add_tag(self, tag_data: Dict) -> None:
         """
         Creates and executes an AddTagCommand to add a new tag.
 
@@ -342,7 +371,7 @@ class Controller(IController):
         command = AddTagCommand(self._tag_manager, tag_data)
         self._execute_command(command)
 
-    def perform_edit_tag(self, tag_id: str, tag_data: dict) -> None:
+    def perform_edit_tag(self, tag_id: str, tag_data: Dict) -> None:
         """
         Creates and executes an EditTagCommand to edit an existing tag.
 
@@ -363,9 +392,13 @@ class Controller(IController):
         command = DeleteTagCommand(self._tag_manager, tag_id)
         self._execute_command(command)
 
-    # performances
+    # todo implement
     def perform_text_selected(self, text: str) -> None:
         print(f"Text: {text} selected.")
+
+    # todo implement
+    def perform_save_document(self, document: Dict):
+        print("Save not implemented")
 
     def _get_observer_config(self, observer: IObserver, mapping_type: str) -> Dict:
         """

@@ -1,6 +1,5 @@
 from typing import List, Dict
 from model.interfaces import IDocumentModel
-from model.interfaces import ITagModel
 
 
 class DocumentModel(IDocumentModel):
@@ -75,6 +74,24 @@ class DocumentModel(IDocumentModel):
             text (str): The new text content to set.
         """
         self._text = text
+        self.notify_data_observers()
+
+    def set_document(self, document: dict) -> None:
+        """
+        Updates the document model with new data.
+
+        This method sets the filename, meta tags, and text of the document model
+        based on the provided dictionary.
+
+        Args:
+            document (dict): A dictionary containing the document data with the following keys:
+                - "filename" (str): The name of the file.
+                - "meta_tags" (dict): Metadata tags associated with the document.
+                - "text" (str): The text content of the document.
+        """
+        self._filename = document["filename"]
+        self._meta_tags = document["meta_tags"]
+        self._text = document["text"]
         self.notify_data_observers()
 
     def get_data_state(self) -> dict:

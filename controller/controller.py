@@ -53,69 +53,86 @@ class Controller(IController):
         # Mapping observer classes to their respective data sources, keys, and finalize status
         self._data_source_mapping = {
             PreviewTextDisplayFrame: {
-                "sources": [self._preview_document_model],
-                "keys": ["text"],
-                "finalize": False
+                "finalize": False,
+                "source_keys": {
+                    self._preview_document_model: ["text"]
+                }
             },
             AnnotationTextDisplayFrame: {
-                "sources": [self._annotation_document_model],
-                "keys": ["text"],
-                "finalize": False
+                "finalize": False,
+                "source_keys": {
+                    self._annotation_document_model: ["text"]
+                }
             },
             ComparisonTextDisplayFrame: {
-                "sources": [self._comparison_document_model],
-                "keys": ["text"],
-                "finalize": False
+                "finalize": False,
+                "source_keys": {
+                    self._comparison_document_model: ["text"],
+                    self._comparison_model: [
+                        "comparison_sentences"]
+                }
             },
             IMetaTagsFrame: {
-                "sources": [self._comparison_model],
-                "keys": ["file_names"],
-                "finalize": True
+                "finalize": True,
+                "source_keys": {
+                    self._comparison_model: ["file_names"]
+                }
             },
             IComparisonTextDisplays: {
-                "sources": [self._comparison_model],
-                "keys": ["file_names"],
-                "finalize": True
+                "finalize": True,
+                "source_keys": {
+                    self._comparison_model: ["file_names"]
+                }
             },
             IComparisonHeaderFrame: {
-                "sources": [self._comparison_model],
-                "keys": ["num_sentences", "current_sentence_index"],
-                "finalize": True
-            },
-            IComparisonTextDisplayFrame: {
-                "sources": [self._comparison_model],
-                "keys": ["comparison_sentences"],
-                "finalize": False
+                "finalize": True,
+                "source_keys": {
+                    self._comparison_model: [
+                        "num_sentences", "current_sentence_index"]
+                }
             },
             IAnnotationMenuFrame: {
-                "sources": [self._selection_model],
-                "keys": ["selected_text"],
-                "finalize": False
+                "finalize": False,
+                "source_keys": {
+                    self._selection_model: ["selected_text"]
+                }
             }
         }
 
         # Mapping layout observer classes to their respective data sources, keys, and finalize status
         self._layout_source_mapping = {
             IComparisonTextDisplays: {
-                "sources": [self._configuration_manager],
-                "keys": ["filenames", "num_files"],
-                "finalize": True
+                "finalize": True,
+                "source_keys": {
+                    self._configuration_manager: [
+                        "filenames", "num_files"]
+                }
             },
             IComparisonHeaderFrame: {
-                "sources": [self._configuration_manager],
-                "keys": ["filenames", "num_files"],
-                "finalize": True
+                "finalize": True,
+                "source_keys": {
+                    self._configuration_manager: [
+                        "filenames", "num_files"]
+                }
             },
             IMetaTagsFrame: {
-                "sources": [self._configuration_manager],
-                "keys": ["tag_types"],
-                "finalize": True
+                "finalize": True,
+                "source_keys": {
+                    self._configuration_manager: ["tag_types"]
+                }
             },
             IAnnotationMenuFrame: {
-                "sources": [self._configuration_manager],
-                "keys": ["template_groups"],
-                "finalize": True
+                "finalize": True,
+                "source_keys": {
+                    self._configuration_manager: [
+                        "template_groups"]
+                }
             }
+        }
+
+        self._mapping_types = {
+            "data": self._data_source_mapping,
+            "layout": self._layout_source_mapping
         }
 
     # command pattern
@@ -132,7 +149,7 @@ class Controller(IController):
 
     def _undo_command(self) -> None:
         """
-        Undoes the last command by moving it from the redo stack to the undo stack 
+        Undoes the last command by moving it from the redo stack to the undo stack
         and calling its undo method.
         """
         if self._redo_stack:
@@ -142,7 +159,7 @@ class Controller(IController):
 
     def _redo_command(self) -> None:
         """
-        Redoes the last undone command by moving it from the undo stack to the redo stack 
+        Redoes the last undone command by moving it from the undo stack to the redo stack
         and calling its redo method.
         """
         if self._undo_stack:
@@ -159,19 +176,19 @@ class Controller(IController):
             observer (IDataObserver): The data observer to be added.
         """
         # Retrieve the mapping by finding the appropriate key based on isinstance
-        mapping = None
-        for cls, value in self._data_source_mapping.items():
-            if isinstance(observer, cls):
-                mapping = value
-                break
+        mapping = self._get_observer_config(
+            observer=observer, mapping_type="data")
 
-        if not mapping:
-            print(f"Unknown Data Observer {type(observer)} registered")
-            return
-        sources = mapping["sources"]
-        keys = mapping["keys"]
+        # Extract finalize flag and source_keys from the mapping
+        finalize = mapping["finalize"]
+        source_keys = mapping["source_keys"]
+
+        # Extract sources
+        sources = list(source_keys.keys())
 
         # Handle specific logic for IComparisonTextDisplayFrame
+        #!
+        # todo change
         if isinstance(observer, IComparisonTextDisplayFrame):
             index = self._dynamic_observer_index
             self._dynamic_observer_index += 1
@@ -180,14 +197,14 @@ class Controller(IController):
             self._observer_data_map[observer] = lambda index=index: {
                 "sentence": sources[0].get_data_state()["comparison_sentences"][index]
             }
+        #! end todo
 
         # Register the observer to the sources
-        self._set_observer_mapping(observer, keys, sources, "data")
         for source in sources:
             source.add_data_observer(observer)
 
         # Add to finalize list if the mapping specifies it
-        if mapping["finalize"]:
+        if finalize:
             self._observers_to_finalize.append(observer)
 
     def add_layout_observer(self, observer: ILayoutObserver) -> None:
@@ -198,26 +215,22 @@ class Controller(IController):
             observer (ILayoutObserver): The layout observer to be added.
         """
         # Retrieve the mapping by finding the appropriate key based on isinstance
-        mapping = None
-        for cls, value in self._layout_source_mapping.items():
-            if isinstance(observer, cls):
-                mapping = value
-                break
+        mapping = self._get_observer_config(
+            observer=observer, mapping_type="layout")
 
-        if not mapping:
-            print(f"Unknown Layout Observer {type(observer)} registered")
-            return
+        # Extract finalize flag and source_keys from the mapping
+        finalize = mapping["finalize"]
+        source_keys = mapping["source_keys"]
 
-        sources = mapping["sources"]
-        keys = mapping["keys"]
+        # Extract sources
+        sources = list(source_keys.keys())
 
         # Register the observer to the sources
-        self._set_observer_mapping(observer, keys, sources, "layout")
         for source in sources:
             source.add_layout_observer(observer)
 
         # Add to finalize list if the mapping specifies it
-        if mapping["finalize"]:
+        if finalize:
             self._observers_to_finalize.append(observer)
 
     def remove_data_observer(self, observer: IDataObserver) -> None:
@@ -228,24 +241,17 @@ class Controller(IController):
             observer (IDataObserver): The data observer to be removed.
         """
         # Retrieve the mapping by finding the appropriate key based on isinstance
-        mapping = None
-        for cls, value in self._data_source_mapping.items():
-            if isinstance(observer, cls):
-                mapping = value
-                break
+        mapping = self._get_observer_config(
+            observer=observer, mapping_type="data")
 
-        if not mapping:
-            print(f"Unknown Data Observer {type(observer)} cannot be removed")
-            return
+        # Extract finalize flag and source_keys from the mapping
+        source_keys = mapping["source_keys"]
 
-        sources = mapping["sources"]
-
-        # Remove the observer from the data map if it exists
-        if observer in self._observer_data_map:
-            del self._observer_data_map[observer]
+        # Extract sources
+        sources = list(source_keys.keys())
 
         # If the observer was added to finalize list, remove it
-        if mapping["finalize"] and observer in self._observers_to_finalize:
+        if observer in self._observers_to_finalize:
             self._observers_to_finalize.remove(observer)
 
         # Remove the observer from all associated data sources
@@ -262,25 +268,17 @@ class Controller(IController):
             observer (ILayoutObserver): The layout observer to be removed.
         """
         # Retrieve the mapping by finding the appropriate key based on isinstance
-        mapping = None
-        for cls, value in self._layout_source_mapping.items():
-            if isinstance(observer, cls):
-                mapping = value
-                break
+        mapping = self._get_observer_config(
+            observer=observer, mapping_type="layout")
 
-        if not mapping:
-            print(
-                f"Unknown Layout Observer {type(observer)} cannot be removed")
-            return
+        # Extract finalize flag and source_keys from the mapping
+        source_keys = mapping["source_keys"]
 
-        sources = mapping["sources"]
-
-        # Remove the observer from the layout map if it exists
-        if observer in self._observer_layout_map:
-            del self._observer_layout_map[observer]
+        # Extract sources
+        sources = list(source_keys.keys())
 
         # If the observer was added to finalize list, remove it
-        if mapping["finalize"] and observer in self._observers_to_finalize:
+        if observer in self._observers_to_finalize:
             self._observers_to_finalize.remove(observer)
 
         # Remove the observer from all associated layout sources
@@ -288,47 +286,6 @@ class Controller(IController):
             source.remove_layout_observer(observer)
 
         print(f"Layout observer {type(observer)} removed.")
-
-    def _set_observer_mapping(self, observer: IObserver, keys: List[str], sources: List[IPublisher], mapping: str) -> None:
-        """
-        Sets the data or layout mapping for an observer with specific keys and sources.
-
-        Depending on the `mapping` argument, this method registers the observer
-        to either the data or layout map. The method combines the states from the
-        provided sources and creates a lambda function to filter the relevant keys
-        for the observer.
-
-        Args:
-            observer (IObserver): The observer to register.
-            keys (List[str]): A list of keys to extract from the state.
-            sources (List[IPublisher]): A list of sources providing state dictionaries.
-            mapping (str): Specifies the type of mapping ("data" or "layout") to register.
-                        - "data": The observer is mapped to the data state.
-                        - "layout": The observer is mapped to the layout state.
-
-        Raises:
-            ValueError: If `mapping` is not "data" or "layout".
-            ValueError: If `keys` or `sources` are empty.
-        """
-        if not keys:
-            raise ValueError("Keys cannot be empty.")
-        if not sources:
-            raise ValueError("Sources cannot be empty.")
-
-        if mapping == "data":
-            data = {key: value for source in sources for key,
-                    value in source.get_data_state().items()}
-            self._observer_data_map[observer] = lambda: {
-                key: data[key] for key in keys if key in data}
-        elif mapping == "layout":
-            layout = {key: value for source in sources for key,
-                      value in source.get_layout_state().items()}
-            self._observer_layout_map[observer] = lambda: {
-                key: layout[key] for key in keys if key in layout}
-        else:
-            raise ValueError("Invalid mapping type. Use 'data' or 'layout'.")
-        print(f"DEBUG: Mapping sources for {observer}: {sources}")
-        print(f"DEBUG: Mapping keys for {observer}: {keys}")
 
     def get_data_state(self, observer: IDataObserver) -> any:
         """
@@ -349,11 +306,14 @@ class Controller(IController):
             KeyError: If the provided observer is not registered in the
             `_observer_data_map`.
         """
-        mapping = self._data_source_mapping[type(observer)]
-        keys = mapping["keys"]
-        sources = mapping["sources"]
-        data = {key: value for source in sources for key,
-                value in source.get_data_state().items() if key in keys}
+        mapping = self._get_observer_config(observer, "data")
+        source_keys = mapping["source_keys"]
+        data = {
+            key: value
+            for source, keys in source_keys.items()
+            for key, value in source.get_data_state().items()
+            if key in keys
+        }
         return data
 
     def get_layout_state(self, observer: ILayoutObserver) -> any:
@@ -375,7 +335,16 @@ class Controller(IController):
             KeyError: If the provided observer is not registered in the
             `_observer_layout_map`.
         """
-        return self._observer_layout_map[observer]()
+        mapping = self._get_observer_config(observer, "layout")
+        source_keys = mapping["source_keys"]
+
+        layout = {
+            key: value
+            for source, keys in source_keys.items()
+            for key, value in source.get_layout_state().items()
+            if key in keys
+        }
+        return layout
 
     #!
     # todo Mockmethod
@@ -384,7 +353,7 @@ class Controller(IController):
         Loads abbreviations from a JSON file and returns the list of German abbreviations.
 
         Arguments:
-            file_path (str): The path to the JSON file containing abbreviations. 
+            file_path (str): The path to the JSON file containing abbreviations.
                             Defaults to "app_data/abbreviations.json".
 
         Returns:
@@ -416,22 +385,24 @@ class Controller(IController):
 
     def finalize_views(self) -> None:
         """
-        Finalizes the initialization of all views that were previously 
+        Finalizes the initialization of all views that were previously
         not fully initialized.
 
-        This method iterates over all registered views (observers) and 
-        triggers their `update` method to provide the necessary data 
-        for completing their initialization. It ensures that all views 
+        This method iterates over all registered views (observers) and
+        triggers their `update` method to provide the necessary data
+        for completing their initialization. It ensures that all views
         are in a fully operational state after this method is called.
 
         Note:
-            This method assumes that all views requiring finalization 
+            This method assumes that all views requiring finalization
             have already been registered with the controller.
         """
         for observer in self._observers_to_finalize:
             observer.update_layout()
 
+
 # Perform methods
+
 
     def perform_pdf_extraction(self, extraction_data: dict) -> None:
         """
@@ -482,3 +453,30 @@ class Controller(IController):
     # performances
     def perform_text_selected(self, text: str) -> None:
         print(f"Text: {text} selected.")
+
+    def _get_observer_config(self, observer: IObserver, mapping_type: str) -> Dict:
+        """
+        Retrieves the configuration for a given observer based on its type and the mapping type.
+
+        The method checks if the observer is an instance of any class or interface 
+        defined in the specified mapping type (`data_source_mapping` or `layout_source_mapping`).
+        If a match is found, the corresponding configuration is returned.
+
+        Args:
+            observer (IObserver): The observer whose configuration needs to be retrieved.
+            mapping_type (str): The type of mapping to use (e.g., "data" or "layout").
+
+        Returns:
+            Dict: The configuration dictionary associated with the observer.
+
+        Raises:
+            KeyError: If the observer does not match any entry in the specified mapping.
+        """
+        source_mapping = self._mapping_types[mapping_type]  # Access the correct mapping type
+
+        for cls, config in source_mapping.items():
+            if isinstance(observer, cls):
+                return config
+
+        raise KeyError(
+            f"No configuration found for observer of type {type(observer).__name__}")

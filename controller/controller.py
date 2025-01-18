@@ -168,55 +168,17 @@ class Controller(IController):
             command.redo()
 
     # observer pattern
-    def add_data_observer(self, observer: IDataObserver) -> None:
+    def add_observer(self, observer: IObserver, mapping_type: str) -> None:
         """
-        Registers a data observer and maps its data-fetching logic using the predefined mapping.
+        Registers an observer (data or layout) and maps its logic using the predefined mapping.
 
         Args:
-            observer (IDataObserver): The data observer to be added.
+            observer (IObserver): The observer to be added.
+            mapping_type (str): Specifies the type of observer to add ("data" or "layout").
         """
-        # Retrieve the mapping by finding the appropriate key based on isinstance
+        # Retrieve the mapping based on the observer and mapping type
         mapping = self._get_observer_config(
-            observer=observer, mapping_type="data")
-
-        # Extract finalize flag and source_keys from the mapping
-        finalize = mapping["finalize"]
-        source_keys = mapping["source_keys"]
-
-        # Extract sources
-        sources = list(source_keys.keys())
-
-        # Handle specific logic for IComparisonTextDisplayFrame
-        #!
-        # todo change
-        if isinstance(observer, IComparisonTextDisplayFrame):
-            index = self._dynamic_observer_index
-            self._dynamic_observer_index += 1
-
-            # Add observer-specific data mapping
-            self._observer_data_map[observer] = lambda index=index: {
-                "sentence": sources[0].get_data_state()["comparison_sentences"][index]
-            }
-        #! end todo
-
-        # Register the observer to the sources
-        for source in sources:
-            source.add_data_observer(observer)
-
-        # Add to finalize list if the mapping specifies it
-        if finalize:
-            self._observers_to_finalize.append(observer)
-
-    def add_layout_observer(self, observer: ILayoutObserver) -> None:
-        """
-        Registers a layout observer and maps its layout-fetching logic using the predefined mapping.
-
-        Args:
-            observer (ILayoutObserver): The layout observer to be added.
-        """
-        # Retrieve the mapping by finding the appropriate key based on isinstance
-        mapping = self._get_observer_config(
-            observer=observer, mapping_type="layout")
+            observer=observer, mapping_type=mapping_type)
 
         # Extract finalize flag and source_keys from the mapping
         finalize = mapping["finalize"]
@@ -227,127 +189,78 @@ class Controller(IController):
 
         # Register the observer to the sources
         for source in sources:
-            source.add_layout_observer(observer)
+            if mapping_type == "data":
+                source.add_data_observer(observer)
+            elif mapping_type == "layout":
+                source.add_layout_observer(observer)
 
         # Add to finalize list if the mapping specifies it
         if finalize:
             self._observers_to_finalize.append(observer)
 
-    def remove_data_observer(self, observer: IDataObserver) -> None:
+    def remove_observer(self, observer: IObserver, mapping_type: str) -> None:
         """
-        Removes a data observer and clears any associated mappings or registrations using the predefined mapping.
+        Removes an observer (data or layout) and clears any associated mappings or registrations using the predefined mapping.
 
         Args:
-            observer (IDataObserver): The data observer to be removed.
+            observer (IObserver): The observer to be removed.
+            mapping_type (str): Specifies the type of observer to remove ("data" or "layout").
         """
-        # Retrieve the mapping by finding the appropriate key based on isinstance
+        # Retrieve the mapping based on the observer and mapping type
         mapping = self._get_observer_config(
-            observer=observer, mapping_type="data")
+            observer=observer, mapping_type=mapping_type)
 
-        # Extract finalize flag and source_keys from the mapping
+        # Extract source_keys and sources
         source_keys = mapping["source_keys"]
-
-        # Extract sources
         sources = list(source_keys.keys())
 
-        # If the observer was added to finalize list, remove it
+        # If the observer was added to the finalize list, remove it
         if observer in self._observers_to_finalize:
             self._observers_to_finalize.remove(observer)
 
-        # Remove the observer from all associated data sources
+        # Remove the observer from all associated sources
         for source in sources:
-            source.remove_data_observer(observer)
+            if mapping_type == "data":
+                source.remove_data_observer(observer)
+            elif mapping_type == "layout":
+                source.remove_layout_observer(observer)
 
-        print(f"Data observer {type(observer)} removed.")
+        print(f"{mapping_type.capitalize()} observer {type(observer)} removed.")
 
-    def remove_layout_observer(self, observer: ILayoutObserver) -> None:
+    def get_observer_state(self, observer: IObserver, mapping_type: str) -> any:
         """
-        Removes a layout observer and clears any associated mappings or registrations using the predefined mapping.
+        Retrieves the updated state information for a specific observer.
+
+        This method accesses the relevant mapping (data or layout) to fetch the
+        state processing logic associated with the given observer. It then executes
+        this logic to return the computed state information for the observer.
 
         Args:
-            observer (ILayoutObserver): The layout observer to be removed.
-        """
-        # Retrieve the mapping by finding the appropriate key based on isinstance
-        mapping = self._get_observer_config(
-            observer=observer, mapping_type="layout")
-
-        # Extract finalize flag and source_keys from the mapping
-        source_keys = mapping["source_keys"]
-
-        # Extract sources
-        sources = list(source_keys.keys())
-
-        # If the observer was added to finalize list, remove it
-        if observer in self._observers_to_finalize:
-            self._observers_to_finalize.remove(observer)
-
-        # Remove the observer from all associated layout sources
-        for source in sources:
-            source.remove_layout_observer(observer)
-
-        print(f"Layout observer {type(observer)} removed.")
-
-    def get_data_state(self, observer: IDataObserver) -> any:
-        """
-        Retrieves the updated data for a specific data observer.
-
-        This method accesses the `_observer_data_map` to fetch the data
-        processing logic associated with the given observer. It then
-        executes this logic (typically a callable) to return the
-        computed data for the observer.
-
-        Args:
-            observer (IDataObserver): The data observer requesting updated data.
+            observer (IObserver): The observer requesting updated state information.
+            mapping_type (str): Specifies the type of state to retrieve ("data" or "layout").
 
         Returns:
-            The computed data specific to the requesting observer.
+            dict: The computed state information specific to the requesting observer.
 
         Raises:
-            KeyError: If the provided observer is not registered in the
-            `_observer_data_map`.
+            KeyError: If the provided observer is not registered in the corresponding mapping.
         """
-        mapping = self._get_observer_config(observer, "data")
-        source_keys = mapping["source_keys"]
-        data = {
-            key: value
-            for source, keys in source_keys.items()
-            for key, value in source.get_data_state().items()
-            if key in keys
-        }
-        return data
-
-    def get_layout_state(self, observer: ILayoutObserver) -> any:
-        """
-        Retrieves the updated layout information for a specific layout observer.
-
-        This method accesses the `_observer_layout_map` to fetch the layout
-        processing logic associated with the given observer. It then
-        executes this logic (typically a callable) to return the
-        computed layout information for the observer.
-
-        Args:
-            observer (ILayoutObserver): The layout observer requesting updated layout information.
-
-        Returns:
-            The computed layout information specific to the requesting observer.
-
-        Raises:
-            KeyError: If the provided observer is not registered in the
-            `_observer_layout_map`.
-        """
-        mapping = self._get_observer_config(observer, "layout")
+        # Retrieve the mapping based on the observer and mapping type
+        mapping = self._get_observer_config(observer, mapping_type)
         source_keys = mapping["source_keys"]
 
-        layout = {
+        # Fetch the state from the relevant sources and keys
+        state = {
             key: value
             for source, keys in source_keys.items()
-            for key, value in source.get_layout_state().items()
+            for key, value in (source.get_data_state() if mapping_type == "data" else source.get_layout_state()).items()
             if key in keys
         }
-        return layout
+        return state
 
     #!
     # todo Mockmethod
+
     def get_abbreviations(self) -> set[str]:
         """
         Loads abbreviations from a JSON file and returns the list of German abbreviations.

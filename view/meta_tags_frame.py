@@ -39,8 +39,8 @@ class MetaTagsFrame(tk.Frame, IMetaTagsFrame):
         self._filename_label = self._filename_label = ttk.Label(self)
 
         # observer pattern
-        self._controller.add_data_observer(self)
-        self._controller.add_layout_observer(self)
+        self._controller.add_observer(self, "data")
+        self._controller.add_observer(self, "layout")
 
     def _render(self) -> None:
         """
@@ -111,7 +111,7 @@ class MetaTagsFrame(tk.Frame, IMetaTagsFrame):
         This method fetches layout data associated with this observer from the controller
         and processes it to adjust the layout of the view.
         """
-        layout = self._controller.get_layout_state(self)
+        layout = self._controller.get_observer_state(self, "layout")
         self._tag_types = layout["tag_types"]
         # todo: Process and update the layout with the retrieved information
 

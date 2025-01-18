@@ -29,9 +29,8 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         self._notebook = ttk.Notebook(self)
         self._notebook.pack(fill="both", expand=True)
 
-        # todo further data registration
-        self._controller.add_data_observer(self)
-        self._controller.add_layout_observer(self)
+        self._controller.add_observer(self, "data")
+        self._controller.add_observer(self, "layout")
 
     def _render(self) -> None:
         """
@@ -105,6 +104,6 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         # todo update data in widgets
 
     def update_layout(self):
-        layout = self._controller.get_layout_state(self)
+        layout = self._controller.get_observer_state(self, "layout")
         self._template_groups = layout["template_groups"]
         self._render()

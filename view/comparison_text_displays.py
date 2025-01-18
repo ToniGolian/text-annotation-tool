@@ -22,8 +22,8 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         self._widget_structure: List[tk.Widget] = []
 
         # Add observer
-        self._controller.add_data_observer(self)
-        self._controller.add_layout_observer(self)
+        self._controller.add_observer(self, "data")
+        self._controller.add_observer(self, "layout")
 
         # Create the canvas and scrollbar
         canvas = tk.Canvas(self)
@@ -90,13 +90,14 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         Creates a new Label and TextDisplayFrame pair for each document and updates self._widget_structure.
         """
         self._widget_structure = []
+        index = 0
 
         original_label = tk.Label(
             self.scrollable_frame, text="Original Text:"
         )
         original_text_display = ComparisonTextDisplayFrame(
-            self.scrollable_frame, self._controller, selectable=True
-        )
+            index=index, parent=self.scrollable_frame, controller=self._controller, selectable=True)
+        index += 1
         self._widget_structure.append((original_label, original_text_display))
 
         for filename in self._filenames:
@@ -106,9 +107,8 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
 
             # Create a TextDisplayFrame for displaying the document's content
             text_display_frame = ComparisonTextDisplayFrame(
-                self.scrollable_frame, self._controller, selectable=False
-            )
-
+                index=index, parent=self.scrollable_frame, controller=self._controller, selectable=True)
+            index += 1
             # Add the label and text display frame as a pair in the widget structure
             self._widget_structure.append((label, text_display_frame))
 
@@ -119,7 +119,7 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         This method fetches data associated with this observer from the controller
         and processes it to refresh the displayed information.
         """
-        data = self._controller.get_data_state(self)
+        self._controller = self._controller.get_observer_state(self, "data")
         self._render()
 
     def update_layout(self) -> None:
@@ -129,12 +129,6 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         This method fetches layout data associated with this observer from the controller
         and processes it to adjust the layout of the view.
         """
-        layout = self._controller.get_layout_state(self)
+        layout = self._controller.get_observer_state(self, "layout")
         self._filenames = layout["filenames"]
         self._render()
-
-    # def update(self) -> None:
-    #     """
-    #     Sets the names of compared documents and triggers rerendering of the GUI.
-    #     """
-    #     self._render()

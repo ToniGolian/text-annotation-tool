@@ -29,8 +29,8 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         self._current_sentence_index: int = 0
         self._num_sentences: int = 0
 
-        self._controller.add_data_observer(self)
-        self._controller.add_layout_observer(self)
+        self._controller.add_observer(self, "data")
+        self._controller.add_observer(self, "layout")
 
         # self._render()
 
@@ -146,7 +146,7 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         This method fetches layout data associated with this observer from the controller
         and processes it to adjust the layout of the view.
         """
-        layout = self._controller.get_layout_state(self)
+        layout = self._controller.get_observer_state(self, "layout")
         self._num_files = layout["num_files"]
         self._render()
 

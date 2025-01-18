@@ -42,7 +42,7 @@ class ExtractionView(tk.Frame):
 
         # Pack the lower_frame below the upper_frame
         self.lower_frame = PreviewTextDisplayFrame(
-            self.left_frame, controller=self._controller)
+            self.left_frame, controller=self._controller, editable=True)
         self.lower_frame.pack(fill=tk.BOTH, expand=True, side="top")
 
         # Now pack left_frame itself in the paned_window

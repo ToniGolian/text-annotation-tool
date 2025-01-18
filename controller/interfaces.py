@@ -33,33 +33,18 @@ class IController(ABC):
 
     # observer pattern
     @abstractmethod
-    def add_data_observer(self, observer: IObserver, variables: List[str]) -> None:
+    def add_observer(self, observer: IObserver, mapping_type: str) -> None:
         """Register observer to Model"""
         pass
 
     @abstractmethod
-    def remove_data_observer(self, observer: IObserver) -> None:
+    def remove_observer(self, observer: IObserver, mapping_type: str) -> None:
         """Remove observer from Model"""
         pass
 
     @abstractmethod
-    def add_layout_observer(self, observer: IObserver, variables: List[str]) -> None:
-        """Register observer to Model"""
-        pass
-
-    @abstractmethod
-    def remove_layout_observer(self, observer: IObserver) -> None:
-        """Remove observer from Model"""
-        pass
-
-    @abstractmethod
-    def get_data_state(self, observer: IDataObserver) -> Any:
+    def get_observer_state(self, observer: IObserver, mapping_type: str) -> Any:
         """Retrieves the data from observed publisher."""
-        pass
-
-    @abstractmethod
-    def get_layout_state(self, observer: ILayoutObserver) -> Any:
-        """Retrieves the layout data from observed publisher."""
         pass
 
     # abbreviation handling

@@ -28,7 +28,7 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
         self._render()
 
         # Register as an observer
-        self._controller.add_data_observer(self)
+        self._controller.add_observer(self, "data")
 
     def _render(self) -> None:
         """
@@ -58,8 +58,12 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
         Args:
             event (tk.Event): The event triggered by text selection.
         """
-        selected_text = self.text_widget.selection_get()
-        self._controller.perform_text_selected(selected_text)
+        try:
+            selected_text = self.text_widget.selection_get()
+            self._controller.perform_text_selected(selected_text)
+        except tk.TclError:
+            # No selection exists, so we simply ignore the event
+            pass
 
     def update_data(self) -> None:
         """
@@ -69,11 +73,12 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
             data (dict): Data passed from the observed subject.
         """
         # Implement any necessary updates based on the data
-        text = self._controller.get_data_state(self).get("text", "NOTEXT")
+        text = self._controller.get_observer_state(
+            self, "data").get("text", "NOTEXT")
 
-        if self._editable:
+        if not self._editable:
             self.text_widget.config(state="normal")
         self.text_widget.delete("1.0", tk.END)
         self.text_widget.insert("1.0", text)
-        if self._editable:
+        if not self._editable:
             self.text_widget.config(state="disabled")

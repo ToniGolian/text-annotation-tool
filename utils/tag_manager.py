@@ -1,3 +1,4 @@
+from pprint import pprint
 from typing import Dict, List
 import uuid
 from model.interfaces import IDocumentModel
@@ -71,13 +72,14 @@ class TagManager:
         # Generate a unique UUID for the tag
         tag_uuid = self._generate_unique_id()
         tag_data["uuid"] = tag_uuid
+        #! debug
+        pprint(tag_data)
         self._tags[tag_uuid] = TagModel(**tag_data)
 
         # Insert the tag into the text using the TagStringProcessor
         text = self._document.get_text()
         # TODO change logic
-        updated_text = self._tag_processor.insert_tags_into_text(text, [
-                                                                 tag_data])
+        updated_text = self._tag_processor.insert_tag_into_text(text, tag_data)
         self._document.set_text(updated_text)
 
         return tag_uuid
@@ -143,3 +145,17 @@ class TagManager:
             List[Dict]: A list of all tag data in dictionary format.
         """
         return list(self._tags.values())
+
+    def set_document(self, document: IDocumentModel) -> None:
+        """
+        Associates a document with the TagManager and initializes the tag list.
+
+        This method sets the provided document as the current document managed by the TagManager.
+        It then extracts tags from the document text and populates the internal tag list.
+
+        Args:
+            document (IDocumentModel): The document to be managed by this TagManager.
+        """
+        self._document = document
+        self._tags.clear()  # Clear any existing tags
+        self._extract_tags_from_document()

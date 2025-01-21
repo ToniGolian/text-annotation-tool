@@ -118,7 +118,7 @@ class ISelectionModel(IDataPublisher):
     """
 
     @abstractmethod
-    def set_selected_text(self, text: str) -> None:
+    def set_selected_text_data(self, selected_data: Dict) -> None:
         """
         Sets the currently selected text and notifies observers.
 

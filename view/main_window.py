@@ -86,8 +86,8 @@ class MainWindow(tk.Tk):
         notebook.add(comparison_view, text="Text Comparison")
 
         # Choose the second page as default
-        #! change
-        notebook.select(0)
+        #! change to 0
+        notebook.select(1)
 
     def _on_open(self):
         """Handles the 'Open' action from the File menu."""

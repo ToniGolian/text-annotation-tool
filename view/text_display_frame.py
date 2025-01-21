@@ -62,14 +62,33 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
 
     def _on_selection(self, event: tk.Event) -> None:
         """
-        Handles text selection events.
+        Handles text selection events and passes the selected text along with its absolute starting position
+        in the entire text to the controller.
 
         Args:
             event (tk.Event): The event triggered by text selection.
         """
         try:
+            # Get the selected text
             selected_text = self.text_widget.selection_get()
-            self._controller.perform_text_selected(selected_text)
+
+            # Get the start index of the selection (e.g., "line.column")
+            start_index = self.text_widget.index(tk.SEL_FIRST)
+            line, col = map(int, start_index.split("."))
+
+            # Calculate the absolute start position in the entire text
+            lines_before = sum(len(self.text_widget.get(
+                f"{i}.0", f"{i}.end")) + 1 for i in range(1, line))
+            start_position = lines_before + col
+
+            # Prepare the selection data
+            selection_data = {
+                "position": start_position,
+                "selected_text": selected_text
+            }
+
+            # Pass the data to the controller
+            self._controller.perform_text_selected(selection_data)
         except tk.TclError:
             # No selection exists, so we simply ignore the event
             pass

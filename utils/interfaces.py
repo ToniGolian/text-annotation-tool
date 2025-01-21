@@ -97,8 +97,8 @@ class ITagManager(ABC):
 
 class ITagProcessor(ABC):
     """
-    Interface for a processor that handles tag-to-string transformations
-    and performs text operations involving tags.
+    Interface for tag processing operations, including transformation between
+    tag objects and strings, and operations on document text.
     """
 
     @abstractmethod

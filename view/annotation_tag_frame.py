@@ -153,13 +153,41 @@ class AnnotationTagFrame(tk.Frame):
     def _collect_tag_data(self) -> dict:
         """
         Collects data from the widgets in self._data_widgets and returns it as a dictionary.
-        Only includes non-empty values.
+
+        The resulting dictionary includes:
+            - "tag_type": The type of the tag as specified in the template.
+            - "attributes": A list of tuples, where each tuple represents an attribute name-value pair.
+            - "position": The position of the selected text in the document, retrieved from the controller.
+            - "text": The currently selected text in the document.
 
         Returns:
-            dict: A dictionary containing the collected data.
+            dict: A dictionary containing the collected tag data, including tag attributes, tag type,
+                position, and the selected text.
+
+        Raises:
+            ValueError: If no text is currently selected.
         """
-        return {
-            attr_name: widget.get().strip()
+        # Retrieve the selected text and its position
+        selected_text_data = self._controller.get_selected_text_data()
+        selected_text = selected_text_data["selected_text"]
+        position = selected_text_data["position"]
+
+        if not selected_text:
+            raise ValueError("No text is currently selected.")
+
+        # Collect tag attributes from widgets
+        attributes = [
+            (attr_name, widget.get().strip())
             for attr_name, widget in self._data_widgets.items()
             if widget.get().strip()
+        ]
+
+        # Build the tag data dictionary
+        tag_data = {
+            "tag_type": self._template.get("type", "Tag"),
+            "attributes": attributes,
+            "position": position,
+            "text": selected_text
         }
+
+        return tag_data

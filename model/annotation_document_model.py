@@ -1,6 +1,7 @@
 from typing import List
 from model.document_model import DocumentModel
 from model.interfaces import ITagModel
+from test_data.json.timex3_example_2 import doc
 
 
 class AnnotationDocumentModel(DocumentModel):
@@ -11,6 +12,10 @@ class AnnotationDocumentModel(DocumentModel):
     def __init__(self):
         super().__init__()
         self._tags: List[ITagModel] = []
+        #!debug
+        text = doc["text"]
+        self.set_text(text)
+        #!end debug
 
     def get_tags(self) -> list:
         """

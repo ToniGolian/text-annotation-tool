@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from model.interfaces import ITagModel
 
 
@@ -17,22 +17,23 @@ class TagModel(ITagModel):
         position (int): The position of the tag in a sequence or structure.
     """
 
-    def __init__(self, uuid: str, tag_type: str, attributes: Dict, position: int):
+    def __init__(self, uuid: str, tag_type: str, attributes: List[Tuple[str, str]], position: int, text: str):
         """
-        Initializes a TagModel instance with a specific UUID, type, attributes, and position.
+        Initializes a TagModel instance with a specific UUID, type, attributes, position, and text.
 
         Args:
             uuid (str): A globally unique identifier for the tag.
             tag_type (str): The type of the tag, describing its category or functionality.
-            attributes (Dict[str, any]): A dictionary containing key-value pairs that define
-                                         additional properties of the tag.
+            attributes (List[Tuple[str, str]]): A list of key-value pairs representing the tag's attributes.
             position (int): The position of the tag in a sequence or structure.
+            text (str): The selected text associated with the tag.
         """
         super().__init__()
         self._uuid = uuid
         self._tag_type = tag_type
-        self._attributes = attributes
+        self._attributes = {key: value for key, value in attributes}
         self._position = position
+        self._text = text
 
     def get_uuid(self) -> str:
         """
@@ -52,7 +53,7 @@ class TagModel(ITagModel):
         """
         self._uuid = uuid
 
-    def get_attributes(self, keys: List[str] = None) -> Dict[str, any]:
+    def get_attributes(self, keys: List[str] = None) -> Dict[str, str]:
         """
         Retrieves attributes based on the provided keys or returns the entire attributes dictionary.
 
@@ -61,20 +62,20 @@ class TagModel(ITagModel):
                                         If None, the entire dictionary is returned.
 
         Returns:
-            Dict[str, any]: A dictionary containing the requested key-value pairs or the entire attributes dictionary.
+            Dict[str, str]: A dictionary containing the requested key-value pairs or the entire attributes dictionary.
         """
         return self._attributes if keys is None else {key: self._attributes[key] for key in keys if key in self._attributes}
 
-    def set_attributes(self, new_attributes: Dict[str, any]) -> None:
+    def set_attributes(self, new_attributes: List[Tuple[str, str]]) -> None:
         """
-        Updates the attributes dictionary with the provided dictionary.
+        Updates the attributes dictionary with the provided list of key-value pairs.
 
         Existing keys will be updated with new values, and new keys will be added.
 
         Args:
-            new_attributes (Dict[str, any]): A dictionary containing key-value pairs to merge into the attributes dictionary.
+            new_attributes (List[Tuple[str, str]]): A list of key-value pairs to merge into the attributes dictionary.
         """
-        self._attributes.update(new_attributes)
+        self._attributes.update({key: value for key, value in new_attributes})
 
     def get_tag_type(self) -> str:
         """
@@ -111,3 +112,21 @@ class TagModel(ITagModel):
             position (int): The new position of the tag.
         """
         self._position = position
+
+    def get_text(self) -> str:
+        """
+        Gets the text associated with the tag.
+
+        Returns:
+            str: The text associated with the tag.
+        """
+        return self._text
+
+    def set_text(self, text: str) -> None:
+        """
+        Sets the text associated with the tag.
+
+        Args:
+            text (str): The new text to associate with the tag.
+        """
+        self._text = text

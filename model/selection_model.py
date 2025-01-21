@@ -1,35 +1,39 @@
-from typing import Dict
-
+from typing import Dict, Union
 from observer.interfaces import IDataPublisher
 
 
 class SelectionModel(IDataPublisher):
     """
-    A model to manage and publish the currently selected text to its observers.
+    A model to manage and publish the currently selected text and its position to its observers.
     """
 
     def __init__(self) -> None:
         """
-        Initializes the SelectionModel with no selected text.
+        Initializes the SelectionModel with no selected text or position.
         """
         super().__init__()  # Initializes _data_observers from the base class
-        self._selected_text: str = ""
+        self._selected_data: Dict[str, Union[str, int]] = {
+            "text": "",
+            "position": -1  # -1 indicates no position is set
+        }
 
-    def set_selected_text(self, text: str) -> None:
+    def set_selected_text_data(self, data: Dict[str, Union[str, int]]) -> None:
         """
-        Sets the currently selected text and notifies all observers.
+        Sets the currently selected text and its position, then notifies all observers.
 
         Args:
-            text (str): The newly selected text.
+            data (Dict[str, Union[str, int]]): A dictionary containing:
+                - "text" (str): The newly selected text.
+                - "position" (int): The starting position of the selected text.
         """
-        self._selected_text = text
+        self._selected_data = data
         self.notify_data_observers()
 
-    def get_data_state(self) -> Dict[str, str]:
+    def get_data_state(self) -> Dict[str, Union[str, int]]:
         """
-        Retrieves the current selected text as a dictionary.
+        Retrieves the current selected text and its position as a dictionary.
 
         Returns:
-            Dict[str, str]: A dictionary containing the selected text.
+            Dict[str, Union[str, int]]: A dictionary containing the selected text and its position.
         """
-        return {"selected_text": self._selected_text}
+        return self._selected_data

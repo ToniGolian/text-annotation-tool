@@ -28,7 +28,6 @@ class Controller(IController):
         self._settings_manager = SettingsManager()
         self._tag_processor = TagProcessor()
         self._tag_manager = TagManager(self._tag_processor)
-        self._configuration_manager: ILayoutPublisher = configuration_model
         self._list_manager = ListManager(
             self._file_handler, self._settings_manager)
         self._pdf_extraction_manager = PDFExtractionManager(
@@ -40,11 +39,14 @@ class Controller(IController):
         self._observer_layout_map: Dict[ILayoutObserver, Dict] = {}
         self._observers_to_finalize: List = []
 
+        self._configuration_model: ILayoutPublisher = configuration_model
         self._preview_document_model: IDocumentModel = preview_document_model
         self._annotation_document_model: IDocumentModel = annotation_document_model
         self._comparison_document_model: IDocumentModel = comparison_document_model
         self._comparison_model: IComparisonModel = comparison_model
         self._selection_model: ISelectionModel = selection_model
+        #!debug
+        self._tag_manager.set_document(self._annotation_document_model)
 
         # collections
         self._undo_stack = []
@@ -104,27 +106,27 @@ class Controller(IController):
             IComparisonTextDisplays: {
                 "finalize": True,
                 "source_keys": {
-                    self._configuration_manager: [
+                    self._configuration_model: [
                         "filenames", "num_files"]
                 }
             },
             IComparisonHeaderFrame: {
                 "finalize": True,
                 "source_keys": {
-                    self._configuration_manager: [
+                    self._configuration_model: [
                         "filenames", "num_files"]
                 }
             },
             IMetaTagsFrame: {
                 "finalize": True,
                 "source_keys": {
-                    self._configuration_manager: ["tag_types"]
+                    self._configuration_model: ["tag_types"]
                 }
             },
             IAnnotationMenuFrame: {
                 "finalize": True,
                 "source_keys": {
-                    self._configuration_manager: [
+                    self._configuration_model: [
                         "template_groups"]
                 }
             }
@@ -308,6 +310,7 @@ class Controller(IController):
         """
         document = self._preview_document_model.get_data_state()
         self._annotation_document_model.set_document(document)
+        self._tag_manager.set_document(document)
         self.perform_save_document(document)
 
     def perform_update_preview_text(self, text: str) -> None:
@@ -356,22 +359,24 @@ class Controller(IController):
         command = DeleteTagCommand(self._tag_manager, tag_id)
         self._execute_command(command)
 
-    def perform_text_selected(self, text: str) -> None:
+    def perform_text_selected(self, selection_data: Dict) -> None:
         """
-        Updates the selection model with the newly selected text.
+        Updates the selection model with the newly selected text and its position.
 
         This method is triggered when text is selected in the view and updates
         the selection model to reflect the new selection.
 
         Args:
             text (str): The text that has been selected.
+            position (int): The starting position of the selected text in the document.
 
         Updates:
-            - The `selected_text` attribute in the selection model.
+            - The `selected_text` and `selected_position` attributes in the selection model.
         """
-        self._selection_model.set_selected_text(text)
+        self._selection_model.set_selected_text_data(selection_data)
 
     # todo implement
+
     def perform_save_document(self, document: Dict):
         print("Save not implemented")
 
@@ -401,3 +406,17 @@ class Controller(IController):
 
         raise KeyError(
             f"No configuration found for observer of type {type(observer).__name__}")
+
+    def get_selected_text_data(self) -> Dict:
+        """
+        Retrieves the currently selected text data from the selection model.
+
+        This method accesses the selection model to fetch the current selected
+        text and its starting position.
+
+        Returns:
+            Dict: A dictionary containing the selected text and its position with the following keys:
+                - "text" (str): The currently selected text.
+                - "position" (int): The starting position of the selected text in the document.
+        """
+        return self._selection_model.get_data_state()

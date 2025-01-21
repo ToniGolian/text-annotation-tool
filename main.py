@@ -22,6 +22,8 @@ def main():
         preview_document_model=preview_document_model, annotation_document_model=annotation_document_model, comparison_document_model=comparison_document_model, comparison_model=comparison_model, selection_model=selection_model, configuration_model=configuration_model)
     app_view = MainWindow(controller)
     controller.finalize_views()
+    #!debug
+    annotation_document_model.notify_data_observers()
     print("####################")
 
     # Start the App

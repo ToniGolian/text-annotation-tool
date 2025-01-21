@@ -130,3 +130,35 @@ class TagModel(ITagModel):
             text (str): The new text to associate with the tag.
         """
         self._text = text
+
+    def get_id(self) -> str:
+        """
+        Gets the ID of the tag from the attributes.
+
+        Returns:
+            str: The ID of the tag if it exists in the attributes, otherwise None.
+        """
+        return self._attributes.get("id")
+
+    def set_id(self, new_id: str) -> None:
+        """
+        Sets the ID of the tag in the attributes.
+
+        Args:
+            new_id (str): The new ID to set for the tag.
+        """
+        self._attributes["id"] = new_id
+
+    def __str__(self) -> str:
+        """
+        Returns a string representation of the tag as it would appear in the text.
+
+        The string includes the tag type, all attributes, and the associated text.
+
+        Returns:
+            str: A string representation of the tag in the format:
+                <tag_type attr1="value1" attr2="value2">text</tag_type>
+        """
+        attributes_str = " ".join(
+            f'{key}="{value}"' for key, value in self._attributes.items())
+        return f'<{self._tag_type} {attributes_str}>{self._text}</{self._tag_type}>'

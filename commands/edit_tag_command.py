@@ -9,7 +9,7 @@ class EditTagCommand(ICommand):
     Supports undo and redo functionality.
     """
 
-    def __init__(self, tag_manager: ITagManager, tag_id: str, new_tag_data: Dict) -> None:
+    def __init__(self, tag_manager: ITagManager, tag_uuid: str, new_tag_data: Dict) -> None:
         """
         Initializes the ChangeTagCommand.
 
@@ -19,7 +19,7 @@ class EditTagCommand(ICommand):
             new_tag_data (Dict): The new data to update the tag with.
         """
         self._tag_manager = tag_manager
-        self._tag_id = tag_id
+        self._tag_uuid = tag_uuid
         self._new_tag_data = new_tag_data
         self._previous_tag_data = None  # Stores the original tag data for undo
 
@@ -28,19 +28,20 @@ class EditTagCommand(ICommand):
         Executes the command to change the tag's data.
         Stores the original data for undo functionality.
         """
-        self._previous_tag_data = self._tag_manager.get_tag_data(self._tag_id)
-        self._tag_manager.edit_tag(self._tag_id, self._new_tag_data)
+        self._previous_tag_data = self._tag_manager.get_tag_data(
+            self._tag_uuid)
+        self._tag_manager.edit_tag(self._tag_uuid, self._new_tag_data)
 
     def undo(self) -> None:
         """
         Undoes the change by restoring the original tag data.
         """
         if self._previous_tag_data is not None:
-            self._tag_manager.edit_tag(self._tag_id, self._previous_tag_data)
+            self._tag_manager.edit_tag(self._tag_uuid, self._previous_tag_data)
 
     def redo(self) -> None:
         """
         Redoes the change by applying the new tag data again.
         """
         if self._new_tag_data is not None:
-            self._tag_manager.edit_tag(self._tag_id, self._new_tag_data)
+            self._tag_manager.edit_tag(self._tag_uuid, self._new_tag_data)

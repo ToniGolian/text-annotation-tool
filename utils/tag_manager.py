@@ -1,4 +1,3 @@
-from pprint import pprint
 from typing import Dict, List
 import uuid
 from model.interfaces import IDocumentModel
@@ -15,26 +14,25 @@ class TagManager:
     def __init__(self, tag_processor: ITagProcessor) -> None:
         """
         Initializes the TagManager with an internal tag list, a reference to the document,
-        and a TagStringProcessor.
+        and a TagProcessor.
 
         Args:
-            document (IDocumentModel): The document associated with this TagManager.
-            tag_processor (ITagStringProcessor): The processor for handling string transformations
-                                                 and text manipulation for tags.
+            tag_processor (ITagProcessor): The processor for handling string transformations
+                                           and text manipulation for tags.
         """
         self._document: IDocumentModel = None
         self._tag_processor: ITagProcessor = tag_processor
-        self._tags: Dict[str, Dict] = {}
+        self._tags: List[TagModel] = []
 
     def _extract_tags_from_document(self) -> None:
         """
-        Initializes the TagManager's internal tag list by extracting tag data 
+        Initializes the TagManager's internal tag list by extracting tag data
         from the associated document text and creating TagModel objects for each tag.
         """
         # Get the document's text
         document_text = self._document.get_text()
 
-        # Use the TagStringProcessor to extract tag data (without UUIDs)
+        # Use the TagProcessor to extract tag data
         extracted_tag_data = self._tag_processor.extract_tags_from_text(
             document_text)
 
@@ -47,8 +45,11 @@ class TagManager:
             # Create a TagModel instance using the tag_data
             tag = TagModel(**tag_data)
 
-            # Add the TagModel to the internal dictionary
-            self._tags[tag_uuid] = tag
+            # Add the TagModel to the internal list
+            self._tags.append(tag)
+
+        # Ensure the tags are sorted by position
+        self._tags.sort(key=lambda tag: tag.get_position())
 
     def _generate_unique_id(self) -> str:
         """
@@ -72,16 +73,23 @@ class TagManager:
         # Generate a unique UUID for the tag
         tag_uuid = self._generate_unique_id()
         tag_data["uuid"] = tag_uuid
-        #! debug
-        pprint(tag_data)
-        self._tags[tag_uuid] = TagModel(**tag_data)
+        new_tag = TagModel(**tag_data)
 
-        # Insert the tag into the text using the TagStringProcessor
+        # Insert the tag directly into the sorted position
+        for index, tag in enumerate(self._tags):
+            if new_tag.get_position() < tag.get_position():
+                self._tags.insert(index, new_tag)
+                break
+        else:
+            # If no earlier position is found, append at the end
+            self._tags.append(new_tag)
+
+        # Insert the tag into the text using the TagProcessor
         text = self._document.get_text()
-        # TODO change logic
         updated_text = self._tag_processor.insert_tag_into_text(text, tag_data)
         self._document.set_text(updated_text)
 
+        self._update_ids(tag_data.get("tag_type", ""))
         return tag_uuid
 
     def edit_tag(self, tag_uuid: str, tag_data: Dict) -> None:
@@ -92,18 +100,21 @@ class TagManager:
             tag_uuid (str): The unique UUID of the tag to edit.
             tag_data (Dict): The new data for the tag.
         """
-        if tag_uuid in self._tags:
-            tag_data["uuid"] = tag_uuid  # Ensure UUID consistency
-            self._tags[tag_uuid] = tag_data
+        for index, tag in enumerate(self._tags):
+            if tag.get_uuid() == tag_uuid:
+                updated_tag = TagModel(**tag_data)
+                self._tags[index] = updated_tag
 
-            # Update the tag in the text using the TagStringProcessor
-            text = self._document.get_text()
-            updated_text = self._tag_processor.insert_tag_into_text(
-                text, tag_data)
-            self._document.set_text(updated_text)
+                # Remove tag in text
+                self._tag_processor.delete_tag_from_text(uuid)
+                # Update the tag in the text using the TagProcessor
+                text = self._document.get_text()
+                updated_text = self._tag_processor.insert_tag_into_text(
+                    text, tag_data)
+                self._document.set_text(updated_text)
+                return
 
-        else:
-            raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
+        raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
 
     def delete_tag(self, tag_uuid: str) -> None:
         """
@@ -112,15 +123,55 @@ class TagManager:
         Args:
             tag_uuid (str): The unique UUID of the tag to delete.
         """
-        if tag_uuid in self._tags:
-            # Remove the tag from the text using the TagStringProcessor
-            text = self._document.get_text()
-            updated_text = self._tag_processor.insert_tags_into_text(text, [])
-            self._document.set_text(updated_text)
+        for index, tag in enumerate(self._tags):
+            if tag.get_uuid() == tag_uuid:
+                # Remove the tag from the text using the TagProcessor
+                text = self._document.get_text()
+                updated_text = self._tag_processor.delete_tag_from_text(
+                    text, [])
+                self._document.set_text(updated_text)
 
-            del self._tags[tag_uuid]
-        else:
-            raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
+                del self._tags[index]
+                return
+
+        raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
+
+    def _update_ids(self, tag_type: str, offset: int = 0) -> None:
+        """
+        Updates the IDs of all tags of the specified type to be sequentially numbered starting from 1.
+        Adjusts the positions based on the length difference between old and new IDs.
+
+        Args:
+            tag_type (str): The tag type for which the IDs should be updated.
+            offset (int): The initial offset to adjust positions. Default is 0.
+        """
+        text = self._document.get_text()
+        current_id = 1
+        for tag in self._tags:
+            # Adjust the position with the current offset
+            tag.set_position(tag.get_position() + offset)
+
+            if tag.get_tag_type() == tag_type:
+                attributes = tag.get_attributes()
+                old_id = attributes.get("id", 0)
+
+                # Update the tag's ID
+                attributes["id"] = current_id
+
+                # Notify the tag processor about the ID update
+                text = self._tag_processor.update_id(
+                    text=text, position=tag.get_position(), new_id=current_id)
+
+                # Calculate the length difference between old and new ID
+                old_id_length = len(str(old_id))
+                new_id_length = len(str(current_id))
+                length_difference = new_id_length - old_id_length
+
+                # Adjust the offset based on the length difference
+                offset += length_difference
+
+                current_id += 1
+        self._document.set_text(text)
 
     def get_tag_data(self, tag_uuid: str) -> Dict:
         """
@@ -132,10 +183,16 @@ class TagManager:
         Returns:
             Dict: The data associated with the tag.
         """
-        if tag_uuid in self._tags:
-            return self._tags[tag_uuid]
-        else:
-            raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
+        for tag in self._tags:
+            if tag.get_uuid() == tag_uuid:
+                return {
+                    "uuid": tag.get_uuid(),
+                    "tag_type": tag.get_tag_type(),
+                    "attributes": tag.get_attributes(),
+                    "position": tag.get_position()
+                }
+
+        raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
 
     def get_all_tags(self) -> List[Dict]:
         """
@@ -144,18 +201,23 @@ class TagManager:
         Returns:
             List[Dict]: A list of all tag data in dictionary format.
         """
-        return list(self._tags.values())
+        return [
+            {
+                "uuid": tag.get_uuid(),
+                "tag_type": tag.get_tag_type(),
+                "attributes": tag.get_attributes(),
+                "position": tag.get_position()
+            }
+            for tag in self._tags
+        ]
 
     def set_document(self, document: IDocumentModel) -> None:
         """
         Associates a document with the TagManager and initializes the tag list.
 
-        This method sets the provided document as the current document managed by the TagManager.
-        It then extracts tags from the document text and populates the internal tag list.
-
         Args:
             document (IDocumentModel): The document to be managed by this TagManager.
         """
         self._document = document
-        self._tags.clear()  # Clear any existing tags
+        self._tags.clear()
         self._extract_tags_from_document()

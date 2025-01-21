@@ -9,7 +9,7 @@ class DeleteTagCommand(ICommand):
     Supports undo and redo functionality.
     """
 
-    def __init__(self, tag_manager: ITagManager, tag_id: str) -> None:
+    def __init__(self, tag_manager: ITagManager, tag_uuid: str) -> None:
         """
         Initializes the RemoveTagCommand.
 
@@ -18,7 +18,7 @@ class DeleteTagCommand(ICommand):
             tag_id (str): The unique ID of the tag to be removed.
         """
         self._tag_manager = tag_manager
-        self._tag_id = tag_id
+        self._tag_uuid = tag_uuid
         self._tag_data = None  # Stores the tag's data for undo functionality
 
     def execute(self) -> None:
@@ -26,8 +26,8 @@ class DeleteTagCommand(ICommand):
         Executes the command to remove the tag.
         Stores the tag's data for undo functionality.
         """
-        self._tag_data = self._tag_manager.get_tag_data(self._tag_id)
-        self._tag_manager.delete_tag(self._tag_id)
+        self._tag_data = self._tag_manager.get_tag_data(self._tag_uuid)
+        self._tag_manager.delete_tag(self._tag_uuid)
 
     def undo(self) -> None:
         """
@@ -40,5 +40,5 @@ class DeleteTagCommand(ICommand):
         """
         Redoes the removal by deleting the tag again.
         """
-        if self._tag_id is not None:
-            self._tag_manager.delete_tag(self._tag_id)
+        if self._tag_uuid is not None:
+            self._tag_manager.delete_tag(self._tag_uuid)

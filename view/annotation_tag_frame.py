@@ -59,8 +59,9 @@ class AnnotationTagFrame(tk.Frame):
             label = tk.Label(self, text=attr_name)
             label.grid(row=row, column=0, sticky="w", padx=(15, 5), pady=5)
 
+            attribute_type = attr_data["type"].upper()
             # Choose widget based on the type
-            if attr_data["type"].upper() in ["CDATA", "ID"]:
+            if attribute_type in ["CDATA", "ID"]:
                 # Entry widget for CDATA type
                 widget = tk.Entry(self)
             else:
@@ -78,6 +79,9 @@ class AnnotationTagFrame(tk.Frame):
 
             # Place the widget in the grid
             widget.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
+            # Rename attribute, if id
+            if attribute_type == "ID":
+                attr_name = "id"
             # Store reference to the widget
             self._data_widgets[attr_name] = widget
             row += 1

@@ -38,33 +38,35 @@ class TagProcessor(ITagProcessor):
         full_tag = f"{opening_tag}{tag_text}</{tag_type}>"
         return full_tag
 
-    def insert_tag_into_text(self, text: str, tag_data: Dict) -> str:
+    def insert_tag_into_text(self, text: str, tag_model: ITagModel) -> str:
         """
-        Inserts a single tag as a string into the specified text.
+        Inserts a single tag as a string into the specified text using an ITagModel instance.
 
         Args:
             text (str): The document text where the tag should be inserted.
-            tag_data (Dict): A dictionary containing the tag data to insert. Expected keys:
-                - "position" (int): The index in the text where the tag should be inserted.
-                - "text" (str): The text content of the tag.
-                - "tag_type" (str): The type of the tag.
-                - "attributes" (List[Tuple[str, str]]): A list of attribute name-value pairs for the tag.
+            tag_model (ITagModel): An instance of ITagModel containing the tag data to insert.
+                Required properties:
+                    - position (int): The index in the text where the tag should be inserted.
+                    - text (str): The text content of the tag.
+                    - tag_type (str): The type of the tag.
+                    - attributes (Dict[str, str]): A dictionary of attribute name-value pairs for the tag.
 
         Returns:
             str: The updated text with the tag inserted at the specified position.
 
         Raises:
-            ValueError: If the text at the specified position does not match tag_data["text"].
+            ValueError: If the text at the specified position does not match the tag's text.
         """
-        position = tag_data["position"]
-        tag_text = tag_data["text"]
+        position = tag_model.get_position()
+        tag_text = tag_model.get_text()
 
         # Validate if the text at the position matches the tag text
         if text[position:position + len(tag_text)] != tag_text:
             raise ValueError(
                 f"Text at position {position} does not match the provided tag text.")
 
-        full_tag = self.tag_data_to_string(tag_data=tag_data)
+        # Convert the tag to a string representation
+        full_tag = str(tag_model)
 
         # Replace the original text with the tag at the specified position
         updated_text = text[:position] + full_tag + \
@@ -72,8 +74,33 @@ class TagProcessor(ITagProcessor):
 
         return updated_text
 
-    def delete_tag_from_text(tag: ITagModel, text: str) -> None:
-        pass
+    def delete_tag_from_text(self, tag: ITagModel, text: str) -> str:
+        """
+        Removes a tag from the specified text based on the provided ITagModel instance.
+
+        Args:
+            tag (ITagModel): An instance of ITagModel representing the tag to remove.
+            text (str): The document text containing the tag.
+
+        Returns:
+            str: The updated text with the specified tag removed.
+
+        Raises:
+            ValueError: If the specified tag is not found in the text.
+        """
+        tag_str = str(tag)  # Convert the tag to its string representation
+        position = tag.get_position()
+
+        # Validate if the tag exists at the expected position
+        if text[position:position + len(tag_str)] != tag_str:
+            raise ValueError(
+                f"Tag not found at the specified position: {position}")
+
+        # Remove the tag from the text
+        updated_text = text[:position] + \
+            tag.get_text() + text[position + len(tag_str):]
+
+        return updated_text
 
     def update_id(self, text: str, position: int, new_id: int) -> str:
         """

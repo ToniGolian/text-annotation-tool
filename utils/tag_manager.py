@@ -1,6 +1,6 @@
 from typing import Dict, List
 import uuid
-from model.interfaces import IDocumentModel
+from model.interfaces import IDocumentModel, ITagModel
 from model.tag_model import TagModel
 from utils.interfaces import ITagProcessor
 
@@ -86,10 +86,10 @@ class TagManager:
 
         # Insert the tag into the text using the TagProcessor
         text = self._document.get_text()
-        updated_text = self._tag_processor.insert_tag_into_text(text, tag_data)
+        updated_text = self._tag_processor.insert_tag_into_text(text, new_tag)
         self._document.set_text(updated_text)
 
-        self._update_ids(tag_data.get("tag_type", ""))
+        self._update_ids(new_tag)
         return tag_uuid
 
     def edit_tag(self, tag_uuid: str, tag_data: Dict) -> None:
@@ -125,52 +125,59 @@ class TagManager:
         """
         for index, tag in enumerate(self._tags):
             if tag.get_uuid() == tag_uuid:
+                del self._tags[index]
+                self._update_ids(tag)
                 # Remove the tag from the text using the TagProcessor
                 text = self._document.get_text()
                 updated_text = self._tag_processor.delete_tag_from_text(
                     tag, text)
                 self._document.set_text(updated_text)
 
-                del self._tags[index]
                 return
 
         raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
 
-    def _update_ids(self, tag_type: str, offset: int = 0) -> None:
+    def _update_ids(self, updated_tag: ITagModel, offset: int = 0) -> None:
         """
-        Updates the IDs of all tags of the specified type to be sequentially numbered starting from 1.
+        Updates the IDs of all tags of the same type as the provided tag,
+        ensuring they are sequentially numbered starting from 1.
         Adjusts the positions based on the length difference between old and new IDs.
 
         Args:
-            tag_type (str): The tag type for which the IDs should be updated.
+            updated_tag (ITagModel): The tag that triggered the update.
             offset (int): The initial offset to adjust positions. Default is 0.
         """
+        tag_type = updated_tag.get_tag_type()
         text = self._document.get_text()
         current_id = 1
+
         for tag in self._tags:
             # Adjust the position with the current offset
             tag.set_position(tag.get_position() + offset)
 
             if tag.get_tag_type() == tag_type:
-                attributes = tag.get_attributes()
-                old_id = attributes.get("id", 0)
+                old_id = tag.get_id() or "0"  # Get the old ID, default to "0" if none exists
+                new_id = str(current_id)  # Generate the new sequential ID
 
-                # Update the tag's ID
-                attributes["id"] = current_id
+                # Update the tag's ID in the model
+                tag.set_id(new_id)
 
-                # Notify the tag processor about the ID update
+                # Notify the tag processor about the ID update in the text
                 text = self._tag_processor.update_id(
-                    text=text, position=tag.get_position(), new_id=current_id)
+                    text=text, position=tag.get_position(), new_id=int(new_id)
+                )
 
                 # Calculate the length difference between old and new ID
                 old_id_length = len(str(old_id))
-                new_id_length = len(str(current_id))
+                new_id_length = len(new_id)
                 length_difference = new_id_length - old_id_length
 
                 # Adjust the offset based on the length difference
                 offset += length_difference
 
                 current_id += 1
+
+        # Update the document's text after processing all tags
         self._document.set_text(text)
 
     def get_tag_data(self, tag_uuid: str) -> Dict:

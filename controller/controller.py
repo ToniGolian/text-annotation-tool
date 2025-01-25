@@ -375,7 +375,7 @@ class Controller(IController):
             tag_data (Dict): A dictionary containing the data for the tag to be added.
             caller_id (str): The unique identifier of the view initiating this action.
         """
-        print("controller perform_add_tag")
+        print("DEBUG controller perform_add_tag")
         command = AddTagCommand(self._tag_manager, tag_data)
         self._execute_command(command=command, caller_id=caller_id)
 

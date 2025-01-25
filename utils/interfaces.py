@@ -102,7 +102,7 @@ class ITagProcessor(ABC):
     """
 
     @abstractmethod
-    def tags_to_strings(self, tags: List[Dict]) -> List[str]:
+    def tag_data_to_string(self, tags: List[Dict]) -> List[str]:
         """
         Converts tag objects into their string representations.
 

@@ -11,7 +11,7 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
     A tkinter Frame that contains a Notebook with pages representing template groups.
     """
 
-    def __init__(self, parent: tk.Widget, controller: IController) -> None:
+    def __init__(self, parent: tk.Widget, controller: IController, root_view_id: str) -> None:
         """
         Initializes the AnnotationMenuFrame with a Notebook containing pages for each template group.
 
@@ -33,6 +33,7 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         self._controller.add_observer(self, "layout")
 
         self._tag_frames = []
+        self._root_view_id = root_view_id
 
     def _render(self) -> None:
         """
@@ -90,7 +91,7 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         # Add TagFrames for each template in the group
         for template in group_templates:
             tag_frame = AnnotationTagFrame(
-                parent=scrollable_frame, controller=self._controller, template=template)
+                parent=scrollable_frame, controller=self._controller, template=template, root_view_id=self._root_view_id)
 
             tag_frame.pack(fill="x", padx=5, pady=5,
                            anchor="n", expand=True)

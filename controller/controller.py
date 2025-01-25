@@ -6,6 +6,7 @@ from controller.interfaces import IController
 from commands.interfaces import ICommand
 from input_output.file_handler import FileHandler
 from model.interfaces import IComparisonModel, IDocumentModel, ISelectionModel
+from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IDataPublisher, ILayoutObserver, ILayoutPublisher, IObserver
 from typing import Dict, List
 
@@ -49,8 +50,9 @@ class Controller(IController):
         self._tag_manager.set_document(self._annotation_document_model)
 
         # collections
-        self._undo_stack = []
-        self._redo_stack = []
+        self._undo_redo_models: Dict[str, UndoRedoModel] = {}
+        # self._undo_stack = []
+        # self._redo_stack = []
 
         # Mapping observer classes to their respective data sources, keys, and finalize status
         self._data_source_mapping = {
@@ -139,37 +141,50 @@ class Controller(IController):
 
     # command pattern
 
-    def _execute_command(self, command: ICommand) -> None:
+    def _execute_command(self, command: ICommand, caller_id: str) -> None:
         """
-        Executes a command, adds it to the redo stack, and clears the undo stack.
+        Executes a command, adds it to the undo stack of the corresponding view,
+        and clears the redo stack for that view.
 
         Args:
-            command: The command object to execute.
+            command (ICommand): The command object to execute.
+            caller_id (str): The unique identifier for the view initiating the command.
         """
-        self._redo_stack.append(command)
-        command.execute()
+        if caller_id in self._undo_redo_models:
+            model = self._undo_redo_models[caller_id]
+            model.execute_command(command)
+            command.execute()
 
-    def _undo_command(self) -> None:
+    def undo_command(self, caller_id: str) -> None:
         """
-        Undoes the last command by moving it from the redo stack to the undo stack
-        and calling its undo method.
-        """
-        if self._redo_stack:
-            command = self._redo_stack.pop()
-            self._undo_stack.append(command)
-            command.undo()
+        Undoes the last command for the specified view by moving it from the undo stack
+        to the redo stack and calling its undo method.
 
-    def _redo_command(self) -> None:
+        Args:
+            caller_id (str): The unique identifier for the view requesting the undo.
         """
-        Redoes the last undone command by moving it from the undo stack to the redo stack
-        and calling its redo method.
+        if caller_id in self._undo_redo_models:
+            model = self._undo_redo_models[caller_id]
+            command = model.undo_command()
+            if command:
+                command.undo()
+
+    def redo_command(self, caller_id: str) -> None:
         """
-        if self._undo_stack:
-            command = self._undo_stack.pop()
-            self._redo_stack.append(command)
-            command.redo()
+        Redoes the last undone command for the specified view by moving it from the redo stack
+        to the undo stack and calling its redo method.
+
+        Args:
+            caller_id (str): The unique identifier for the view requesting the redo.
+        """
+        if caller_id in self._undo_redo_models:
+            model = self._undo_redo_models[caller_id]
+            command = model.redo_command()
+            if command:
+                command.redo()
 
     # observer pattern
+
     def add_observer(self, observer: IObserver, mapping_type: str) -> None:
         """
         Registers an observer (data or layout) and maps its logic using the predefined mapping.
@@ -279,6 +294,16 @@ class Controller(IController):
         for observer in self._observers_to_finalize:
             observer.update_layout()
 
+    def register_view(self, view_id: str) -> None:
+        """
+        Initializes an Undo/Redo model for a specific view.
+
+        Args:
+            view_id (str): The unique identifier for the view for which the 
+                           Undo/Redo model is being set up.
+        """
+        self._undo_redo_models[view_id] = UndoRedoModel()
+
     # Perform methods
 
     def perform_pdf_extraction(self, extraction_data: dict) -> None:
@@ -328,36 +353,39 @@ class Controller(IController):
         """
         self._preview_document_model.set_text(text)
 
-    def perform_add_tag(self, tag_data: Dict) -> None:
+    def perform_add_tag(self, tag_data: Dict, caller_id: str) -> None:
         """
-        Creates and executes an AddTagCommand to add a new tag.
+        Creates and executes an AddTagCommand to add a new tag to the tag manager.
 
         Args:
-            tag_data (dict): Data for the tag to be added.
+            tag_data (Dict): A dictionary containing the data for the tag to be added.
+            caller_id (str): The unique identifier of the view initiating this action.
         """
         command = AddTagCommand(self._tag_manager, tag_data)
-        self._execute_command(command)
+        self._execute_command(command=command, caller_id=caller_id)
 
-    def perform_edit_tag(self, tag_id: str, tag_data: Dict) -> None:
+    def perform_edit_tag(self, tag_id: str, tag_data: Dict, caller_id: str) -> None:
         """
-        Creates and executes an EditTagCommand to edit an existing tag.
+        Creates and executes an EditTagCommand to modify an existing tag in the tag manager.
 
         Args:
-            tag_id (str): The ID of the tag to edit.
-            tag_data (dict): The new data for the tag.
+            tag_id (str): The unique identifier of the tag to be edited.
+            tag_data (Dict): A dictionary containing the updated data for the tag.
+            caller_id (str): The unique identifier of the view initiating this action.
         """
         command = EditTagCommand(self._tag_manager, tag_id, tag_data)
-        self._execute_command(command)
+        self._execute_command(command=command, caller_id=caller_id)
 
-    def perform_delete_tag(self, tag_id: str) -> None:
+    def perform_delete_tag(self, tag_id: str, caller_id: str) -> None:
         """
-        Creates and executes a DeleteTagCommand to delete a tag.
+        Creates and executes a DeleteTagCommand to remove a tag from the tag manager.
 
         Args:
-            tag_id (str): The ID of the tag to delete.
+            tag_id (str): The unique identifier of the tag to be deleted.
+            caller_id (str): The unique identifier of the view initiating this action.
         """
         command = DeleteTagCommand(self._tag_manager, tag_id)
-        self._execute_command(command)
+        self._execute_command(command=command, caller_id=caller_id)
 
     def perform_text_selected(self, selection_data: Dict) -> None:
         """

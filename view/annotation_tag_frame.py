@@ -12,16 +12,20 @@ class AnnotationTagFrame(tk.Frame):
         template (Dict): The template dictionary defining the structure and attributes for the tag.
     """
 
-    def __init__(self, parent: tk.Widget, controller: IController, template: Dict) -> None:
+    def __init__(self, parent: tk.Widget, controller: IController, template: Dict, root_view_id: str) -> None:
         """
         Initializes the TagFrame and creates widgets based on the template.
 
         Args:
             parent (tk.Widget): The parent tkinter container (e.g., Tk, Frame) for this TagFrame.
-            controller (IController): The controller managing interactions.
-            template (Dict): The template dictionary defining the tag type and attributes.
+            controller (IController): The controller managing interactions and commands for this frame.
+            template (Dict): A dictionary defining the tag type and its associated attributes.
+            root_view_id (str): The unique identifier of the root view (e.g., the notebook page) 
+                                associated with this TagFrame, representing the top-level context 
+                                for the specific task or subtask in the application.
         """
         super().__init__(parent)
+        self._root_view_id = root_view_id
         self._controller = controller
         self._template = template
         self._data_widgets = {}
@@ -138,7 +142,8 @@ class AnnotationTagFrame(tk.Frame):
         Handles the action when the 'Add Tag' button is pressed.
         """
         tag_data = self._collect_tag_data()
-        self._controller.perform_add_tag(tag_data)
+        self._controller.perform_add_tag(
+            tag_data=tag_data, caller_id=self._root_view_id)
 
     def _button_pressed_edit_tag(self) -> None:
         """
@@ -146,13 +151,14 @@ class AnnotationTagFrame(tk.Frame):
         """
         tag_data = self._collect_tag_data()
         self._controller.perform_edit_tag(
-            id=self.edit_id_combobox.get(), tag_data=tag_data)
+            id=self.edit_id_combobox.get(), tag_data=tag_data, caller_id=self._root_view_id)
 
     def _button_pressed_delete_tag(self) -> None:
         """
         Handles the action when the 'Delete Tag' button is pressed.
         """
-        self._controller.perform_delete_tag(id=self.delete_id_combobox.get())
+        self._controller.perform_delete_tag(
+            tag_id=self.delete_id_combobox.get(), caller_id=self._root_view_id)
 
     def _collect_tag_data(self) -> dict:
         """

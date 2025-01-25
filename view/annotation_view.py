@@ -5,11 +5,12 @@ from view.annotation_text_display_frame import AnnotationTextDisplayFrame
 from view.meta_tags_frame import MetaTagsFrame
 from view.text_display_frame import TextDisplayFrame
 from view.annotation_menu_frame import AnnotationMenuFrame
+from view.view import View
 # from mockclasses.mock_tagging_menu_frame import MockTaggingMenuFrame
 # from mockclasses.mock_text_display_frame import MockTextDisplayFrame
 
 
-class AnnotationView(tk.Frame):
+class AnnotationView(View):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the TextAnnotationView with a reference to the parent widget and controller.
@@ -18,9 +19,7 @@ class AnnotationView(tk.Frame):
             parent (tk.Widget): The parent widget where this frame will be placed.
             controller (IController): The controller managing actions for this view.
         """
-        super().__init__(parent)
-        self._controller = controller
-
+        super().__init__(parent, controller)
         self._render()
 
     def _render(self) -> None:
@@ -50,7 +49,7 @@ class AnnotationView(tk.Frame):
 
         # Right frame for the tagging menu
         self.right_frame = AnnotationMenuFrame(
-            self, controller=self._controller)
+            self, controller=self._controller, root_view_id=self._view_id)
 
         # Add frames to the PanedWindow with weights
         self.paned_window.add(self.left_frame, weight=6)

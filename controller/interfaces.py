@@ -22,12 +22,12 @@ class IController(ABC):
         pass
 
     @abstractmethod
-    def _undo_command(self) -> None:
+    def undo_command(self) -> None:
         """Reverses the last executed command."""
         pass
 
     @abstractmethod
-    def _redo_command(self) -> None:
+    def redo_command(self) -> None:
         """Reapplies the last undone command."""
         pass
 
@@ -64,32 +64,35 @@ class IController(ABC):
         pass
 
     @abstractmethod
-    def perform_add_tag(self, tag_data: dict) -> None:
+    def perform_add_tag(self, tag_data: Dict, caller_id: str) -> None:
         """
-        Perform the action of adding a new tag with the provided data.
+        Abstract method to create and execute an AddTagCommand to add a new tag.
 
         Args:
-            tag_data (dict): The data of the tag to be added.
+            tag_data (Dict): A dictionary containing the data for the tag to be added.
+            caller_id (str): The unique identifier of the view initiating this action.
         """
         pass
 
     @abstractmethod
-    def perform_edit_tag(self, tag_id: str, tag_data: dict) -> None:
+    def perform_edit_tag(self, tag_id: str, tag_data: Dict, caller_id: str) -> None:
         """
-        Perform the action of editing an existing tag with the given ID and data.
+        Abstract method to create and execute an EditTagCommand to modify an existing tag.
 
         Args:
-            tag_id (str): The ID of the tag to edit.
-            tag_data (dict): The new data for the tag.
+            tag_id (str): The unique identifier of the tag to be edited.
+            tag_data (Dict): A dictionary containing the updated data for the tag.
+            caller_id (str): The unique identifier of the view initiating this action.
         """
         pass
 
     @abstractmethod
-    def perform_delete_tag(self, tag_id: str) -> None:
+    def perform_delete_tag(self, tag_id: str, caller_id: str) -> None:
         """
-        Perform the action of deleting a tag with the given ID.
+        Abstract method to create and execute a DeleteTagCommand to remove a tag.
 
         Args:
-            tag_id (str): The ID of the tag to delete.
+            tag_id (str): The unique identifier of the tag to be deleted.
+            caller_id (str): The unique identifier of the view initiating this action.
         """
         pass

@@ -10,18 +10,32 @@ class TagProcessor(ITagProcessor):
     and performs string operations on the document text.
     """
 
-    def tags_to_strings(self, tags: List[Dict]) -> List[str]:
+    def tag_data_to_string(self, tag_data: Dict) -> str:
         """
-        Converts tag objects into their string representations.
+        Converts tag object into it's string representation.
 
         Args:
-            tags (List[Dict]): A list of tag dictionaries.
+            tag_data (Dict): A dictionary containing the tag data to insert. Expected keys:
+                - "position" (int): The index in the text where the tag should be inserted.
+                - "text" (str): The text content of the tag.
+                - "tag_type" (str): The type of the tag.
+                - "attributes" (List[Tuple[str, str]]): A list of attribute name-value pairs for the tag.
 
         Returns:
-            List[str]: A list of string representations of the tags.
+            str: The string representation of the tag.
         """
-        # TODO: Implement logic for tag-to-string conversion
-        return [f"<tag name='{tag['name']}' color='{tag['color']}'>" for tag in tags]
+        tag_text = tag_data["text"]
+        tag_type = tag_data["tag_type"]
+        attributes = tag_data.get("attributes", [])
+
+        # Construct the opening tag with attributes
+        attributes_str = " ".join(
+            f'{key}="{value}"' for key, value in attributes)
+        opening_tag = f"<{tag_type} {attributes_str}>" if attributes else f"<{tag_type}>"
+
+        # Construct the full tag
+        full_tag = f"{opening_tag}{tag_text}</{tag_type}>"
+        return full_tag
 
     def insert_tag_into_text(self, text: str, tag_data: Dict) -> str:
         """
@@ -43,21 +57,13 @@ class TagProcessor(ITagProcessor):
         """
         position = tag_data["position"]
         tag_text = tag_data["text"]
-        tag_type = tag_data["tag_type"]
-        attributes = tag_data.get("attributes", [])
 
         # Validate if the text at the position matches the tag text
         if text[position:position + len(tag_text)] != tag_text:
             raise ValueError(
                 f"Text at position {position} does not match the provided tag text.")
 
-        # Construct the opening tag with attributes
-        attributes_str = " ".join(
-            f'{key}="{value}"' for key, value in attributes)
-        opening_tag = f"<{tag_type} {attributes_str}>" if attributes else f"<{tag_type}>"
-
-        # Construct the full tag
-        full_tag = f"{opening_tag}{tag_text}</{tag_type}>"
+        full_tag = self.tag_data_to_string(tag_data=tag_data)
 
         # Replace the original text with the tag at the specified position
         updated_text = text[:position] + full_tag + \

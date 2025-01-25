@@ -6,9 +6,10 @@ from view.extraction_frame import ExtractionFrame
 from view.preview_text_display_frame import PreviewTextDisplayFrame
 from view.text_display_frame import TextDisplayFrame
 from view.annotation_menu_frame import AnnotationMenuFrame
+from view.view import View
 
 
-class ExtractionView(tk.Frame):
+class ExtractionView(View):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the PDFExtractionView with a reference to the parent widget and controller.
@@ -17,8 +18,7 @@ class ExtractionView(tk.Frame):
             parent (tk.Widget): The parent widget where this frame will be placed.
             controller (IController): The controller managing actions for this view.
         """
-        super().__init__(parent)
-        self._controller = controller
+        super().__init__(parent, controller)
         self._filename = ""  # Initialize file name as an empty string
 
         self._render()

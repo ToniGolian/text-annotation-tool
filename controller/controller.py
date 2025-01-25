@@ -35,6 +35,7 @@ class Controller(IController):
             list_manager=self._list_manager)
 
         # state
+
         self._dynamic_observer_index: int = 0
         self._observer_data_map: Dict[IObserver:Dict] = {}
         self._observer_layout_map: Dict[ILayoutObserver, Dict] = {}
@@ -49,10 +50,9 @@ class Controller(IController):
         #!debug
         self._tag_manager.set_document(self._annotation_document_model)
 
-        # collections
+        # command pattern
+        self._active_view_id = None  # Track the currently active view
         self._undo_redo_models: Dict[str, UndoRedoModel] = {}
-        # self._undo_stack = []
-        # self._redo_stack = []
 
         # Mapping observer classes to their respective data sources, keys, and finalize status
         self._data_source_mapping = {
@@ -150,33 +150,47 @@ class Controller(IController):
             command (ICommand): The command object to execute.
             caller_id (str): The unique identifier for the view initiating the command.
         """
+        print("DEBUG Controller _execute_command")
+        print(f"DEBUG {caller_id=}")
+        print(f"DEBUG {self._undo_redo_models.keys()=}")
+
         if caller_id in self._undo_redo_models:
             model = self._undo_redo_models[caller_id]
             model.execute_command(command)
             command.execute()
 
-    def undo_command(self, caller_id: str) -> None:
+    def undo_command(self, caller_id: str = None) -> None:
         """
-        Undoes the last command for the specified view by moving it from the undo stack
+        Undoes the last command for the specified or active view by moving it from the undo stack
         to the redo stack and calling its undo method.
 
         Args:
-            caller_id (str): The unique identifier for the view requesting the undo.
+            caller_id (str, optional): The unique identifier for the view requesting the undo.
+                                       Defaults to the currently active view.
         """
+        print(f"DEBUG Undo command triggered for caller_id={caller_id}")
+        if not caller_id:
+            caller_id = self._active_view_id
         if caller_id in self._undo_redo_models:
             model = self._undo_redo_models[caller_id]
+            print(f"DEBUG {caller_id=}")
+            print(f"DEBUG {len(model.undo_stack)}")
             command = model.undo_command()
             if command:
+                print("DEBUG Command exists")
                 command.undo()
 
-    def redo_command(self, caller_id: str) -> None:
+    def redo_command(self, caller_id: str = None) -> None:
         """
-        Redoes the last undone command for the specified view by moving it from the redo stack
+        Redoes the last undone command for the specified or active view by moving it from the redo stack
         to the undo stack and calling its redo method.
 
         Args:
-            caller_id (str): The unique identifier for the view requesting the redo.
+            caller_id (str, optional): The unique identifier for the view requesting the redo.
+                                       Defaults to the currently active view.
         """
+        if not caller_id:
+            caller_id = self._active_view_id
         if caller_id in self._undo_redo_models:
             model = self._undo_redo_models[caller_id]
             command = model.redo_command()
@@ -361,6 +375,7 @@ class Controller(IController):
             tag_data (Dict): A dictionary containing the data for the tag to be added.
             caller_id (str): The unique identifier of the view initiating this action.
         """
+        print("controller perform_add_tag")
         command = AddTagCommand(self._tag_manager, tag_data)
         self._execute_command(command=command, caller_id=caller_id)
 
@@ -448,3 +463,26 @@ class Controller(IController):
                 - "position" (int): The starting position of the selected text in the document.
         """
         return self._selection_model.get_data_state()
+
+    def get_active_view(self) -> str:
+        """
+        Returns the unique identifier of the currently active view.
+
+        This method provides the view ID of the view that is currently focused
+        and interacting with the user. It is used to ensure that actions such as
+        undo and redo are applied to the correct view.
+
+        Returns:
+            str: The unique identifier of the active view.
+        """
+        print(f"DEBUG Retrieving active view: {self._active_view_id}")
+        return self._active_view_id
+
+    def set_active_view(self, view_id: str) -> None:
+        """
+        Sets the active view for shortcut handling.
+
+        Args:
+            view_id (str): The unique identifier of the currently active view.
+        """
+        self._active_view_id = view_id

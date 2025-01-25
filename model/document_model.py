@@ -73,7 +73,6 @@ class DocumentModel(IDocumentModel):
         Args:
             text (str): The new text content to set.
         """
-        print("set")
         self._text = text
         self.notify_data_observers()
 

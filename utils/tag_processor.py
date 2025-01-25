@@ -1,6 +1,7 @@
 import re
 from typing import List, Dict
 
+from model.interfaces import ITagModel
 from utils.interfaces import ITagProcessor
 
 
@@ -70,6 +71,9 @@ class TagProcessor(ITagProcessor):
             text[position + len(tag_text):]
 
         return updated_text
+
+    def delete_tag_from_text(tag: ITagModel, text: str) -> None:
+        pass
 
     def update_id(self, text: str, position: int, new_id: int) -> str:
         """

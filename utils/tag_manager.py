@@ -128,7 +128,7 @@ class TagManager:
                 # Remove the tag from the text using the TagProcessor
                 text = self._document.get_text()
                 updated_text = self._tag_processor.delete_tag_from_text(
-                    text, [])
+                    tag, text)
                 self._document.set_text(updated_text)
 
                 del self._tags[index]

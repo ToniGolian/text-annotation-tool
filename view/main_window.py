@@ -10,7 +10,7 @@ from controller.interfaces import IController
 class MainWindow(tk.Tk):
     def __init__(self, controller: IController) -> None:
         """
-        Initializes the MainFrame window, sets its size, and immediately renders 
+        Initializes the MainFrame window, sets its size, and immediately renders
         the notebook with three tabs for PDF extraction, text annotation, and text comparison.
 
         Args:
@@ -64,7 +64,7 @@ class MainWindow(tk.Tk):
 
     def _render(self) -> None:
         """
-        Sets up the MainFrame layout by creating a notebook and adding 
+        Sets up the MainFrame layout by creating a notebook and adding
         the PDF extraction, text annotation, and text comparison views as separate tabs.
         """
         # Create a notebook widget within the main window
@@ -106,22 +106,32 @@ class MainWindow(tk.Tk):
         Raises:
             Exception: Logs any exception that occurs during the file selection process.
         """
-        try:
-            config = self._controller.get_open_file_config()
-            initial_dir = config.get("initial_dir", ".")
-            filetypes = config.get("filetypes", [("All Files", "*.*")])
-            title = config.get("title", "Open File")
-            file_path = tk.filedialog.askopenfilename(
-                initialdir=initial_dir,
-                filetypes=filetypes,
-                title=title
-            )
+        config = self._controller.get_open_file_config()
+        initial_dir = config.get("initial_dir", ".")
+        filetypes = config.get("filetypes", [("All Files", "*.*")])
+        title = config.get("title", "Open File")
+        multi_select = config.get("multiselect", False)
 
-            if file_path:
-                print(f"DEBUG {file_path=}")
-                self._controller.perform_open_file(file_path)
+        try:
+            # Handle single or multi-select
+            if multi_select:
+                file_paths = tk.filedialog.askopenfilenames(
+                    initialdir=initial_dir,
+                    filetypes=filetypes,
+                    title=title)
+            else:
+                file_paths = [tk.filedialog.askopenfilename(
+                    initialdir=initial_dir,
+                    filetypes=filetypes,
+                    title=title
+                )]
+
+            # Filter out empty paths (if no selection was made)
+            file_paths = [path for path in file_paths if path]
         except Exception as e:
             print(f"Error during open file dialog: {e}")
+        if file_paths:
+            self._controller.perform_open_file(file_paths)
 
     def _on_save_as(self):
         """
@@ -152,14 +162,19 @@ class MainWindow(tk.Tk):
                 title=title
             )
 
-            if file_path:
-                self._controller.perform_save_as(file_path)
         except Exception as e:
             print(f"Error during save as file dialog: {e}")
+        if file_path:
+            self._controller.perform_save_as(file_path)
 
     def _on_save(self):
         """Handles the 'Save' action from the File menu."""
-        print("Save file dialog not implemented yet.")
+        file_path = self._controller.get_file_path()
+        print(f"DEBUG {file_path=}")
+        if file_path:
+            self._controller.perform_save_as(file_path)
+        else:
+            self._on_save_as()
 
     def _on_preferences(self):
         """Handles the 'Preferences' action from the Settings menu."""

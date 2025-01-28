@@ -1,4 +1,3 @@
-import json
 from commands.add_tag_command import AddTagCommand
 from commands.delete_tag_command import DeleteTagCommand
 from commands.edit_tag_command import EditTagCommand
@@ -53,6 +52,11 @@ class Controller(IController):
         # command pattern
         self._active_view_id = None  # Track the currently active view
         self._undo_redo_models: Dict[str, UndoRedoModel] = {}
+
+        # maps view ids to document sources for save actions
+        self._document_source_mapping = {"extraction": self._extraction_document_model,
+                                         "annotation": self._annotation_document_model,
+                                         "comparison": self._comparison_document_model}
 
         # Mapping observer classes to their respective data sources, keys, and finalize status
         self._data_source_mapping = {
@@ -311,11 +315,9 @@ class Controller(IController):
         Initializes an Undo/Redo model for a specific view.
 
         Args:
-            view_id (str): The unique identifier for the view for which the 
+            view_id (str): The unique identifier for the view for which the
                            Undo/Redo model is being set up.
         """
-        print(f"DEBUG register_view {view_id=}")
-
         self._undo_redo_models[view_id] = UndoRedoModel()
 
     # Perform methods
@@ -348,6 +350,7 @@ class Controller(IController):
             - The adopted document is saved.
         """
         document = self._extraction_document_model.get_data_state()
+        document["document_type"] = "annotation"
         self._annotation_document_model.set_document(document)
         self._tag_manager.set_document(document)
         self.perform_save_document(document)
@@ -417,26 +420,87 @@ class Controller(IController):
         """
         self._selection_model.set_selected_text_data(selection_data)
 
-    # todo implement
-    def perform_open_file(self, file_path: str) -> None:
+    def perform_open_file(self, file_paths: List[str]) -> None:
+        """
+        Handles the process of opening files and updating the appropriate document model based on the active view.
+
+        This method processes the provided file paths, determines the active view, and updates the corresponding
+        document model with the file data. The behavior depends on the active view:
+        - For the "extraction" view, the file path is set directly in the extraction document model.
+        - For the "annotation" view, the file is read and loaded into the annotation document model.
+        - For the "comparison" view, multiple files are processed if necessary, and the comparison document model is updated.
+
+        Args:
+            file_paths (List[str]): A list of file paths selected by the user.
+                                    For single-file operations, only the first file is used.
+
+        Behavior:
+            - **Extraction View**: Updates the extraction document model with the file path.
+            - **Annotation View**: Reads the file and updates the annotation document model with its content.
+            - **Comparison View**: Processes multiple files if provided, or verifies if the document type is suitable
+              for comparison, then updates the comparison document model.
+
+        Notes:
+            - If multiple file paths are provided in the "comparison" view, they are processed together.
+            - If the document's type is not "comparison" in the "comparison" view, additional processing is performed.
+
+        Raises:
+            ValueError: If `file_paths` is empty or the active view ID is invalid.
+        """
+
+        file_path = file_paths[0]
         if self._active_view_id == "extraction":
             self._extraction_document_model.set_file_path(file_path=file_path)
             return
+
         document = self._file_handler.read_file(file_path=file_path)
         document["file_path"] = file_path
+        document["document_type"] = self._active_view_id
+
         if self._active_view_id == "annotation":
             self._annotation_document_model.set_document(document)
         if self._active_view_id == "comparison":
+            # todo improve
+            if len(file_path) > 1 or document.get("document_type", "") != "comparison":
+                document = self._perform_annotation_comparison(
+                    file_paths)
             self._comparison_document_model.set_document(document)
 
-    def perform_save_document(self, document: Dict):
-        print("Save not implemented")
+    def perform_save_as(self, file_path: str):
+        """
+        Saves the current document to the specified file path.
+
+        This method retrieves the document data from the configured data source,
+        updates the filename and document type, and writes the updated data to the
+        specified file path using the file handler.
+
+        Args:
+            file_path (str): The file path where the document should be saved.
+
+        Behavior:
+            - Retrieves the document data from the configured data source.
+            - Updates the "filename" field with the derived file name from the file path.
+            - Updates the "file_path" field the chosen file path.
+            - Updates the "document_type" field with the current active view ID.
+            - Writes the updated document to the specified file path using the file handler.
+        """
+        data_source = self.get_save_as_config()["data_source"]
+        document = data_source.get_data_state()
+        document["file_path"] = file_path
+        document["filename"] = self._file_handler.derive_file_name(file_path)
+        document["document_type"] = self._active_view_id
+        self._file_handler.write_file(file_path, document)
+
+        # todo implement
+
+    def _perform_annotation_comparison(self, file_paths: List[str]) -> Dict:
+        pass
 
     def _get_observer_config(self, observer: IObserver, mapping_type: str) -> Dict:
         """
         Retrieves the configuration for a given observer based on its type and the mapping type.
 
-        The method checks if the observer is an instance of any class or interface 
+        The method checks if the observer is an instance of any class or interface
         defined in the specified mapping type (`data_source_mapping` or `layout_source_mapping`).
         If a match is found, the corresponding configuration is returned.
 
@@ -513,6 +577,10 @@ class Controller(IController):
             file_extension = "pdf"
         else:
             file_extension = "json"
+        if self._active_view_id == "comparison":
+            multiselect = True
+        else:
+            multiselect = False
 
         key = f"default_{self._active_view_id}_load_folder"
         initial_dir = self._file_handler.get_default_path(key)
@@ -521,7 +589,8 @@ class Controller(IController):
         return {
             "initial_dir": initial_dir,
             "filetypes": [(f"{file_extension.upper()} Files", f"*.{file_extension}"), ("All Files", "*.*")],
-            "title": "Open File"
+            "title": "Open File",
+            "multiselect": multiselect
         }
 
     def get_save_as_config(self) -> dict:
@@ -538,9 +607,10 @@ class Controller(IController):
                 - "defaultextension" (str): The default file extension.
                 - "title" (str): The title of the dialog.
         """
+
         # Determine the file extension and default path based on the active view
         file_extension = "json"
-
+        data_source = self._document_source_mapping[self._active_view_id]
         key = f"default_{self._active_view_id}_save_folder"
         initial_dir = self._file_handler.get_default_path(key)
 
@@ -549,5 +619,19 @@ class Controller(IController):
             "initial_dir": initial_dir,
             "filetypes": [(f"{file_extension.upper()} Files", f"*.{file_extension}"), ("All Files", "*.*")],
             "defaultextension": f".{file_extension}",
-            "title": "Save File As"
+            "title": "Save File As",
+            "data_source": data_source
         }
+
+    def get_file_path(self) -> str:
+        """
+        Retrieves the file path from the current active data source.
+
+        The method identifies the appropriate data source based on the active view ID
+        and retrieves the file name associated with it.
+
+        Returns:
+            str: The file path of the current active data source.
+        """
+        data_source = self._document_source_mapping[self._active_view_id]
+        return data_source.get_file_path()

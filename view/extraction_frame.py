@@ -107,10 +107,21 @@ class ExtractionFrame(tk.Frame, IExtractionFrame):
             self.pdf_path_entry.insert(0, file_path)
 
     def update_data(self) -> None:
-        data = self._controller.get_observer_state(self, "data")
-        print(f"DEBUG {data=}")
-        file_path = data["file_path"]
+        """
+        Updates the view with the latest data from the controller.
 
+        This method retrieves the current state of the observed data from the controller,
+        extracts the file path, and updates the PDF path entry widget with the new file path.
+
+        Updates:
+            - Clears the current text in the PDF path entry widget.
+            - Inserts the new file path retrieved from the controller.
+
+        Raises:
+            KeyError: If the "file_path" key is not present in the retrieved data.
+        """
+        data = self._controller.get_observer_state(self, "data")
+        file_path = data["file_path"]
         self.pdf_path_entry.delete(0, tk.END)
         self.pdf_path_entry.insert(0, file_path)
 

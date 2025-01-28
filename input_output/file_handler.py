@@ -123,5 +123,16 @@ class FileHandler:
         Returns:
             str: The fully resolved and OS-specific default path associated with the given key.
         """
-        print(f"DEBUG {self._load_path(key)=}")
         return self._load_path(key)
+
+    def derive_file_name(self, file_path: str) -> str:
+        """
+        Extracts the file name, excluding its extension, from a given file path.
+
+        Args:
+            filepath (str): The full path to the file.
+
+        Returns:
+            str: The file name without its extension.
+        """
+        return os.path.splitext(os.path.basename(file_path))[0]

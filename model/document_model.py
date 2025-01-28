@@ -13,6 +13,7 @@ class DocumentModel(IDocumentModel):
         Initializes the DocumentModel with default values for its attributes.
         """
         super().__init__()
+        self._document_type = ""
         self._file_path: str = ""
         self._file_name: str = ""
         self._meta_tags: Dict = {}
@@ -96,19 +97,45 @@ class DocumentModel(IDocumentModel):
         self._text = text
         self.notify_data_observers()
 
+    def get_document_type(self) -> str:
+        """
+        Retrieves the document type.
+
+        Returns:
+            str: The type of the document.
+        """
+        return self._document_type
+
+    def set_document_type(self, document_type: str) -> None:
+        """
+        Sets the document type.
+
+        Args:
+            document_type (str): The type of the document to set.
+        """
+        self._document_type = document_type
+
     def set_document(self, document: dict) -> None:
         """
         Updates the document model with new data.
 
-        This method sets the filename, meta tags, and text of the document model
-        based on the provided dictionary.
+        This method sets the document type, file path, filename, meta tags, 
+        and text of the document model based on the provided dictionary.
 
         Args:
             document (dict): A dictionary containing the document data with the following keys:
+                - "document_type" (str): The type of the document (e.g., "annotation", "comparison").
+                - "file_path" (str): The full path to the file.
                 - "filename" (str): The name of the file.
                 - "meta_tags" (dict): Metadata tags associated with the document.
                 - "text" (str): The text content of the document.
+
+        Updates:
+            - Sets the internal attributes for document type, file path, filename, meta tags, and text.
+            - Notifies all registered data observers about the changes.
         """
+        self._document_type = document["document_type"]
+        self._file_path: str = document["file_path"]
         self._file_name = document["filename"]
         self._meta_tags = document["meta_tags"]
         self._text = document["text"]
@@ -127,7 +154,8 @@ class DocumentModel(IDocumentModel):
         Returns:
             dict: A dictionary containing the object's attributes as keys and their corresponding values.
         """
-        return {"file_path": self._file_path,
+        return {"document_type": self._document_type,
+                "file_path": self._file_path,
                 "filename": self._file_name,
                 "meta_tags": self._meta_tags,
                 "text": self._text}

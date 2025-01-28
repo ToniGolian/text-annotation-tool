@@ -17,7 +17,7 @@ class MainWindow(tk.Tk):
             controller (IController): The controller managing actions for the main application.
         """
         super().__init__()
-
+        self._controller = controller
         # Set window size
         if platform.system() == "Windows":
             self.state('zoomed')
@@ -48,6 +48,7 @@ class MainWindow(tk.Tk):
         file_menu = tk.Menu(menu_bar, tearoff=0)
         file_menu.add_command(label="Open", command=self._on_open)
         file_menu.add_command(label="Save", command=self._on_save)
+        file_menu.add_command(label="Save as", command=self._on_save_as)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self._on_closing)
         menu_bar.add_cascade(label="File", menu=file_menu)
@@ -86,12 +87,75 @@ class MainWindow(tk.Tk):
         notebook.add(comparison_view, text="Text Comparison")
 
         # Choose the second page as default
-        #! change to 0
+        #!DEBUG change to 0
         notebook.select(1)
+        self._controller.set_active_view("annotation")
+        #!END DEBUG
 
     def _on_open(self):
-        """Handles the 'Open' action from the File menu."""
-        print("Open file dialog not implemented yet.")
+        """
+        Opens a file selection dialog and triggers the controller to handle the selected file.
+
+        This method uses configuration from the controller to determine:
+        - The initial directory for the dialog.
+        - The allowed file types.
+        - The title of the dialog.
+
+        After a file is selected, it calls `perform_open_file` on the controller with the file path.
+
+        Raises:
+            Exception: Logs any exception that occurs during the file selection process.
+        """
+        try:
+            config = self._controller.get_open_file_config()
+            initial_dir = config.get("initial_dir", ".")
+            filetypes = config.get("filetypes", [("All Files", "*.*")])
+            title = config.get("title", "Open File")
+            file_path = tk.filedialog.askopenfilename(
+                initialdir=initial_dir,
+                filetypes=filetypes,
+                title=title
+            )
+
+            if file_path:
+                print(f"DEBUG {file_path=}")
+                self._controller.perform_open_file(file_path)
+        except Exception as e:
+            print(f"Error during open file dialog: {e}")
+
+    def _on_save_as(self):
+        """
+        Opens a save-as dialog and triggers the controller to handle the save operation.
+
+        This method uses configuration from the controller to determine:
+        - The initial directory for the dialog.
+        - The allowed file types.
+        - The default file extension.
+        - The title of the dialog.
+
+        After a file is selected, it calls `perform_save_as` on the controller with the file path.
+
+        Raises:
+            Exception: Logs any exception that occurs during the save-as process.
+        """
+        try:
+            config = self._controller.get_save_as_config()
+            initial_dir = config.get("initial_dir", ".")
+            filetypes = config.get("filetypes", [("All Files", "*.*")])
+            defaultextension = config.get("defaultextension", "")
+            title = config.get("title", "Save File As")
+
+            file_path = tk.filedialog.asksaveasfilename(
+                initialdir=initial_dir,
+                filetypes=filetypes,
+                defaultextension=defaultextension,
+                title=title
+            )
+
+            if file_path:
+                self._controller.perform_save_as(file_path)
+        except Exception as e:
+            print(f"Error during save as file dialog: {e}")
 
     def _on_save(self):
         """Handles the 'Save' action from the File menu."""

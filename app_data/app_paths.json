@@ -3,7 +3,10 @@
     "saved_layout": "app_data/saved_layout.json",
     "default_project_config": "app_data/project_config/",
     "default_path_settings": "app_data/settings/",
-    "default_pdf_folder": "data/pdf/",
-    "default_annotation_folder": "data/annotation/",
-    "default_comparison_folder": "data/comparison/"
+    "default_extraction_load_folder": "data/extraction/",
+    "default_annotation_load_folder": "data/annotation/",
+    "default_comparison_load_folder": "data/comparison/",
+    "default_extraction_save_folder": "data/annotation/",
+    "default_annotation_save_folder": "data/annotation/",
+    "default_comparison_save_folder": "data/comparison/"
 }

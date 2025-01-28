@@ -150,10 +150,6 @@ class Controller(IController):
             command (ICommand): The command object to execute.
             caller_id (str): The unique identifier for the view initiating the command.
         """
-        print("DEBUG Controller _execute_command")
-        print(f"DEBUG {caller_id=}")
-        print(f"DEBUG {self._undo_redo_models.keys()=}")
-
         if caller_id in self._undo_redo_models:
             model = self._undo_redo_models[caller_id]
             model.execute_command(command)
@@ -168,16 +164,12 @@ class Controller(IController):
             caller_id (str, optional): The unique identifier for the view requesting the undo.
                                        Defaults to the currently active view.
         """
-        print(f"DEBUG Undo command triggered for caller_id={caller_id}")
         if not caller_id:
             caller_id = self._active_view_id
         if caller_id in self._undo_redo_models:
             model = self._undo_redo_models[caller_id]
-            print(f"DEBUG {caller_id=}")
-            print(f"DEBUG {len(model.undo_stack)}")
             command = model.undo_command()
             if command:
-                print("DEBUG Command exists")
                 command.undo()
 
     def redo_command(self, caller_id: str = None) -> None:
@@ -316,6 +308,8 @@ class Controller(IController):
             view_id (str): The unique identifier for the view for which the 
                            Undo/Redo model is being set up.
         """
+        print(f"DEBUG register_view {view_id=}")
+
         self._undo_redo_models[view_id] = UndoRedoModel()
 
     # Perform methods
@@ -375,7 +369,6 @@ class Controller(IController):
             tag_data (Dict): A dictionary containing the data for the tag to be added.
             caller_id (str): The unique identifier of the view initiating this action.
         """
-        print("DEBUG controller perform_add_tag")
         command = AddTagCommand(self._tag_manager, tag_data)
         self._execute_command(command=command, caller_id=caller_id)
 
@@ -419,6 +412,9 @@ class Controller(IController):
         self._selection_model.set_selected_text_data(selection_data)
 
     # todo implement
+    def perform_open_file(self, file_path: str) -> None:
+        if self._active_view_id == "extraction":
+            self._preview_document_model.set_filename(file_path=file_path)
 
     def perform_save_document(self, document: Dict):
         print("Save not implemented")
@@ -475,7 +471,6 @@ class Controller(IController):
         Returns:
             str: The unique identifier of the active view.
         """
-        print(f"DEBUG Retrieving active view: {self._active_view_id}")
         return self._active_view_id
 
     def set_active_view(self, view_id: str) -> None:
@@ -486,3 +481,60 @@ class Controller(IController):
             view_id (str): The unique identifier of the currently active view.
         """
         self._active_view_id = view_id
+
+    def get_open_file_config(self) -> dict:
+        """
+        Returns the configuration for the open file dialog.
+
+        This method constructs the configuration based on the active view and
+        determines the initial directory, file types, and dialog title.
+
+        Returns:
+            dict: A dictionary containing the configuration for the open file dialog.
+                - "initial_dir" (str): The initial directory for the file dialog.
+                - "filetypes" (list of tuples): The allowed file types.
+                - "title" (str): The title of the dialog.
+        """
+        # Determine the file extension and default path based on the active view
+        if self._active_view_id == "extraction":
+            file_extension = "pdf"
+        else:
+            file_extension = "json"
+
+        key = f"default_{self._active_view_id}_load_folder"
+        initial_dir = self._file_handler.get_default_path(key)
+
+        # Construct the dialog configuration
+        return {
+            "initial_dir": initial_dir,
+            "filetypes": [(f"{file_extension.upper()} Files", f"*.{file_extension}"), ("All Files", "*.*")],
+            "title": "Open File"
+        }
+
+    def get_save_as_config(self) -> dict:
+        """
+        Returns the configuration for the save-as file dialog.
+
+        This method constructs the configuration based on the active view and
+        determines the initial directory, file types, default file extension, and dialog title.
+
+        Returns:
+            dict: A dictionary containing the configuration for the save-as file dialog.
+                - "initial_dir" (str): The initial directory for the file dialog.
+                - "filetypes" (list of tuples): The allowed file types.
+                - "defaultextension" (str): The default file extension.
+                - "title" (str): The title of the dialog.
+        """
+        # Determine the file extension and default path based on the active view
+        file_extension = "json"
+
+        key = f"default_{self._active_view_id}_save_folder"
+        initial_dir = self._file_handler.get_default_path(key)
+
+        # Construct the dialog configuration
+        return {
+            "initial_dir": initial_dir,
+            "filetypes": [(f"{file_extension.upper()} Files", f"*.{file_extension}"), ("All Files", "*.*")],
+            "defaultextension": f".{file_extension}",
+            "title": "Save File As"
+        }

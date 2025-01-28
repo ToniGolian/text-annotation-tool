@@ -144,13 +144,45 @@ class TagProcessor(ITagProcessor):
 
     def extract_tags_from_text(self, text: str) -> List[Dict]:
         """
-        Extracts tag information from the text.
+        Extracts all tags from the given text and returns them as a list of dictionaries.
+
+        This method identifies tags in the text based on their XML-like structure, including their type,
+        attributes, position, and content. It parses the tag type, attributes, and the inner text of each
+        tag, while also recording the start position of each tag in the text.
 
         Args:
-            text (str): The document text.
+            text (str): The input text containing tags.
 
         Returns:
-            List[Dict]: A list of extracted tag dictionaries.
+            List[Dict]: A list of dictionaries where each dictionary represents a tag with the following keys:
+                - "tag_type" (str): The type of the tag (e.g., "TIMEX3").
+                - "attributes" (List[Tuple[str, str]]): A list of key-value pairs for the tag's attributes.
+                - "position" (int): The starting position of the tag in the text.
+                - "text" (str): The content enclosed within the tag.
         """
-        # TODO: Implement logic to parse text and extract tags
-        return []
+        tag_pattern = re.compile(
+            r'<(?P<tag_type>\w+)\s*(?P<attributes>[^>]*)>(?P<content>.*?)</\1>',
+            re.DOTALL
+        )
+        attribute_pattern = re.compile(r'(?P<key>\w+)="(?P<value>[^"]*)"')
+
+        tags = []
+        for match in tag_pattern.finditer(text):
+            tag_type = match.group("tag_type")
+            attributes_raw = match.group("attributes")
+            content = match.group("content")
+            start_position = match.start()
+
+            # Parse attributes
+            attributes = attribute_pattern.findall(attributes_raw)
+
+            # Construct tag_data
+            tag_data = {
+                "tag_type": tag_type,
+                "attributes": attributes,
+                "position": start_position,
+                "text": content.strip(),
+            }
+            tags.append(tag_data)
+
+        return tags

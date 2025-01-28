@@ -20,7 +20,8 @@ class ComparisonView(View):
             controller (IController): The controller managing actions for this view.
         """
         super().__init__(parent, controller)
-
+        self._view_id = "comparison"
+        self._controller.register_view(self._view_id)
         self._render()
 
     def _render(self):

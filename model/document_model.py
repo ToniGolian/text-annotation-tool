@@ -13,29 +13,49 @@ class DocumentModel(IDocumentModel):
         Initializes the DocumentModel with default values for its attributes.
         """
         super().__init__()
-        self._filename: str = ""
+        self._file_path: str = ""
+        self._file_name: str = ""
         self._meta_tags: Dict = {}
         self._text: str = ""
 
     # Getters and Setters
 
-    def get_filename(self) -> str:
+    def get_file_name(self) -> str:
         """
         Retrieves the filename of the document.
 
         Returns:
             str: The filename of the document.
         """
-        return self._filename
+        return self._file_name
 
-    def set_filename(self, file_name: str) -> None:
+    def set_file_name(self, file_name: str) -> None:
         """
         Sets the filename of the document.
 
         Args:
             file_name (str): The filename to be set.
         """
-        self._filename = file_name
+        self._file_name = file_name
+        self.notify_data_observers()
+
+    def get_file_path(self) -> str:
+        """
+        Retrieves the file_path of the document.
+
+        Returns:
+            str: The file_path of the document.
+        """
+        return self._file_path
+
+    def set_file_path(self, file_path: str) -> None:
+        """
+        Sets the file_path of the document.
+
+        Args:
+            file_path (str): The file_path to be set.
+        """
+        self._file_path = file_path
         self.notify_data_observers()
 
     def get_meta_tags(self) -> dict:
@@ -89,7 +109,7 @@ class DocumentModel(IDocumentModel):
                 - "meta_tags" (dict): Metadata tags associated with the document.
                 - "text" (str): The text content of the document.
         """
-        self._filename = document["filename"]
+        self._file_name = document["filename"]
         self._meta_tags = document["meta_tags"]
         self._text = document["text"]
         self.notify_data_observers()
@@ -99,6 +119,7 @@ class DocumentModel(IDocumentModel):
         Retrieves a dictionary representation of the object's attributes.
 
         The dictionary includes the following attributes:
+            - "file_path": The path, where the document is stored.
             - "filename": The name of the file associated with the object.
             - "meta_tags": The metadata tags associated with the object.
             - "text": The textual content managed by the object.
@@ -106,6 +127,7 @@ class DocumentModel(IDocumentModel):
         Returns:
             dict: A dictionary containing the object's attributes as keys and their corresponding values.
         """
-        return {"filename": self._filename,
+        return {"file_path": self._file_path,
+                "filename": self._file_name,
                 "meta_tags": self._meta_tags,
                 "text": self._text}

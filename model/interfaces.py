@@ -21,7 +21,7 @@ class IDocumentModel(IDataPublisher):
     """
 
     @abstractmethod
-    def get_filename(self) -> str:
+    def get_file_name(self) -> str:
         """
         Retrieves the filename of the document.
 
@@ -31,7 +31,7 @@ class IDocumentModel(IDataPublisher):
         pass
 
     @abstractmethod
-    def set_filename(self, file_name: str) -> None:
+    def set_file_name(self, file_name: str) -> None:
         """
         Sets the filename of the document.
 

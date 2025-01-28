@@ -17,6 +17,10 @@ class IAnnotationMenuFrame(IDataObserver, ILayoutObserver):
     pass
 
 
+class IExtractionFrame(IDataObserver):
+    pass
+
+
 class ITextDisplayFrame(IDataObserver):
     pass
 

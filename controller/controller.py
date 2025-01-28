@@ -17,7 +17,7 @@ from utils.tag_manager import TagManager
 from utils.tag_processor import TagProcessor
 from view.annotation_text_display_frame import AnnotationTextDisplayFrame
 from view.comparison_text_display_frame import ComparisonTextDisplayFrame
-from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplays, IMetaTagsFrame, ITextDisplayFrame
+from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplays, IExtractionFrame, IMetaTagsFrame, ITextDisplayFrame
 from view.preview_text_display_frame import PreviewTextDisplayFrame
 
 
@@ -42,7 +42,7 @@ class Controller(IController):
         self._observers_to_finalize: List = []
 
         self._configuration_model: ILayoutPublisher = configuration_model
-        self._preview_document_model: IDocumentModel = preview_document_model
+        self._extraction_document_model: IDocumentModel = preview_document_model
         self._annotation_document_model: IDocumentModel = annotation_document_model
         self._comparison_document_model: IDocumentModel = comparison_document_model
         self._comparison_model: IComparisonModel = comparison_model
@@ -59,7 +59,7 @@ class Controller(IController):
             PreviewTextDisplayFrame: {
                 "finalize": False,
                 "source_keys": {
-                    self._preview_document_model: ["text"]
+                    self._extraction_document_model: ["text"]
                 }
             },
             AnnotationTextDisplayFrame: {
@@ -99,6 +99,12 @@ class Controller(IController):
                 "finalize": False,
                 "source_keys": {
                     self._selection_model: ["selected_text"]
+                }
+            },
+            IExtractionFrame: {
+                "finalize": False,
+                "source_keys": {
+                    self._extraction_document_model: ["file_path"]
                 }
             }
         }
@@ -327,7 +333,7 @@ class Controller(IController):
 
         extracted_text = self._pdf_extraction_manager.extract_document(
             extraction_data=extraction_data)
-        self._preview_document_model.set_text(text=extracted_text)
+        self._extraction_document_model.set_text(text=extracted_text)
 
     def perform_text_adoption(self) -> None:
         """
@@ -341,7 +347,7 @@ class Controller(IController):
             - The annotation document model is updated with data from the preview document model.
             - The adopted document is saved.
         """
-        document = self._preview_document_model.get_data_state()
+        document = self._extraction_document_model.get_data_state()
         self._annotation_document_model.set_document(document)
         self._tag_manager.set_document(document)
         self.perform_save_document(document)
@@ -359,7 +365,7 @@ class Controller(IController):
         Updates:
             - The text in the preview document model is updated, and its observers are notified.
         """
-        self._preview_document_model.set_text(text)
+        self._extraction_document_model.set_text(text)
 
     def perform_add_tag(self, tag_data: Dict, caller_id: str) -> None:
         """
@@ -414,7 +420,14 @@ class Controller(IController):
     # todo implement
     def perform_open_file(self, file_path: str) -> None:
         if self._active_view_id == "extraction":
-            self._preview_document_model.set_filename(file_path=file_path)
+            self._extraction_document_model.set_file_path(file_path=file_path)
+            return
+        document = self._file_handler.read_file(file_path=file_path)
+        document["file_path"] = file_path
+        if self._active_view_id == "annotation":
+            self._annotation_document_model.set_document(document)
+        if self._active_view_id == "comparison":
+            self._comparison_document_model.set_document(document)
 
     def perform_save_document(self, document: Dict):
         print("Save not implemented")

@@ -3,7 +3,7 @@ from mockclasses.mock_configuration_model import MockConfigurationModel
 from model.annotation_document_model import AnnotationDocumentModel
 from model.comparison_document_model import ComparisonDocumentModel
 from model.configuration_model import ConfigurationModel
-from model.preview_document_model import PreviewDocumentModel
+from model.extraction_document_model import ExtractionDocumentModel
 from model.selection_model import SelectionModel
 from view.main_window import MainWindow
 from mockclasses.mock_models import MockDocumentModel, MockComparisonModel
@@ -11,7 +11,7 @@ from mockclasses.mock_models import MockDocumentModel, MockComparisonModel
 
 def main():
     # Initialize model and controller
-    preview_document_model = PreviewDocumentModel()
+    preview_document_model = ExtractionDocumentModel()
     annotation_document_model = AnnotationDocumentModel()
     comparison_document_model = ComparisonDocumentModel()
     comparison_model = MockComparisonModel()

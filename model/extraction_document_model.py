@@ -2,7 +2,7 @@ from model.document_model import DocumentModel
 from observer.interfaces import IDataObserver
 
 
-class PreviewDocumentModel(DocumentModel):
+class ExtractionDocumentModel(DocumentModel):
     """
     A specialized DocumentModel for managing preview text.
     """

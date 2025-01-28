@@ -22,7 +22,6 @@ class ExtractionView(View):
         self._filename = ""  # Initialize file name as an empty string
         self._view_id = "extraction"
         self._controller.register_view(self._view_id)
-
         self._render()
 
     def _render(self) -> None:

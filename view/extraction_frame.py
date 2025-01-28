@@ -2,9 +2,10 @@ from tkinter import filedialog
 import tkinter as tk
 from tkinter import ttk
 from controller.interfaces import IController
+from view.interfaces import IExtractionFrame
 
 
-class ExtractionFrame(tk.Frame):
+class ExtractionFrame(tk.Frame, IExtractionFrame):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the PDFExtractionView with a reference to the parent widget and controller.
@@ -20,6 +21,9 @@ class ExtractionFrame(tk.Frame):
         # Ensure the column expands to fill the frame
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
+
+        # Register as an observer
+        self._controller.add_observer(self, "data")
 
         self._render()
 
@@ -102,13 +106,13 @@ class ExtractionFrame(tk.Frame):
             self.pdf_path_entry.delete(0, tk.END)
             self.pdf_path_entry.insert(0, file_path)
 
-    def update(self) -> None:
-        """
-        Updates the view in response to notifications from the observed object.
-        This method could be used to refresh the view if the PDF data changes
-        or if new data needs to be loaded/displayed.
-        """
-        print("PDFExtractionView has been updated based on model changes.")
+    def update_data(self) -> None:
+        data = self._controller.get_observer_state(self, "data")
+        print(f"DEBUG {data=}")
+        file_path = data["file_path"]
+
+        self.pdf_path_entry.delete(0, tk.END)
+        self.pdf_path_entry.insert(0, file_path)
 
     def _on_button_pressed_extract_pages(self) -> None:
         """

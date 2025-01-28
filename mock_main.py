@@ -5,7 +5,7 @@ from mockclasses.mock_models import MockComparisonModel, MockDocumentModel, Mock
 from model.annotation_document_model import AnnotationDocumentModel
 from model.comparison_document_model import ComparisonDocumentModel
 from model.configuration_model import ConfigurationModel
-from model.preview_document_model import PreviewDocumentModel
+from model.extraction_document_model import ExtractionDocumentModel
 from model.selection_model import SelectionModel
 from utils.pdf_extraction_manager import PDFExtractionManager
 
@@ -21,7 +21,7 @@ test_docs = [
 DOCUMENT = 4
 margins = [10, 10, 10, 10]
 pages = "6-36"
-preview_document_model = PreviewDocumentModel()
+preview_document_model = ExtractionDocumentModel()
 annotation_document_model = AnnotationDocumentModel()
 comparison_document_model = ComparisonDocumentModel()
 comparison_model = MockComparisonModel()

@@ -12,7 +12,19 @@ class IComparisonModel(IDataPublisher, ILayoutPublisher):
 
 
 class IConfigurationModel(ILayoutPublisher):
-    pass
+    @abstractmethod
+    def get_color_scheme(self) -> Dict[str, str]:
+        """
+        Retrieves the current color scheme of the application.
+
+        This method returns a dictionary containing the color scheme settings
+        used in the application. The color scheme typically defines UI colors
+        such as background, foreground, and highlight colors.
+
+        Returns:
+            Dict: A dictionary mapping UI elements to their corresponding colors.
+        """
+        pass
 
 
 class IDocumentModel(IDataPublisher):

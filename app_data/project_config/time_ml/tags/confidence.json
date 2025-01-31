@@ -1,5 +1,5 @@
 {
-    "type": "confidence",
+    "type": "CONFIDENCE",
     "attributes": {
         "tagType": {
             "type": "CDATA"

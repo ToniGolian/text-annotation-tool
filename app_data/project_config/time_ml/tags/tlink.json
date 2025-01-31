@@ -1,38 +1,51 @@
 {
-    "type":"TLINK",
-    
-    "attributes": {
-      "lid": {
-        "type": "ID"
-      },
-      "origin": {
-        "type": "CDATA"
-      },
-      "eventInstanceID": {
-        "type": "IDREF"
-      },
-      "timeID": {
-        "type": "IDREF"
-      },
-      "signalID": {
-        "type": "IDREF"
-      },
-      "relatedToEventInstance": {
-        "type": "IDREF"
-      },
-      "relatedToTime": {
-        "type": "IDREF"
-      },
-      "relType": {
-        "type": "string",
-        "allowedValues": ["BEFORE", "AFTER", "INCLUDES", "IS_INCLUDED", "DURING", "SIMULTANEOUS", "IAFTER", "IBEFORE", "IDENTITY", "BEGINS", "ENDS", "BEGUN_BY", "ENDED_BY", "DURING_INV"]
-      },
-      "comment": {
-        "type": "CDATA"
-      },
-      "syntax": {
-        "type": "CDATA"
-      }
+  "type": "TLINK",
+  "attributes": {
+    "lid": {
+      "type": "ID"
+    },
+    "origin": {
+      "type": "CDATA"
+    },
+    "eventInstanceID": {
+      "type": "IDREF"
+    },
+    "timeID": {
+      "type": "IDREF"
+    },
+    "signalID": {
+      "type": "IDREF"
+    },
+    "relatedToEventInstance": {
+      "type": "IDREF"
+    },
+    "relatedToTime": {
+      "type": "IDREF"
+    },
+    "relType": {
+      "type": "string",
+      "allowedValues": [
+        "BEFORE",
+        "AFTER",
+        "INCLUDES",
+        "IS_INCLUDED",
+        "DURING",
+        "SIMULTANEOUS",
+        "IAFTER",
+        "IBEFORE",
+        "IDENTITY",
+        "BEGINS",
+        "ENDS",
+        "BEGUN_BY",
+        "ENDED_BY",
+        "DURING_INV"
+      ]
+    },
+    "comment": {
+      "type": "CDATA"
+    },
+    "syntax": {
+      "type": "CDATA"
     }
   }
-  
+}

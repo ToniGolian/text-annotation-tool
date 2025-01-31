@@ -1,5 +1,5 @@
 {
-    "type": "event",
+    "type": "EVENT",
     "attributes": {
         "eid": {
             "type": "ID"

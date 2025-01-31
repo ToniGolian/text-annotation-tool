@@ -1,8 +1,7 @@
-from mockclasses.mock_template_loader import MockTemplateLoader
 from observer.interfaces import ILayoutPublisher
 from input_output.template_loader import TemplateLoader
 from input_output.file_handler import FileHandler
-from typing import List, Dict
+from typing import Dict
 
 
 class ConfigurationModel(ILayoutPublisher):
@@ -25,14 +24,42 @@ class ConfigurationModel(ILayoutPublisher):
 
         # Load the stored layout information
         self._saved_layout_path = self._app_paths["saved_layout"]
-        saved_layout = self._filehandler.read_file(self._saved_layout_path)
-        self.layout_state = {key: value for key, value in saved_layout.items()}
-
-        # Load template groups based on the saved project path
-        project_path = f"{self._app_paths['default_project_config']}{saved_layout['project']}/"
-        self.layout_state["template_groups"] = self._template_loader.load_template_groups(
-            project_path)
+        self._project = self._filehandler.read_file(
+            self._saved_layout_path).get("project", "")
+        self._project_path = f"{self._app_paths['default_project_config']}{self._project}/"
 
     def get_layout_state(self) -> Dict:
-        """Retrieves the layout state of the application."""
-        return self.layout_state
+        """
+        Retrieves the current layout state of the application.
+
+        This method returns a dictionary representing the layout configuration
+        of the application. The layout state may include information such as 
+        window positions, panel visibility, and other UI-related settings.
+
+        Returns:
+            Dict: A dictionary containing key-value pairs that define the 
+                current layout state of the application.
+        """
+        saved_layout = self._filehandler.read_file(self._saved_layout_path)
+        layout_state = {key: value for key, value in saved_layout.items()}
+
+        # Load template groups based on the saved project path
+        layout_state["template_groups"] = self._template_loader.load_template_groups(
+            self._project_path)
+        return layout_state
+
+    def get_color_scheme(self) -> Dict:
+        """
+        Retrieves the current color scheme of the application.
+
+        This method returns a dictionary containing the color scheme settings 
+        used in the application. The color scheme typically defines UI colors 
+        such as background, foreground, and highlight colors.
+
+        Returns:
+            Dict: A dictionary mapping UI elements to their corresponding colors.
+        """
+        color_path = self._project_path+"color_scheme.json"
+        color_scheme = self._filehandler.read_file(color_path)
+
+        return color_scheme

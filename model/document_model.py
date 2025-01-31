@@ -1,5 +1,5 @@
-from typing import List, Dict
-from model.interfaces import IDocumentModel
+from typing import List, Dict, Tuple
+from model.interfaces import IDocumentModel, ITagModel
 
 
 class DocumentModel(IDocumentModel):
@@ -114,6 +114,30 @@ class DocumentModel(IDocumentModel):
             document_type (str): The type of the document to set.
         """
         self._document_type = document_type
+
+    def get_highlight_data(self) -> List[Tuple[str, int, int]]:
+        """
+        Retrieves the current highlight data.
+
+        Returns:
+            List[Tuple[str, int, int]]: A list of tuples where each tuple consists of:
+                - The tag type (str).
+                - The start position of the tag in the text (int).
+                - The end position of the tag in the text (int).
+        """
+        return self._highlight_data
+
+    def set_highlight_data(self, highlight_data: List[Tuple[str, int, int]]) -> None:
+        """
+        Sets the highlight data.
+
+        Args:
+            highlight_data (List[Tuple[str, int, int]]): A list of tuples where each tuple consists of:
+                - The tag type (str).
+                - The start position of the tag in the text (int).
+                - The end position of the tag in the text (int).
+        """
+        self._highlight_data = highlight_data
 
     def set_document(self, document: dict) -> None:
         """

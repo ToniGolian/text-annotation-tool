@@ -128,7 +128,24 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
 
     def update_data(self) -> None:
         """
-        Observer method to handle updates from subjects.
+        Observer method to handle updates from subjects, refreshing the displayed text.
+
+        This method updates the text in the text widget based on the latest state 
+        from the controller. If the user is currently typing, the update is skipped 
+        to prevent unwanted overwrites.
+
+        Behavior:
+            - The text widget is cleared and updated with new content.
+            - If a cursor position was stored, it is restored after the update.
+            - If the widget is not editable, it is temporarily set to normal mode 
+            to allow updates before being disabled again.
+            - The internal update flag is used to distinguish between automatic 
+            and manual updates.
+
+        Updates:
+            - Fetches the latest text from the controller.
+            - Restores cursor position if available.
+            - Ensures that typing interactions are not interrupted.
         """
         if self._is_typing:
             # Skip updates while the user is typing to prevent overwrites

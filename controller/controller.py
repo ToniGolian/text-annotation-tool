@@ -4,10 +4,10 @@ from commands.edit_tag_command import EditTagCommand
 from controller.interfaces import IController
 from commands.interfaces import ICommand
 from input_output.file_handler import FileHandler
-from model.interfaces import IComparisonModel, IDocumentModel, ISelectionModel
+from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISelectionModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IDataPublisher, ILayoutObserver, ILayoutPublisher, IObserver
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from utils.list_manager import ListManager
 from utils.pdf_extraction_manager import PDFExtractionManager
@@ -16,12 +16,12 @@ from utils.tag_manager import TagManager
 from utils.tag_processor import TagProcessor
 from view.annotation_text_display_frame import AnnotationTextDisplayFrame
 from view.comparison_text_display_frame import ComparisonTextDisplayFrame
-from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplays, IExtractionFrame, IMetaTagsFrame, ITextDisplayFrame
+from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplays, IExtractionFrame, IMetaTagsFrame
 from view.preview_text_display_frame import PreviewTextDisplayFrame
 
 
 class Controller(IController):
-    def __init__(self, configuration_model: ILayoutPublisher, preview_document_model: IDataPublisher = None, annotation_document_model: IDataPublisher = None, comparison_document_model: IDataPublisher = None, selection_model: IDataPublisher = None, comparison_model: IDataPublisher = None):
+    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IDataPublisher = None, annotation_document_model: IDataPublisher = None, comparison_document_model: IDataPublisher = None, selection_model: IDataPublisher = None, comparison_model: IDataPublisher = None):
 
         # dependencies
         self._file_handler = FileHandler()
@@ -69,7 +69,7 @@ class Controller(IController):
             AnnotationTextDisplayFrame: {
                 "finalize": False,
                 "source_keys": {
-                    self._annotation_document_model: ["text"]
+                    self._annotation_document_model: ["text", "highlight_data"]
                 }
             },
             ComparisonTextDisplayFrame: {
@@ -77,7 +77,7 @@ class Controller(IController):
                 "source_keys": {
                     self._comparison_document_model: ["text"],
                     self._comparison_model: [
-                        "comparison_sentences"]
+                        "comparison_sentences", "highlight_data"]
                 }
             },
             IMetaTagsFrame: {
@@ -635,3 +635,23 @@ class Controller(IController):
         """
         data_source = self._document_source_mapping[self._active_view_id]
         return data_source.get_file_path()
+
+    def get_highlight_data(self) -> List[Tuple[str, int, int]]:
+        """
+        Retrieves the highlight data for text annotation.
+
+        This method fetches the highlight data from the tag manager and maps the tag types 
+        to their corresponding colors using the color scheme from the configuration model.
+
+        Returns:
+            List[Tuple[str, int, int]]: A list of tuples where:
+                - The first element (str) is the highlight color associated with the tag type.
+                - The second element (int) is the start position of the highlight in the text.
+                - The third element (int) is the end position of the highlight in the text.
+        """
+        color_scheme = self._configuration_model.get_color_scheme()
+        highlight_data = self._tag_manager.get_highlight_data()
+        highlight_data = [
+            (color_scheme[tag], start, end) for tag, start, end in highlight_data
+        ]
+        return highlight_data

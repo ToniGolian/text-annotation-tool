@@ -20,6 +20,7 @@ class AnnotationTextDisplayFrame(TextDisplayFrame):
         and applies the new highlights to the text.
         """
         super().update_data()
+        # todo change to correct observer pattern
         highlight_data = self._controller.get_highlight_data()
         self.unhighlight_text()
         self.highlight_text(highlight_data)

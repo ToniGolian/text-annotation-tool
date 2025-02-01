@@ -1,5 +1,6 @@
 {
     "abbreviations": "app_data/abbreviations.json",
+    "source_mapping": "app_data/source_mapping.json",
     "saved_layout": "app_data/saved_layout.json",
     "default_project_config": "app_data/project_config/",
     "default_path_settings": "app_data/settings/",

@@ -2,6 +2,7 @@ from tkinter import filedialog
 import tkinter as tk
 from tkinter import ttk
 from controller.interfaces import IController
+from observer.interfaces import IPublisher
 from view.interfaces import IExtractionFrame
 
 
@@ -23,7 +24,7 @@ class ExtractionFrame(tk.Frame, IExtractionFrame):
         self.columnconfigure(1, weight=1)
 
         # Register as an observer
-        self._controller.add_observer(self, "data")
+        self._controller.add_observer(self)
 
         self._render()
 
@@ -106,7 +107,7 @@ class ExtractionFrame(tk.Frame, IExtractionFrame):
             self.pdf_path_entry.delete(0, tk.END)
             self.pdf_path_entry.insert(0, file_path)
 
-    def update_data(self) -> None:
+    def update(self, publisher: IPublisher) -> None:
         """
         Updates the view with the latest data from the controller.
 
@@ -120,7 +121,7 @@ class ExtractionFrame(tk.Frame, IExtractionFrame):
         Raises:
             KeyError: If the "file_path" key is not present in the retrieved data.
         """
-        data = self._controller.get_observer_state(self, "data")
+        data = self._controller.get_observer_state(self, publisher)
         file_path = data["file_path"]
         self.pdf_path_entry.delete(0, tk.END)
         self.pdf_path_entry.insert(0, file_path)

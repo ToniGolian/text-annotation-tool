@@ -1,6 +1,7 @@
 from tkinter import ttk
 from typing import List
 from controller.interfaces import IController
+from observer.interfaces import IPublisher
 from view.interfaces import IComparisonTextDisplays
 from view.comparison_text_display_frame import ComparisonTextDisplayFrame
 import tkinter as tk
@@ -22,8 +23,7 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         self._widget_structure: List[tk.Widget] = []
 
         # Add observer
-        self._controller.add_observer(self, "data")
-        self._controller.add_observer(self, "layout")
+        self._controller.add_observer(self)
 
         # Create the canvas and scrollbar
         canvas = tk.Canvas(self)
@@ -112,23 +112,33 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
             # Add the label and text display frame as a pair in the widget structure
             self._widget_structure.append((label, text_display_frame))
 
-    def update_data(self) -> None:
+    def update(self, publisher: IPublisher) -> None:
         """
-        Retrieves updated data from the controller and updates the view accordingly.
+        Retrieves updated data and layout information from the controller 
+        and updates the view accordingly.
 
-        This method fetches data associated with this observer from the controller
-        and processes it to refresh the displayed information.
+        This method fetches both data and layout state associated with this observer
+        from the controller and processes it to refresh the displayed information.
+
+        Args:
+            publisher (IPublisher): The publisher that triggered the update.
         """
-        self._controller = self._controller.get_observer_state(self, "data")
+        state = self._controller.get_observer_state(self, publisher)
+
+        # Update view attributes dynamically based on the retrieved state
+        if "filenames" in state:
+            self._filenames = state["filenames"]
+
+        # Store the updated controller state (if necessary)
+        self._controller = state
+
+        # Render the updated state
         self._render()
 
-    def update_layout(self) -> None:
+    def finalize_view(self) -> None:
         """
-        Retrieves updated layout information from the controller and updates the view accordingly.
-
-        This method fetches layout data associated with this observer from the controller
-        and processes it to adjust the layout of the view.
+        Retrieves the layout state and updates the filenames before rendering the view.
         """
-        layout = self._controller.get_observer_state(self, "layout")
+        layout = self._controller.get_observer_state(self)
         self._filenames = layout["filenames"]
         self._render()

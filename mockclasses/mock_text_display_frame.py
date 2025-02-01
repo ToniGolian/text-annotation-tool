@@ -25,10 +25,3 @@ class MockTextDisplayFrame(tk.Frame, ITextDisplayFrame):
         self.text_area.insert(
             "1.0", "This is a mock text display area.\n\nHere you can display and annotate text.")
         self.text_area.pack(fill="both", expand=True, padx=10, pady=10)
-
-    def update(self) -> None:
-        """
-        Updates the text display frame in response to notifications from the observed object.
-        """
-        # Example action for update; could refresh or modify the text content
-        print("MockTextDisplayFrame has been updated based on model changes.")

@@ -1,5 +1,6 @@
 import tkinter as tk
 from controller.interfaces import IController
+from observer.interfaces import IPublisher
 from view.interfaces import ITextDisplayFrame
 
 
@@ -35,7 +36,7 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
         self._render()
 
         # Register as an observer
-        self._controller.add_observer(self, "data")
+        self._controller.add_observer(self)
 
     def _render(self) -> None:
         """
@@ -126,7 +127,7 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
             new_text)  # Final update to ensure sync
         self._debounce_job = None  # Reset the job reference
 
-    def update_data(self) -> None:
+    def update(self, publisher: IPublisher) -> None:
         """
         Observer method to handle updates from subjects, refreshing the displayed text.
 
@@ -155,7 +156,7 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
 
         # Fetch the latest text from the model
         text = self._controller.get_observer_state(
-            self, "data").get("text", "NOTEXT")
+            self, publisher).get("text", "NOTEXT")
 
         # Update the display
         if not self._editable:

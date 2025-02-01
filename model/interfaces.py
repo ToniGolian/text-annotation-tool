@@ -1,17 +1,17 @@
 from abc import ABC, abstractmethod
 from typing import Dict
-from observer.interfaces import IDataPublisher, ILayoutPublisher
+from observer.interfaces import IPublisher, IPublisher
 
 
 class ITagModel(ABC):
     pass
 
 
-class IComparisonModel(IDataPublisher, ILayoutPublisher):
+class IComparisonModel(IPublisher):
     pass
 
 
-class IConfigurationModel(ILayoutPublisher):
+class IConfigurationModel(IPublisher):
     @abstractmethod
     def get_color_scheme(self) -> Dict[str, str]:
         """
@@ -27,7 +27,7 @@ class IConfigurationModel(ILayoutPublisher):
         pass
 
 
-class IDocumentModel(IDataPublisher):
+class IDocumentModel(IPublisher):
     """
     Interface for a document model that manages metadata, text, and associated tags.
     """
@@ -109,7 +109,7 @@ class IDocumentModel(IDataPublisher):
         pass
 
     @abstractmethod
-    def get_data_state(self) -> Dict:
+    def get_state(self) -> Dict:
         """
         Retrieves a dictionary representation of the object's attributes.
 
@@ -124,7 +124,7 @@ class IDocumentModel(IDataPublisher):
         pass
 
 
-class ISelectionModel(IDataPublisher):
+class ISelectionModel(IPublisher):
     """
     Interface for the SelectionModel, defining methods to manage and retrieve the selected text.
     """
@@ -140,7 +140,7 @@ class ISelectionModel(IDataPublisher):
         pass
 
     @abstractmethod
-    def get_data_state(self) -> Dict[str, str]:
+    def get_state(self) -> Dict[str, str]:
         """
         Retrieves the current selected text as a dictionary.
 

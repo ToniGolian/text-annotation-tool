@@ -3,6 +3,7 @@ from tkinter import ttk
 from controller.interfaces import IController
 from typing import List, Dict
 
+from observer.interfaces import IPublisher
 from view.interfaces import IMetaTagsFrame
 
 
@@ -39,8 +40,7 @@ class MetaTagsFrame(tk.Frame, IMetaTagsFrame):
         self._filename_label = self._filename_label = ttk.Label(self)
 
         # observer pattern
-        self._controller.add_observer(self, "data")
-        self._controller.add_observer(self, "layout")
+        self._controller.add_observer(self)
 
     def _render(self) -> None:
         """
@@ -93,26 +93,21 @@ class MetaTagsFrame(tk.Frame, IMetaTagsFrame):
             widget.destroy()
         self._render()
 
-    def update_data(self) -> None:
-        """
-        Retrieves updated data from the controller and updates the view accordingly.
-
-        This method fetches data associated with this observer from the controller
-        and processes it to refresh the displayed information.
-        """
-        data = self._controller.get_data_state(self)
-        # todo: Process and update the view with the retrieved data
-        self._render()
-
-    def update_layout(self) -> None:
+    def update(self, publisher: IPublisher) -> None:
         """
         Retrieves updated layout information from the controller and updates the view accordingly.
 
         This method fetches layout data associated with this observer from the controller
         and processes it to adjust the layout of the view.
         """
-        layout = self._controller.get_observer_state(self, "layout")
+        layout = self._controller.get_observer_state(self, publisher)
         self._tag_types = layout["tag_types"]
-        # todo: Process and update the layout with the retrieved information
+        self._render()
 
+    def finalize_view(self) -> None:
+        """
+        Retrieves the layout state and updates the filenames before rendering the view.
+        """
+        layout = self._controller.get_observer_state(self)
+        self._tag_types = layout["tag_types"]
         self._render()

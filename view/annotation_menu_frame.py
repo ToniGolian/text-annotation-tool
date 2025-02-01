@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Dict, List
 from controller.interfaces import IController
+from observer.interfaces import IPublisher
 from view.annotation_tag_frame import AnnotationTagFrame
 from view.interfaces import IAnnotationMenuFrame
 
@@ -29,8 +30,7 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         self._notebook = ttk.Notebook(self)
         self._notebook.pack(fill="both", expand=True)
 
-        self._controller.add_observer(self, "data")
-        self._controller.add_observer(self, "layout")
+        self._controller.add_observer(self)
 
         self._tag_frames = []
         self._root_view_id = root_view_id
@@ -103,13 +103,32 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
 
         return container_frame
 
-    def update_data(self):
-        selected_text = self._controller.get_observer_state(self, "data")[
-            "selected_text"]
-        for tag_frame in self._tag_frames:
-            tag_frame.set_selected_text(selected_text)
+    def update(self, publisher: IPublisher) -> None:
+        """
+        Updates the observer based on the state changes from the given publisher.
 
-    def update_layout(self):
-        layout = self._controller.get_observer_state(self, "layout")
-        self._template_groups = layout["template_groups"]
+        This method retrieves the updated state from the controller and processes both 
+        data-related and layout-related changes in a unified way.
+
+        Args:
+            publisher (IPublisher): The publisher that triggered the update.
+        """
+        state = self._controller.get_observer_state(self, publisher)
+
+        # Handle selected text updates if available
+        if "selected_text" in state:
+            for tag_frame in self._tag_frames:
+                tag_frame.set_selected_text(state["selected_text"])
+
+        # Handle layout updates if available
+        if "template_groups" in state:
+            self._template_groups = state["template_groups"]
+            self._render()
+
+    def finalize_view(self) -> None:
+        """
+        Retrieves the layout state and updates the filenames before rendering the view.
+        """
+        state = self._controller.get_observer_state(self)
+        self._template_groups = state["template_groups"]
         self._render()

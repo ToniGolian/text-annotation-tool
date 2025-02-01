@@ -1,5 +1,6 @@
 from typing import List, Tuple
 from controller.interfaces import IController
+from observer.interfaces import IPublisher
 from view.text_display_frame import TextDisplayFrame
 import tkinter as tk
 
@@ -12,14 +13,14 @@ class AnnotationTextDisplayFrame(TextDisplayFrame):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         super().__init__(parent=parent, controller=controller, editable=False)
 
-    def update_data(self) -> None:
+    def update(self, publisher: IPublisher) -> None:
         """
         Updates the displayed text and refreshes text highlighting.
 
         This method retrieves the latest highlight data, removes any existing highlights,
         and applies the new highlights to the text.
         """
-        super().update_data()
+        super().update(publisher)
         # todo change to correct observer pattern
         highlight_data = self._controller.get_highlight_data()
         self.unhighlight_text()

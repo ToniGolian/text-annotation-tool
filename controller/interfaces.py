@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from commands.interfaces import ICommand
-from observer.interfaces import IDataObserver, ILayoutObserver, IObserver, IPublisher
+from observer.interfaces import IObserver, IObserver, IObserver, IPublisher
 from typing import List, Dict, Any
 
 
@@ -43,7 +43,7 @@ class IController(ABC):
         pass
 
     @abstractmethod
-    def get_observer_state(self, observer: IObserver, mapping_type: str) -> Any:
+    def get_observer_state(self, observer: IObserver, publisher: IPublisher) -> Any:
         """Retrieves the data from observed publisher."""
         pass
 

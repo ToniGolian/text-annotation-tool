@@ -1,10 +1,10 @@
-from observer.interfaces import ILayoutPublisher
+from observer.interfaces import IPublisher
 from input_output.template_loader import TemplateLoader
 from input_output.file_handler import FileHandler
 from typing import Dict
 
 
-class ConfigurationModel(ILayoutPublisher):
+class ConfigurationModel(IPublisher):
     """
     A configuration manager that provides access to templates and manages meta tag names 
     and template groups for the application.
@@ -28,7 +28,7 @@ class ConfigurationModel(ILayoutPublisher):
             self._saved_layout_path).get("project", "")
         self._project_path = f"{self._app_paths['default_project_config']}{self._project}/"
 
-    def get_layout_state(self) -> Dict:
+    def get_state(self) -> Dict:
         """
         Retrieves the current layout state of the application.
 

@@ -35,9 +35,6 @@ class UndoRedoModel:
         Returns:
             Optional[ICommand]: The command that was undone, or None if the undo stack is empty.
         """
-        print("Model undo_command")
-        print(f"Model undo_command. {len(self.undo_stack)=}")
-
         if self.undo_stack:
             command = self.undo_stack.pop()
             self.redo_stack.append(command)

@@ -38,7 +38,7 @@ class DocumentModel(IDocumentModel):
             file_name (str): The filename to be set.
         """
         self._file_name = file_name
-        self.notify_data_observers()
+        self.notify_observers()
 
     def get_file_path(self) -> str:
         """
@@ -57,7 +57,7 @@ class DocumentModel(IDocumentModel):
             file_path (str): The file_path to be set.
         """
         self._file_path = file_path
-        self.notify_data_observers()
+        self.notify_observers()
 
     def get_meta_tags(self) -> dict:
         """
@@ -76,7 +76,7 @@ class DocumentModel(IDocumentModel):
             metatags (dict): A dictionary containing the meta tags to set.
         """
         self._meta_tags = metatags
-        self.notify_data_observers()
+        self.notify_observers()
 
     def get_text(self) -> str:
         """
@@ -95,7 +95,7 @@ class DocumentModel(IDocumentModel):
             text (str): The new text content to set.
         """
         self._text = text
-        self.notify_data_observers()
+        self.notify_observers()
 
     def get_document_type(self) -> str:
         """
@@ -163,9 +163,9 @@ class DocumentModel(IDocumentModel):
         self._file_name = document["filename"]
         self._meta_tags = document["meta_tags"]
         self._text = document["text"]
-        self.notify_data_observers()
+        self.notify_observers()
 
-    def get_data_state(self) -> dict:
+    def get_state(self) -> dict:
         """
         Retrieves a dictionary representation of the object's attributes.
 

@@ -59,11 +59,3 @@ class AnnotationView(View):
 
         # Set initial sash positions
         self.old_sash = self.paned_window.sashpos(0)
-
-    def update_layout(self) -> None:
-        """
-        Updates the view in response to notifications from the observed object.
-        This method could refresh the text display or tagging menu if necessary.
-        """
-        # Placeholder for update logic based on model changes
-        print("TextAnnotationView has been updated based on model changes.")

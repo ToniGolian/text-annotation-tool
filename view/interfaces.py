@@ -1,27 +1,27 @@
-from observer.interfaces import IDataObserver, ILayoutObserver
+from observer.interfaces import IObserver
 
 
-class IMetaTagsFrame(IDataObserver, ILayoutObserver):
+class IMetaTagsFrame(IObserver):
     pass
 
 
-class IComparisonHeaderFrame(IDataObserver, ILayoutObserver):
+class IComparisonHeaderFrame(IObserver):
     pass
 
 
-class IComparisonTextDisplays(IDataObserver, ILayoutObserver):
+class IComparisonTextDisplays(IObserver):
     pass
 
 
-class IAnnotationMenuFrame(IDataObserver, ILayoutObserver):
+class IAnnotationMenuFrame(IObserver):
     pass
 
 
-class IExtractionFrame(IDataObserver):
+class IExtractionFrame(IObserver):
     pass
 
 
-class ITextDisplayFrame(IDataObserver):
+class ITextDisplayFrame(IObserver):
     pass
 
 

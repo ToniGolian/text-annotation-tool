@@ -1,113 +1,58 @@
-from typing import List, Dict
+from typing import List, Dict, Union
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
 
 class IObserver(ABC):
-    pass
-
-
-class IDataObserver(IObserver):
     @abstractmethod
-    def update_data(self):
+    def update(self):
         """Called when data changes."""
-        pass
-
-
-class ILayoutObserver(IObserver):
-
-    @abstractmethod
-    def update_layout(self):
-        """Called when layout changes."""
         pass
 
 
 class IPublisher(ABC):
     """
-    A base interface for all publishers.
-    """
-    pass
-
-
-class IDataPublisher(IPublisher):
-    """
-    A specialized interface for publishers managing data observers.
+    A base interface for all publishers, managing both data and layout observers.
     """
 
     def __init__(self) -> None:
-        """Initializes the data publisher with an empty list of data observers."""
-        self._data_observers: List[IDataObserver] = []
+        """Initializes the publisher with empty lists for both data and layout observers."""
+        self._observers: List[IObserver] = []
 
-    def add_data_observer(self, observer: IDataObserver) -> None:
+    def add_observer(self, observer: IObserver) -> None:
         """
-        Adds a data observer to the list if it is not already present.
-
-        Args:
-            observer (IDataObserver): The data observer to be added.
-        """
-        if observer not in self._data_observers:
-            self._data_observers.append(observer)
-
-    def remove_data_observer(self, observer: IDataObserver) -> None:
-        """
-        Removes a data observer from the list if it is present.
+        Adds an observer to the list if it is not already present.
 
         Args:
-            observer (IDataObserver): The data observer to be removed.
+            observer (IObserver): The observer to be added.
         """
-        if observer in self._data_observers:
-            self._data_observers.remove(observer)
+        if observer not in self._observers:
+            self._observers.append(observer)
 
-    def notify_data_observers(self) -> None:
+    def remove_observer(self, observer: IObserver) -> None:
         """
-        Notifies all registered data observers of data changes.
+        Removes an observer from the list if it is present.
+
+        Args:
+            observer (IObserver): The observer to be removed.
         """
-        for observer in self._data_observers:
-            observer.update_data()
+        if observer in self._observers:
+            self._observers.remove(observer)
+
+    def notify_observers(self) -> None:
+        """
+        Notifies all registered observers of changes.
+        Each observer should implement update() to handle the notification.
+        """
+        for observer in self._observers:
+            observer.update(self)
 
     @abstractmethod
-    def get_data_state(self) -> Dict:
-        """Retrieves the data state of the publisher."""
-        pass
-
-
-class ILayoutPublisher(IPublisher):
-    """
-    A specialized interface for publishers managing layout observers.
-    """
-
-    def __init__(self) -> None:
-        """Initializes the layout publisher with an empty list of layout observers."""
-        self._layout_observers: List[ILayoutObserver] = []
-
-    def add_layout_observer(self, observer: ILayoutObserver) -> None:
+    def get_state(self) -> Dict[str, Union[str, int]]:
         """
-        Adds a layout observer to the list if it is not already present.
+        Retrieves the current state of the publisher.
 
-        Args:
-            observer (ILayoutObserver): The layout observer to be added.
+        Returns:
+            Dict: The state of the publisher.
         """
-        if observer not in self._layout_observers:
-            self._layout_observers.append(observer)
-
-    def remove_layout_observer(self, observer: ILayoutObserver) -> None:
-        """
-        Removes a layout observer from the list if it is present.
-
-        Args:
-            observer (ILayoutObserver): The layout observer to be removed.
-        """
-        if observer in self._layout_observers:
-            self._layout_observers.remove(observer)
-
-    def notify_layout_observers(self) -> None:
-        """
-        Notifies all registered layout observers of layout changes.
-        """
-        for observer in self._layout_observers:
-            observer.update_layout()
-
-    @abstractmethod
-    def get_layout_state(self) -> Dict:
-        """Retrieves the layout state of the publisher."""
         pass

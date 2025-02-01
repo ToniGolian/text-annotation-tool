@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import List
 from controller.interfaces import IController
+from observer.interfaces import IPublisher
 from view.interfaces import IComparisonHeaderFrame
 
 
@@ -29,8 +30,7 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         self._current_sentence_index: int = 0
         self._num_sentences: int = 0
 
-        self._controller.add_observer(self, "data")
-        self._controller.add_observer(self, "layout")
+        self._controller.add_observer(self)
 
         # self._render()
 
@@ -127,27 +127,30 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         # Prevent column 4 from expanding
         self.grid_columnconfigure(4, weight=0)
 
-    def update_data(self) -> None:
+    def update(self, publisher: IPublisher) -> None:
         """
-        Retrieves updated data from the controller and updates the view accordingly.
+        Retrieves updated data and layout information from the controller 
+        and updates the view accordingly.
 
-        This method fetches data associated with this observer from the controller
-        and processes it to refresh the displayed information.
-        """
-        data = self._controller.get_data_state(self)
-        self._num_sentences = data["num_sentences"]
-        self._current_sentence_index = data["current_sentence_index"]
-        self._render()
+        This method fetches both data and layout state associated with this observer
+        from the controller and processes it to refresh the displayed information.
 
-    def update_layout(self) -> None:
+        Args:
+            publisher (IPublisher): The publisher that triggered the update.
         """
-        Retrieves updated layout information from the controller and updates the view accordingly.
+        state = self._controller.get_observer_state(self, publisher)
 
-        This method fetches layout data associated with this observer from the controller
-        and processes it to adjust the layout of the view.
-        """
-        layout = self._controller.get_observer_state(self, "layout")
-        self._num_files = layout["num_files"]
+        # Update data-related attributes if available
+        if "num_sentences" in state:
+            self._num_sentences = state["num_sentences"]
+        if "current_sentence_index" in state:
+            self._current_sentence_index = state["current_sentence_index"]
+
+        # Update layout-related attributes if available
+        if "num_files" in state:
+            self._num_files = state["num_files"]
+
+        # Render the updated state
         self._render()
 
     def _on_button_pressed_select_directory(self):
@@ -167,3 +170,16 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
 
     def _on_button_pressed_next_sentence(self):
         pass
+
+    def finalize_view(self) -> None:
+        """
+        Retrieves the layout state and updates the filenames before rendering the view.
+        """
+        state = self._controller.get_observer_state(self)
+        if "num_sentences" in state:
+            self._num_sentences = state["num_sentences"]
+        if "current_sentence_index" in state:
+            self._current_sentence_index = state["current_sentence_index"]
+        if "num_files" in state:
+            self._num_files = state["num_files"]
+        self._render()

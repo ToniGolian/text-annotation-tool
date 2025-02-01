@@ -1,5 +1,5 @@
 from model.document_model import DocumentModel
-from observer.interfaces import IDataObserver
+from observer.interfaces import IObserver
 
 
 class ExtractionDocumentModel(DocumentModel):
@@ -10,5 +10,5 @@ class ExtractionDocumentModel(DocumentModel):
     def __init__(self):
         super().__init__()
 
-    def get_data_state(self):
-        return super().get_data_state()
+    def get_state(self):
+        return super().get_state()

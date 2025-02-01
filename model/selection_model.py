@@ -1,8 +1,8 @@
 from typing import Dict, Union
-from observer.interfaces import IDataPublisher
+from observer.interfaces import IPublisher
 
 
-class SelectionModel(IDataPublisher):
+class SelectionModel(IPublisher):
     """
     A model to manage and publish the currently selected text and its position to its observers.
     """
@@ -27,9 +27,9 @@ class SelectionModel(IDataPublisher):
                 - "position" (int): The starting position of the selected text.
         """
         self._selected_data = data
-        self.notify_data_observers()
+        self.notify_observers()
 
-    def get_data_state(self) -> Dict[str, Union[str, int]]:
+    def get_state(self) -> Dict[str, Union[str, int]]:
         """
         Retrieves the current selected text and its position as a dictionary.
 

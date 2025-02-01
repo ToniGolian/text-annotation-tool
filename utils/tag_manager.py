@@ -124,14 +124,8 @@ class TagManager:
         self._update_positions(
             start_position=new_tag.get_position(), offset=offset)
 
-        print(f"DEBUG tag positions before update")
-        for tag in self._tags:
-            print(f"DEBUG Pos: {tag.get_position()}")
         # Update IDs and adjust text
         updated_text = self._update_ids(new_tag, updated_text)
-        print(f"DEBUG tag positions after update")
-        for tag in self._tags:
-            print(f"DEBUG Pos: {tag.get_position()}")
 
         # Apply final text update after all modifications
         self._document_model.set_text(updated_text)

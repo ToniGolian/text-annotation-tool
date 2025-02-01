@@ -1,0 +1,127 @@
+{
+    "PreviewTextDisplayFrame": {
+        "ExtractionDocumentModel": {
+            "finalize": false,
+            "source_keys": {
+                "extraction_document_model": [
+                    "text"
+                ]
+            }
+        }
+    },
+    "AnnotationTextDisplayFrame": {
+        "AnnotationDocumentModel": {
+            "finalize": false,
+            "source_keys": {
+                "annotation_document_model": [
+                    "text",
+                    "highlight_data"
+                ]
+            }
+        }
+    },
+    "ComparisonTextDisplayFrame": {
+        "ComparisonDocumentModel": {
+            "finalize": false,
+            "source_keys": {
+                "comparison_document_model": [
+                    "text"
+                ]
+            }
+        },
+        "ComparisonModel": {
+            "finalize": false,
+            "source_keys": {
+                "comparison_model": [
+                    "comparison_sentences",
+                    "highlight_data"
+                ]
+            }
+        }
+    },
+    "MetaTagsFrame": {
+        "ComparisonModel": {
+            "finalize": true,
+            "source_keys": {
+                "comparison_model": [
+                    "file_names"
+                ]
+            }
+        },
+        "ConfigurationModel": {
+            "finalize": true,
+            "source_keys": {
+                "configuration_model": [
+                    "tag_types"
+                ]
+            }
+        }
+    },
+    "ComparisonTextDisplays": {
+        "ComparisonModel": {
+            "finalize": true,
+            "source_keys": {
+                "comparison_model": [
+                    "file_names"
+                ]
+            }
+        },
+        "ConfigurationModel": {
+            "finalize": true,
+            "source_keys": {
+                "configuration_model": [
+                    "filenames",
+                    "num_files"
+                ]
+            }
+        }
+    },
+    "ComparisonHeaderFrame": {
+        "ComparisonModel": {
+            "finalize": true,
+            "source_keys": {
+                "comparison_model": [
+                    "num_sentences",
+                    "current_sentence_index"
+                ]
+            }
+        },
+        "ConfigurationModel": {
+            "finalize": true,
+            "source_keys": {
+                "configuration_model": [
+                    "filenames",
+                    "num_files"
+                ]
+            }
+        }
+    },
+    "AnnotationMenuFrame": {
+        "SelectionModel": {
+            "finalize": false,
+            "source_keys": {
+                "selection_model": [
+                    "selected_text"
+                ]
+            }
+        },
+        "ConfigurationModel": {
+            "finalize": true,
+            "source_keys": {
+                "configuration_model": [
+                    "template_groups"
+                ]
+            }
+        }
+    },
+    "ExtractionFrame": {
+        "ExtractionDocumentModel": {
+            "finalize": false,
+            "source_keys": {
+                "extraction_document_model": [
+                    "file_path"
+                ]
+            }
+        }
+    }
+}

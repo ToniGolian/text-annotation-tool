@@ -6,7 +6,7 @@ from commands.interfaces import ICommand
 from input_output.file_handler import FileHandler
 from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISelectionModel
 from model.undo_redo_model import UndoRedoModel
-from observer.interfaces import IDataPublisher, ILayoutObserver, ILayoutPublisher, IObserver
+from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
 from typing import Dict, List, Tuple
 
 from utils.list_manager import ListManager
@@ -21,7 +21,7 @@ from view.preview_text_display_frame import PreviewTextDisplayFrame
 
 
 class Controller(IController):
-    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IDataPublisher = None, annotation_document_model: IDataPublisher = None, comparison_document_model: IDataPublisher = None, selection_model: IDataPublisher = None, comparison_model: IDataPublisher = None):
+    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_document_model: IPublisher = None, selection_model: IPublisher = None, comparison_model: IPublisher = None):
 
         # dependencies
         self._file_handler = FileHandler()
@@ -33,14 +33,20 @@ class Controller(IController):
         self._pdf_extraction_manager = PDFExtractionManager(
             list_manager=self._list_manager)
 
+        # config
+        # Load the source mapping once and store it in an instance variable
+        # todo change hardcoded path
+        self._source_mapping = self._file_handler.read_file(
+            "app_data/source_mapping.json")
+
         # state
 
         self._dynamic_observer_index: int = 0
         self._observer_data_map: Dict[IObserver:Dict] = {}
-        self._observer_layout_map: Dict[ILayoutObserver, Dict] = {}
-        self._observers_to_finalize: List = []
+        self._observer_layout_map: Dict[IObserver, Dict] = {}
+        self._views_to_finalize: List = []
 
-        self._configuration_model: ILayoutPublisher = configuration_model
+        self._configuration_model: IPublisher = configuration_model
         self._extraction_document_model: IDocumentModel = preview_document_model
         self._annotation_document_model: IDocumentModel = annotation_document_model
         self._comparison_document_model: IDocumentModel = comparison_document_model
@@ -59,95 +65,95 @@ class Controller(IController):
                                          "comparison": self._comparison_document_model}
 
         # Mapping observer classes to their respective data sources, keys, and finalize status
-        self._data_source_mapping = {
-            PreviewTextDisplayFrame: {
-                "finalize": False,
-                "source_keys": {
-                    self._extraction_document_model: ["text"]
-                }
-            },
-            AnnotationTextDisplayFrame: {
-                "finalize": False,
-                "source_keys": {
-                    self._annotation_document_model: ["text", "highlight_data"]
-                }
-            },
-            ComparisonTextDisplayFrame: {
-                "finalize": False,
-                "source_keys": {
-                    self._comparison_document_model: ["text"],
-                    self._comparison_model: [
-                        "comparison_sentences", "highlight_data"]
-                }
-            },
-            IMetaTagsFrame: {
-                "finalize": True,
-                "source_keys": {
-                    self._comparison_model: ["file_names"]
-                }
-            },
-            IComparisonTextDisplays: {
-                "finalize": True,
-                "source_keys": {
-                    self._comparison_model: ["file_names"]
-                }
-            },
-            IComparisonHeaderFrame: {
-                "finalize": True,
-                "source_keys": {
-                    self._comparison_model: [
-                        "num_sentences", "current_sentence_index"]
-                }
-            },
-            IAnnotationMenuFrame: {
-                "finalize": False,
-                "source_keys": {
-                    self._selection_model: ["selected_text"]
-                }
-            },
-            IExtractionFrame: {
-                "finalize": False,
-                "source_keys": {
-                    self._extraction_document_model: ["file_path"]
-                }
-            }
-        }
+        # self._data_source_mapping = {
+        #     PreviewTextDisplayFrame: {
+        #         "finalize": False,
+        #         "source_keys": {
+        #             self._extraction_document_model: ["text"]
+        #         }
+        #     },
+        #     AnnotationTextDisplayFrame: {
+        #         "finalize": False,
+        #         "source_keys": {
+        #             self._annotation_document_model: ["text", "highlight_data"]
+        #         }
+        #     },
+        #     ComparisonTextDisplayFrame: {
+        #         "finalize": False,
+        #         "source_keys": {
+        #             self._comparison_document_model: ["text"],
+        #             self._comparison_model: [
+        #                 "comparison_sentences", "highlight_data"]
+        #         }
+        #     },
+        #     IMetaTagsFrame: {
+        #         "finalize": True,
+        #         "source_keys": {
+        #             self._comparison_model: ["file_names"]
+        #         }
+        #     },
+        #     IComparisonTextDisplays: {
+        #         "finalize": True,
+        #         "source_keys": {
+        #             self._comparison_model: ["file_names"]
+        #         }
+        #     },
+        #     IComparisonHeaderFrame: {
+        #         "finalize": True,
+        #         "source_keys": {
+        #             self._comparison_model: [
+        #                 "num_sentences", "current_sentence_index"]
+        #         }
+        #     },
+        #     IAnnotationMenuFrame: {
+        #         "finalize": False,
+        #         "source_keys": {
+        #             self._selection_model: ["selected_text"]
+        #         }
+        #     },
+        #     IExtractionFrame: {
+        #         "finalize": False,
+        #         "source_keys": {
+        #             self._extraction_document_model: ["file_path"]
+        #         }
+        #     }
+        # }
 
-        # Mapping layout observer classes to their respective data sources, keys, and finalize status
-        self._layout_source_mapping = {
-            IComparisonTextDisplays: {
-                "finalize": True,
-                "source_keys": {
-                    self._configuration_model: [
-                        "filenames", "num_files"]
-                }
-            },
-            IComparisonHeaderFrame: {
-                "finalize": True,
-                "source_keys": {
-                    self._configuration_model: [
-                        "filenames", "num_files"]
-                }
-            },
-            IMetaTagsFrame: {
-                "finalize": True,
-                "source_keys": {
-                    self._configuration_model: ["tag_types"]
-                }
-            },
-            IAnnotationMenuFrame: {
-                "finalize": True,
-                "source_keys": {
-                    self._configuration_model: [
-                        "template_groups"]
-                }
-            }
-        }
+        # # Mapping layout observer classes to their respective data sources, keys, and finalize status
+        # self._layout_source_mapping = {
+        #     IComparisonTextDisplays: {
+        #         "finalize": True,
+        #         "source_keys": {
+        #             self._configuration_model: [
+        #                 "filenames", "num_files"]
+        #         }
+        #     },
+        #     IComparisonHeaderFrame: {
+        #         "finalize": True,
+        #         "source_keys": {
+        #             self._configuration_model: [
+        #                 "filenames", "num_files"]
+        #         }
+        #     },
+        #     IMetaTagsFrame: {
+        #         "finalize": True,
+        #         "source_keys": {
+        #             self._configuration_model: ["tag_types"]
+        #         }
+        #     },
+        #     IAnnotationMenuFrame: {
+        #         "finalize": True,
+        #         "source_keys": {
+        #             self._configuration_model: [
+        #                 "template_groups"]
+        #         }
+        #     }
+        # }
 
-        self._mapping_types = {
-            "data": self._data_source_mapping,
-            "layout": self._layout_source_mapping
-        }
+        # self._mapping_types = {
+        #     "data": self._data_source_mapping,
+        #     "layout": self._layout_source_mapping
+        # }
 
     # command pattern
 
@@ -201,95 +207,208 @@ class Controller(IController):
 
     # observer pattern
 
-    def add_observer(self, observer: IObserver, mapping_type: str) -> None:
+    def add_observer(self, observer: IObserver) -> None:
         """
-        Registers an observer (data or layout) and maps its logic using the predefined mapping.
+        Registers an observer to all relevant publishers based on the predefined mapping.
+
+        This method retrieves all publishers related to the observer and registers it 
+        dynamically by checking the keys in `source_keys`.
 
         Args:
             observer (IObserver): The observer to be added.
-            mapping_type (str): Specifies the type of observer to add ("data" or "layout").
+
+        Raises:
+            KeyError: If no mapping exists for the given observer.
         """
-        # Retrieve the mapping based on the observer and mapping type
-        mapping = self._get_observer_config(
-            observer=observer, mapping_type=mapping_type)
+        # Retrieve the full mapping for the observer (without specifying a publisher)
+        observer_config = self._get_observer_config(observer)
 
-        # Extract finalize flag and source_keys from the mapping
-        finalize = mapping["finalize"]
-        source_keys = mapping["source_keys"]
+        # Iterate through all publishers by extracting keys from `source_keys`
+        for config in observer_config.values():
+            finalize = config["finalize"]
+            source_keys = config["source_keys"]
 
-        # Extract sources
-        sources = list(source_keys.keys())
+            # Extract publisher instances dynamically based on `source_keys`
+            for publisher_key in source_keys.keys():
+                # Convert the string key into the actual instance stored in the Controller
+                publisher_instance = getattr(self, f"_{publisher_key}", None)
 
-        # Register the observer to the sources
-        for source in sources:
-            if mapping_type == "data":
-                source.add_data_observer(observer)
-            elif mapping_type == "layout":
-                source.add_layout_observer(observer)
+                if publisher_instance is None:
+                    raise KeyError(
+                        f"Publisher instance '{publisher_key}' not found as an attribute in Controller "
+                        f"for observer {observer.__class__.__name__}")
 
-        # Add to finalize list if the mapping specifies it
-        if finalize:
-            self._observers_to_finalize.append(observer)
+                # Register observer with the publisher
+                print(
+                    f"DEBUG: Registering observer {observer.__class__.__name__} to publisher {publisher_instance.__class__.__name__}")
+                # Assuming all publishers have this method
+                publisher_instance.add_observer(observer)
 
-    def remove_observer(self, observer: IObserver, mapping_type: str) -> None:
+            # Add observer to finalize list if required
+            if finalize:
+                self._views_to_finalize.append(observer)
+
+    def remove_observer(self, observer: IObserver) -> None:
         """
-        Removes an observer (data or layout) and clears any associated mappings or registrations using the predefined mapping.
+        Removes an observer from all relevant publishers and clears any associated mappings or registrations.
+
+        This method dynamically retrieves all publishers related to the observer and removes the observer
+        without requiring a specific mapping type.
 
         Args:
             observer (IObserver): The observer to be removed.
-            mapping_type (str): Specifies the type of observer to remove ("data" or "layout").
-        """
-        # Retrieve the mapping based on the observer and mapping type
-        mapping = self._get_observer_config(
-            observer=observer, mapping_type=mapping_type)
 
-        # Extract source_keys and sources
-        source_keys = mapping["source_keys"]
-        sources = list(source_keys.keys())
+        Raises:
+            KeyError: If no mapping exists for the given observer.
+        """
+        # Retrieve the full mapping for the observer (without specifying a publisher)
+        observer_config = self._get_observer_config(observer)
+
+        # Iterate through all publishers by extracting keys from `source_keys`
+        for config in observer_config.values():
+            source_keys = config["source_keys"]
+
+            # Extract publisher instances dynamically based on `source_keys`
+            for publisher_instance in source_keys.keys():
+                if publisher_instance is None:
+                    raise KeyError(
+                        f"Publisher instance not found for observer {observer.__class__.__name__}")
+
+                # Remove observer from the publisher
+                # Assuming all publishers have this method
+                publisher_instance.remove_observer(observer)
 
         # If the observer was added to the finalize list, remove it
-        if observer in self._observers_to_finalize:
-            self._observers_to_finalize.remove(observer)
+        if observer in self._views_to_finalize:
+            self._views_to_finalize.remove(observer)
 
-        # Remove the observer from all associated sources
-        for source in sources:
-            if mapping_type == "data":
-                source.remove_data_observer(observer)
-            elif mapping_type == "layout":
-                source.remove_layout_observer(observer)
+        print(f"Observer {type(observer).__name__} removed.")
 
-        print(f"{mapping_type.capitalize()} observer {type(observer)} removed.")
-
-    def get_observer_state(self, observer: IObserver, mapping_type: str) -> any:
+    def get_observer_state(self, observer: IObserver, publisher: IPublisher) -> dict:
         """
-        Retrieves the updated state information for a specific observer.
+        Retrieves the updated state information for a specific observer and publisher.
 
-        This method accesses the relevant mapping (data or layout) to fetch the
-        state processing logic associated with the given observer. It then executes
-        this logic to return the computed state information for the observer.
+        This method accesses the relevant mapping to fetch the state processing logic
+        associated with the given observer and publisher. It then retrieves the relevant
+        data from the appropriate data source.
 
         Args:
             observer (IObserver): The observer requesting updated state information.
-            mapping_type (str): Specifies the type of state to retrieve ("data" or "layout").
+            publisher (IDataPublisher): The publisher that triggered the update.
 
         Returns:
             dict: The computed state information specific to the requesting observer.
 
         Raises:
-            KeyError: If the provided observer is not registered in the corresponding mapping.
+            KeyError: If the provided observer or publisher is not registered in the mapping.
         """
-        # Retrieve the mapping based on the observer and mapping type
-        mapping = self._get_observer_config(observer, mapping_type)
+        # Retrieve the mapping based on the observer and publisher
+        mapping = self._get_observer_config(observer, publisher)
         source_keys = mapping["source_keys"]
 
         # Fetch the state from the relevant sources and keys
         state = {
             key: value
             for source, keys in source_keys.items()
-            for key, value in (source.get_data_state() if mapping_type == "data" else source.get_layout_state()).items()
+            for key, value in source.get_state().items()
             if key in keys
         }
+
         return state
+
+    def get_observer_state(self, observer: IObserver, publisher: IPublisher = None) -> dict:
+        """
+        Retrieves the updated state information for a specific observer and publisher.
+
+        This method accesses the relevant mapping to fetch the state processing logic
+        associated with the given observer and publisher. It then retrieves the relevant
+        data from the appropriate data source.
+
+        If no publisher is provided, it merges all publisher-specific state mappings
+        into a single dictionary.
+
+        Args:
+            observer (IObserver): The observer requesting updated state information.
+            publisher (IPublisher, optional): The publisher that triggered the update. Defaults to None.
+
+        Returns:
+            dict: The computed state information specific to the requesting observer.
+
+        Raises:
+            KeyError: If the provided observer or publisher is not registered in the mapping.
+        """
+        # Retrieve the mapping based on the observer and publisher
+        mapping = self._get_observer_config(observer, publisher)
+
+        # If no publisher is provided, merge all publisher-specific mappings
+        if publisher is None:
+            merged_source_keys = {}
+            for publisher_mapping in mapping.values():  # Iterate over all publisher configs
+                for source_name, keys in publisher_mapping["source_keys"].items():
+                    if source_name not in merged_source_keys:
+                        merged_source_keys[source_name] = set()
+                    merged_source_keys[source_name].update(keys)
+
+            # Convert merged sets back to lists
+            merged_source_keys = {
+                source_name: list(keys) for source_name, keys in merged_source_keys.items()
+            }
+            source_keys = merged_source_keys
+        else:
+            source_keys = mapping["source_keys"]
+
+        # Fetch the state from the relevant sources and keys
+        state = {
+            key: value
+            for source_name, keys in source_keys.items()
+            if (source := getattr(self, f"_{source_name}", None)) is not None
+            for key, value in source.get_state().items()
+            if key in keys
+        }
+
+        return state
+
+    def _get_observer_config(self, observer: IObserver, publisher: IPublisher = None) -> Dict:
+        """
+        Retrieves the configuration for a given observer and optionally for a specific publisher.
+
+        If the publisher is provided, the method filters the configuration further based on the publisher type.
+        If no publisher is provided, it returns the entire mapping for all publishers related to the observer.
+
+        Args:
+            observer (IObserver): The observer requesting the configuration.
+            publisher (IPublisher, optional): The publisher that triggered the update. Defaults to None.
+
+        Returns:
+            Dict: The configuration dictionary associated with the observer.
+                If a publisher is provided, returns only that publisher's configuration.
+                If no publisher is provided, returns the full mapping for all publishers.
+
+        Raises:
+            KeyError: If no configuration is found for the observer or the specific publisher.
+        """
+        # Use preloaded source mapping
+        observer_name = observer.__class__.__name__
+
+        # Step 1: Filter by Observer
+        if observer_name not in self._source_mapping:
+            raise KeyError(
+                f"No configuration found for observer {observer_name}")
+
+        observer_config = self._source_mapping[observer_name]
+
+        # If no publisher is provided, return all mappings for the observer
+        if publisher is None:
+            return observer_config
+
+        # Step 2: Filter by Publisher
+        publisher_name = publisher.__class__.__name__
+
+        if publisher_name not in observer_config:
+            raise KeyError(
+                f"No configuration found for observer {observer_name} and publisher {publisher_name}")
+
+        return observer_config[publisher_name]
 
     # initialization
 
@@ -307,8 +426,8 @@ class Controller(IController):
             This method assumes that all views requiring finalization
             have already been registered with the controller.
         """
-        for observer in self._observers_to_finalize:
-            observer.update_layout()
+        for view in self._views_to_finalize:
+            view.finalize_view()
 
     def register_view(self, view_id: str) -> None:
         """
@@ -349,7 +468,7 @@ class Controller(IController):
             - The annotation document model is updated with data from the preview document model.
             - The adopted document is saved.
         """
-        document = self._extraction_document_model.get_data_state()
+        document = self._extraction_document_model.get_state()
         document["document_type"] = "annotation"
         self._annotation_document_model.set_document(document)
         self._tag_manager.set_document(document)
@@ -485,7 +604,7 @@ class Controller(IController):
             - Writes the updated document to the specified file path using the file handler.
         """
         data_source = self.get_save_as_config()["data_source"]
-        document = data_source.get_data_state()
+        document = data_source.get_state()
         document["file_path"] = file_path
         document["filename"] = self._file_handler.derive_file_name(file_path)
         document["document_type"] = self._active_view_id
@@ -495,33 +614,6 @@ class Controller(IController):
 
     def _perform_annotation_comparison(self, file_paths: List[str]) -> Dict:
         pass
-
-    def _get_observer_config(self, observer: IObserver, mapping_type: str) -> Dict:
-        """
-        Retrieves the configuration for a given observer based on its type and the mapping type.
-
-        The method checks if the observer is an instance of any class or interface
-        defined in the specified mapping type (`data_source_mapping` or `layout_source_mapping`).
-        If a match is found, the corresponding configuration is returned.
-
-        Args:
-            observer (IObserver): The observer whose configuration needs to be retrieved.
-            mapping_type (str): The type of mapping to use (e.g., "data" or "layout").
-
-        Returns:
-            Dict: The configuration dictionary associated with the observer.
-
-        Raises:
-            KeyError: If the observer does not match any entry in the specified mapping.
-        """
-        source_mapping = self._mapping_types[mapping_type]  # Access the correct mapping type
-
-        for cls, config in source_mapping.items():
-            if isinstance(observer, cls):
-                return config
-
-        raise KeyError(
-            f"No configuration found for observer of type {type(observer).__name__}")
 
     def get_selected_text_data(self) -> Dict:
         """
@@ -535,7 +627,7 @@ class Controller(IController):
                 - "text" (str): The currently selected text.
                 - "position" (int): The starting position of the selected text in the document.
         """
-        return self._selection_model.get_data_state()
+        return self._selection_model.get_state()
 
     def get_active_view(self) -> str:
         """

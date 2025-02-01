@@ -23,7 +23,7 @@ def main():
     app_view = MainWindow(controller)
     controller.finalize_views()
     #!DEBUG
-    annotation_document_model.notify_data_observers()
+    annotation_document_model.notify_observers()
     print("######### END INIT ###########")
     #!END DEBUG
 

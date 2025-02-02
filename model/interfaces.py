@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Dict, List
 from observer.interfaces import IPublisher, IPublisher
 
 
@@ -29,7 +29,7 @@ class IConfigurationModel(IPublisher):
 
 class IDocumentModel(IPublisher):
     """
-    Interface for a document model that manages metadata, text, and associated tags.
+    Interface for a document model that manages metadata, and text.
     """
 
     @abstractmethod
@@ -120,6 +120,31 @@ class IDocumentModel(IPublisher):
 
         Returns:
             dict: A dictionary containing the object's attributes as keys and their corresponding values.
+        """
+        pass
+
+
+class IAnnotableDocumentModel(IDocumentModel):
+    """
+    Interface for a document model that manages metadata, text, and associated tags.
+    """
+    @abstractmethod
+    def get_tags(self) -> List[ITagModel]:
+        """
+        Retrieves the tag list of the document.
+
+        Returns:
+            List[ITagModel]: The tag list of the document.
+        """
+        pass
+
+    @abstractmethod
+    def set_tags(self, tags: List[ITagModel]) -> None:
+        """
+        Sets the tag list of the document.
+
+        Args:
+            tags (List[ITagModel]): The list of tags to set.
         """
         pass
 

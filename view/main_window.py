@@ -170,7 +170,6 @@ class MainWindow(tk.Tk):
     def _on_save(self):
         """Handles the 'Save' action from the File menu."""
         file_path = self._controller.get_file_path()
-        print(f"DEBUG {file_path=}")
         if file_path:
             self._controller.perform_save_as(file_path)
         else:

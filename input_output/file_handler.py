@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Type
+from typing import Dict
 from input_output.interfaces import IReadWriteStrategy
 from input_output.file_handler_strategies import JsonReadWriteStrategy, CsvReadWriteStrategy, TxtReadWriteStrategy
 

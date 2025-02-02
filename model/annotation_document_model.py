@@ -1,10 +1,10 @@
 from typing import List, Tuple
 from model.document_model import DocumentModel
-from model.interfaces import ITagModel
+from model.interfaces import IAnnotableDocumentModel, ITagModel
 from test_data.json.timex3_example_2 import doc
 
 
-class AnnotationDocumentModel(DocumentModel):
+class AnnotationDocumentModel(DocumentModel, IAnnotableDocumentModel):
     """
     A specialized DocumentModel for managing annotation text.
     """

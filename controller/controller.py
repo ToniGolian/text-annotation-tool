@@ -12,6 +12,7 @@ from typing import Dict, List, Tuple
 from utils.list_manager import ListManager
 from utils.pdf_extraction_manager import PDFExtractionManager
 from utils.settings_manager import SettingsManager
+from utils.suggestion_manager import SuggestionManager
 from utils.tag_manager import TagManager
 from utils.tag_processor import TagProcessor
 
@@ -21,6 +22,7 @@ class Controller(IController):
 
         # dependencies
         self._file_handler = FileHandler()
+        self._suggestion_manager = SuggestionManager(self._file_handler)
         self._settings_manager = SettingsManager()
         self._tag_processor = TagProcessor()
         self._tag_manager = TagManager(self._tag_processor)
@@ -244,7 +246,6 @@ class Controller(IController):
 
         # If no publisher is provided, merge all publisher-specific mappings
         if publisher is None:
-            print(f"DEBUG if")
             merged_source_keys = {}
             for publisher_mapping in mapping.values():  # Iterate over all publisher configs
                 for source_name, keys in publisher_mapping["source_keys"].items():
@@ -430,18 +431,26 @@ class Controller(IController):
 
     def perform_text_selected(self, selection_data: Dict) -> None:
         """
-        Updates the selection model with the newly selected text and its position.
+        Updates the selection model with the newly selected text, its position, and suggested attributes.
 
         This method is triggered when text is selected in the view and updates
-        the selection model to reflect the new selection.
+        the selection model to reflect the new selection, including possible attribute
+        and ID suggestions based on the selected text and existing document data.
 
         Args:
-            text (str): The text that has been selected.
-            position (int): The starting position of the selected text in the document.
+            selection_data (Dict): A dictionary containing:
+                - "selected_text" (str): The selected text.
+                - "position" (int): The starting position of the selected text in the document.
 
         Updates:
-            - The `selected_text` and `selected_position` attributes in the selection model.
+            - The `selected_text`, `selected_position`, and `suggestions` attributes in the selection model.
+            - `suggestions` contains attribute and ID recommendations based on the selected text
+              and existing IDs in the document.
         """
+        selected_text = selection_data["selected_text"]
+        document_model = self._document_source_mapping[self._active_view_id]
+        selection_data["suggestions"] = self._suggestion_manager.get_suggestions(
+            selected_text, document_model)
         self._selection_model.set_selected_text_data(selection_data)
 
     def perform_open_file(self, file_paths: List[str]) -> None:

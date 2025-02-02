@@ -14,10 +14,6 @@ from utils.pdf_extraction_manager import PDFExtractionManager
 from utils.settings_manager import SettingsManager
 from utils.tag_manager import TagManager
 from utils.tag_processor import TagProcessor
-from view.annotation_text_display_frame import AnnotationTextDisplayFrame
-from view.comparison_text_display_frame import ComparisonTextDisplayFrame
-from view.interfaces import IAnnotationMenuFrame, IComparisonHeaderFrame, IComparisonTextDisplays, IExtractionFrame, IMetaTagsFrame
-from view.preview_text_display_frame import PreviewTextDisplayFrame
 
 
 class Controller(IController):
@@ -40,7 +36,6 @@ class Controller(IController):
             "app_data/source_mapping.json")
 
         # state
-
         self._dynamic_observer_index: int = 0
         self._observer_data_map: Dict[IObserver:Dict] = {}
         self._observer_layout_map: Dict[IObserver, Dict] = {}
@@ -52,8 +47,6 @@ class Controller(IController):
         self._comparison_document_model: IDocumentModel = comparison_document_model
         self._comparison_model: IComparisonModel = comparison_model
         self._selection_model: ISelectionModel = selection_model
-        #!debug
-        self._tag_manager.set_document(self._annotation_document_model)
 
         # command pattern
         self._active_view_id = None  # Track the currently active view
@@ -63,97 +56,6 @@ class Controller(IController):
         self._document_source_mapping = {"extraction": self._extraction_document_model,
                                          "annotation": self._annotation_document_model,
                                          "comparison": self._comparison_document_model}
-
-        # Mapping observer classes to their respective data sources, keys, and finalize status
-        # self._data_source_mapping = {
-        #     PreviewTextDisplayFrame: {
-        #         "finalize": False,
-        #         "source_keys": {
-        #             self._extraction_document_model: ["text"]
-        #         }
-        #     },
-        #     AnnotationTextDisplayFrame: {
-        #         "finalize": False,
-        #         "source_keys": {
-        #             self._annotation_document_model: ["text", "highlight_data"]
-        #         }
-        #     },
-        #     ComparisonTextDisplayFrame: {
-        #         "finalize": False,
-        #         "source_keys": {
-        #             self._comparison_document_model: ["text"],
-        #             self._comparison_model: [
-        #                 "comparison_sentences", "highlight_data"]
-        #         }
-        #     },
-        #     IMetaTagsFrame: {
-        #         "finalize": True,
-        #         "source_keys": {
-        #             self._comparison_model: ["file_names"]
-        #         }
-        #     },
-        #     IComparisonTextDisplays: {
-        #         "finalize": True,
-        #         "source_keys": {
-        #             self._comparison_model: ["file_names"]
-        #         }
-        #     },
-        #     IComparisonHeaderFrame: {
-        #         "finalize": True,
-        #         "source_keys": {
-        #             self._comparison_model: [
-        #                 "num_sentences", "current_sentence_index"]
-        #         }
-        #     },
-        #     IAnnotationMenuFrame: {
-        #         "finalize": False,
-        #         "source_keys": {
-        #             self._selection_model: ["selected_text"]
-        #         }
-        #     },
-        #     IExtractionFrame: {
-        #         "finalize": False,
-        #         "source_keys": {
-        #             self._extraction_document_model: ["file_path"]
-        #         }
-        #     }
-        # }
-
-        # # Mapping layout observer classes to their respective data sources, keys, and finalize status
-        # self._layout_source_mapping = {
-        #     IComparisonTextDisplays: {
-        #         "finalize": True,
-        #         "source_keys": {
-        #             self._configuration_model: [
-        #                 "filenames", "num_files"]
-        #         }
-        #     },
-        #     IComparisonHeaderFrame: {
-        #         "finalize": True,
-        #         "source_keys": {
-        #             self._configuration_model: [
-        #                 "filenames", "num_files"]
-        #         }
-        #     },
-        #     IMetaTagsFrame: {
-        #         "finalize": True,
-        #         "source_keys": {
-        #             self._configuration_model: ["tag_types"]
-        #         }
-        #     },
-        #     IAnnotationMenuFrame: {
-        #         "finalize": True,
-        #         "source_keys": {
-        #             self._configuration_model: [
-        #                 "template_groups"]
-        #         }
-        #     }
-        # }
-
-        # self._mapping_types = {
-        #     "data": self._data_source_mapping,
-        #     "layout": self._layout_source_mapping
-        # }
 
     # command pattern
 
@@ -342,6 +244,7 @@ class Controller(IController):
 
         # If no publisher is provided, merge all publisher-specific mappings
         if publisher is None:
+            print(f"DEBUG if")
             merged_source_keys = {}
             for publisher_mapping in mapping.values():  # Iterate over all publisher configs
                 for source_name, keys in publisher_mapping["source_keys"].items():
@@ -356,7 +259,6 @@ class Controller(IController):
             source_keys = merged_source_keys
         else:
             source_keys = mapping["source_keys"]
-
         # Fetch the state from the relevant sources and keys
         state = {
             key: value
@@ -365,7 +267,6 @@ class Controller(IController):
             for key, value in source.get_state().items()
             if key in keys
         }
-
         return state
 
     def _get_observer_config(self, observer: IObserver, publisher: IPublisher = None) -> Dict:
@@ -497,7 +398,8 @@ class Controller(IController):
             tag_data (Dict): A dictionary containing the data for the tag to be added.
             caller_id (str): The unique identifier of the view initiating this action.
         """
-        command = AddTagCommand(self._tag_manager, tag_data)
+        target_model = self._document_source_mapping[self._active_view_id]
+        command = AddTagCommand(self._tag_manager, tag_data, target_model)
         self._execute_command(command=command, caller_id=caller_id)
 
     def perform_edit_tag(self, tag_id: str, tag_data: Dict, caller_id: str) -> None:
@@ -509,7 +411,9 @@ class Controller(IController):
             tag_data (Dict): A dictionary containing the updated data for the tag.
             caller_id (str): The unique identifier of the view initiating this action.
         """
-        command = EditTagCommand(self._tag_manager, tag_id, tag_data)
+        target_model = self._document_source_mapping[self._active_view_id]
+        command = EditTagCommand(
+            self._tag_manager, tag_id, tag_data, target_model)
         self._execute_command(command=command, caller_id=caller_id)
 
     def perform_delete_tag(self, tag_id: str, caller_id: str) -> None:
@@ -520,7 +424,8 @@ class Controller(IController):
             tag_id (str): The unique identifier of the tag to be deleted.
             caller_id (str): The unique identifier of the view initiating this action.
         """
-        command = DeleteTagCommand(self._tag_manager, tag_id)
+        target_model = self._document_source_mapping[self._active_view_id]
+        command = DeleteTagCommand(self._tag_manager, tag_id, target_model)
         self._execute_command(command=command, caller_id=caller_id)
 
     def perform_text_selected(self, selection_data: Dict) -> None:
@@ -741,8 +646,9 @@ class Controller(IController):
                 - The second element (int) is the start position of the highlight in the text.
                 - The third element (int) is the end position of the highlight in the text.
         """
+        target_model = self._document_source_mapping[self._active_view_id]
         color_scheme = self._configuration_model.get_color_scheme()
-        highlight_data = self._tag_manager.get_highlight_data()
+        highlight_data = self._tag_manager.get_highlight_data(target_model)
         highlight_data = [
             (color_scheme[tag], start, end) for tag, start, end in highlight_data
         ]

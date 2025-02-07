@@ -1,6 +1,7 @@
-from typing import Dict
+from typing import Dict, List
+from controller.interfaces import IController
 from input_output.file_handler import FileHandler
-from model.interfaces import IAnnotableDocumentModel, IDocumentModel
+from model.interfaces import IAnnotableDocumentModel
 
 
 class SuggestionManager:
@@ -15,7 +16,7 @@ class SuggestionManager:
         _attribute_suggestions (dict): Stores predefined attribute suggestions loaded from file.
     """
 
-    def __init__(self, file_handler: FileHandler):
+    def __init__(self, controller: IController, file_handler: FileHandler):
         """
         Initializes the SuggestionManager with a file handler and loads attribute suggestions.
 
@@ -23,9 +24,9 @@ class SuggestionManager:
             file_handler (FileHandler): An instance responsible for handling file operations.
         """
         self._file_handler = file_handler
+        self._controller = controller
         self._attribute_suggestions = self._file_handler.read_file(
             "app_data/project_config/time_ml/suggestions.json")
-        print(f"DEBUG {len(self._attribute_suggestions)=}")
 
     def get_suggestions(self, selected_text: str, document_model: IAnnotableDocumentModel) -> Dict:
         """
@@ -41,21 +42,21 @@ class SuggestionManager:
         Returns:
             Dict: A dictionary containing ID and attribute suggestions for relevant tag types.
         """
-        print(f"DEBUG {selected_text=}")
-        id_suggestions = self._calc_id_suggstions(document_model)
-        suggestions = {tag_type: {"id": id_suggestion}
-                       for tag_type, id_suggestion in id_suggestions.items()}
-        print(f"DEBUG {suggestions=}")
-        tag_types = id_suggestions.keys()
+        tag_types = self._controller.get_tag_types()
+        id_suggestions = self._calc_id_suggstions(document_model, tag_types)
+
+        suggestions = {}
         for tag_type in tag_types:
             attribute_suggestions_for_type = self._attribute_suggestions[tag_type]
+            suggestion = {"id": id_suggestions[tag_type]}
             if selected_text in attribute_suggestions_for_type:
-                suggestions[tag_type]["attributes"] = attribute_suggestions_for_type[selected_text]
-        print(f"DEBUG {suggestions=}")
+                suggestion.update(
+                    attribute_suggestions_for_type[selected_text])
+            suggestions[tag_type] = suggestion
         # todo regexsuggestions
         return suggestions
 
-    def _calc_id_suggstions(self, document_model: IAnnotableDocumentModel) -> Dict[str, int]:
+    def _calc_id_suggstions(self, document_model: IAnnotableDocumentModel, tag_types: List[str]) -> Dict[str, int]:
         """
         Computes ID suggestions based on existing annotations in the document model.
 
@@ -68,9 +69,12 @@ class SuggestionManager:
         Returns:
             Dict[str, int]: A dictionary mapping tag types to their next available numeric ID.
         """
+        id_suggestions = {tag_type: 1 for tag_type in tag_types}
+
         tags = document_model.get_tags()
-        id_suggestions = {}
         for tag in tags:
             tag_type = tag.get_tag_type()
             id_suggestions[tag_type] = id_suggestions.get(tag_type, 1) + 1
         return id_suggestions
+
+    # todo implement add suggestion

@@ -101,7 +101,8 @@
             "finalize": false,
             "source_keys": {
                 "selection_model": [
-                    "selected_text"
+                    "selected_text",
+                    "suggestions"
                 ]
             }
         },

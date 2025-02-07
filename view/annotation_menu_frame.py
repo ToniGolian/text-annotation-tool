@@ -120,6 +120,11 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
             for tag_frame in self._tag_frames:
                 tag_frame.set_selected_text(state["selected_text"])
 
+        if "suggestions" in state:
+            for tag_frame in self._tag_frames:
+                suggestions = state["suggestions"][tag_frame.get_name()]
+                tag_frame.set_attributes(suggestions)
+
         # Handle layout updates if available
         if "template_groups" in state:
             self._template_groups = state["template_groups"]

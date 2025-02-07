@@ -14,7 +14,8 @@ class SelectionModel(IPublisher):
         super().__init__()  # Initializes _data_observers from the base class
         self._selected_data: Dict[str, Union[str, int]] = {
             "text": "",
-            "position": -1  # -1 indicates no position is set
+            "position": -1,  # -1 indicates no position is set
+            "suggestions": {}
         }
 
     def set_selected_text_data(self, data: Dict[str, Union[str, int]]) -> None:

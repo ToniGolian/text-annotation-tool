@@ -22,7 +22,7 @@ class Controller(IController):
 
         # dependencies
         self._file_handler = FileHandler()
-        self._suggestion_manager = SuggestionManager(self._file_handler)
+        self._suggestion_manager = SuggestionManager(self, self._file_handler)
         self._settings_manager = SettingsManager()
         self._tag_processor = TagProcessor()
         self._tag_manager = TagManager(self._tag_processor)
@@ -143,9 +143,6 @@ class Controller(IController):
                         f"for observer {observer.__class__.__name__}")
 
                 # Register observer with the publisher
-                print(
-                    f"DEBUG: Registering observer {observer.__class__.__name__} to publisher {publisher_instance.__class__.__name__}")
-                # Assuming all publishers have this method
                 publisher_instance.add_observer(observer)
 
             # Add observer to finalize list if required
@@ -188,37 +185,37 @@ class Controller(IController):
 
         print(f"Observer {type(observer).__name__} removed.")
 
-    def get_observer_state(self, observer: IObserver, publisher: IPublisher) -> dict:
-        """
-        Retrieves the updated state information for a specific observer and publisher.
+    # def get_observer_state(self, observer: IObserver, publisher: IPublisher) -> dict:
+    #     """
+    #     Retrieves the updated state information for a specific observer and publisher.
 
-        This method accesses the relevant mapping to fetch the state processing logic
-        associated with the given observer and publisher. It then retrieves the relevant
-        data from the appropriate data source.
+    #     This method accesses the relevant mapping to fetch the state processing logic
+    #     associated with the given observer and publisher. It then retrieves the relevant
+    #     data from the appropriate data source.
 
-        Args:
-            observer (IObserver): The observer requesting updated state information.
-            publisher (IDataPublisher): The publisher that triggered the update.
+    #     Args:
+    #         observer (IObserver): The observer requesting updated state information.
+    #         publisher (IDataPublisher): The publisher that triggered the update.
 
-        Returns:
-            dict: The computed state information specific to the requesting observer.
+    #     Returns:
+    #         dict: The computed state information specific to the requesting observer.
 
-        Raises:
-            KeyError: If the provided observer or publisher is not registered in the mapping.
-        """
-        # Retrieve the mapping based on the observer and publisher
-        mapping = self._get_observer_config(observer, publisher)
-        source_keys = mapping["source_keys"]
+    #     Raises:
+    #         KeyError: If the provided observer or publisher is not registered in the mapping.
+    #     """
+    #     # Retrieve the mapping based on the observer and publisher
+    #     mapping = self._get_observer_config(observer, publisher)
+    #     source_keys = mapping["source_keys"]
 
-        # Fetch the state from the relevant sources and keys
-        state = {
-            key: value
-            for source, keys in source_keys.items()
-            for key, value in source.get_state().items()
-            if key in keys
-        }
+    #     # Fetch the state from the relevant sources and keys
+    #     state = {
+    #         key: value
+    #         for source, keys in source_keys.items()
+    #         for key, value in source.get_state().items()
+    #         if key in keys
+    #     }
 
-        return state
+    #     return state
 
     def get_observer_state(self, observer: IObserver, publisher: IPublisher = None) -> dict:
         """
@@ -441,6 +438,7 @@ class Controller(IController):
             selection_data (Dict): A dictionary containing:
                 - "selected_text" (str): The selected text.
                 - "position" (int): The starting position of the selected text in the document.
+                - "suggestions" (Dict): A dictionary containing ID and attribute suggestions for relevant tag types.
 
         Updates:
             - The `selected_text`, `selected_position`, and `suggestions` attributes in the selection model.
@@ -492,6 +490,8 @@ class Controller(IController):
 
         if self._active_view_id == "annotation":
             self._annotation_document_model.set_document(document)
+            self._tag_manager._extract_tags_from_document(
+                self._annotation_document_model)
         if self._active_view_id == "comparison":
             # todo improve
             if len(file_path) > 1 or document.get("document_type", "") != "comparison":
@@ -662,3 +662,15 @@ class Controller(IController):
             (color_scheme[tag], start, end) for tag, start, end in highlight_data
         ]
         return highlight_data
+
+    def get_tag_types(self) -> List[str]:
+        """
+        Retrieves all available tag types from the loaded template groups.
+
+        This method iterates through the template groups and collects unique 
+        tag types used within the templates.
+
+        Returns:
+            List[str]: A list of unique tag types used in the current project.
+        """
+        return self._configuration_model.get_tag_types()

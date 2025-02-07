@@ -42,9 +42,9 @@ class AnnotationTagFrame(tk.Frame):
         self.grid_columnconfigure(1, weight=1)
 
         # Display header label
-        tag_type = self._template.get("type", "Tag")
+        self.name = self._template.get("type", "Tag")
         header_label = tk.Label(
-            self, text=f"{tag_type[0].upper()+tag_type[1:]}-Tag", font=("Helvetica", 16))
+            self, text=f"{self.name[0].upper()+self.name[1:]}-Tag", font=("Helvetica", 16))
         header_label.grid(row=0, column=0, columnspan=2,
                           padx=10, pady=(0, 10), sticky="w")
 
@@ -65,7 +65,7 @@ class AnnotationTagFrame(tk.Frame):
 
             attribute_type = attr_data["type"].upper()
             # Choose widget based on the type
-            if attribute_type in ["CDATA", "ID"]:
+            if attribute_type.upper() in ["CDATA", "ID", "UNION"]:
                 # Entry widget for CDATA type
                 widget = tk.Entry(self)
             else:
@@ -201,3 +201,33 @@ class AnnotationTagFrame(tk.Frame):
         }
 
         return tag_data
+
+    def get_name(self) -> str:
+        """
+        Retrieves the name of the menu frame.
+
+
+        Returns:
+            str: The name of the  menu frame.
+        """
+        return self.name
+
+    def set_attributes(self, attribute_data: Dict[str, str]) -> None:
+        """
+        Populates the form fields with the given attribute data.
+
+        This method updates the entry widgets corresponding to tag attributes
+        with the provided values. It ensures that each attribute is displayed
+        correctly in the UI.
+
+        Args:
+            attribute_data (Dict[str, str]): A dictionary where keys are attribute names 
+                                             and values are their corresponding values to be set.
+        """
+        for widget in self._data_widgets.values():
+            widget.delete(0, tk.END)
+
+        for attribute_name, attribute_value in attribute_data.items():
+            widget = self._data_widgets.get(attribute_name, None)
+            if widget:
+                widget.insert(0, attribute_value)

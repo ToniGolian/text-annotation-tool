@@ -27,3 +27,4 @@ class ComparisonDocumentModel(DocumentModel, IAnnotableDocumentModel):
             tags (list): A list of tags represented as ITagModel objects to set.
         """
         self._tags = tags
+        self.notify_observers()

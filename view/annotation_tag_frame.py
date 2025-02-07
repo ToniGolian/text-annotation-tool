@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import Dict
+from typing import Dict, List
 from controller.interfaces import IController
 
 
@@ -29,7 +29,9 @@ class AnnotationTagFrame(tk.Frame):
         self._controller = controller
         self._template = template
         self._data_widgets = {}
+        self._idref_widgets = []  # list of widgets to chose references to other tags
         self._selected_text_entry = None  # Entry for selected text
+        self._id_string = ""  # attributename f the id
         self._render()
 
     def _render(self) -> None:
@@ -58,12 +60,12 @@ class AnnotationTagFrame(tk.Frame):
             row=1, column=1, sticky="ew", padx=5, pady=5)
         # Iterate over each attribute in the template
         row = 2  # Start placing widgets from row 2
-        for attr_name, attr_data in self._template["attributes"].items():
+        for attribute_name, attribute_data in self._template["attributes"].items():
             # Create label for the attribute
-            label = tk.Label(self, text=attr_name)
+            label = tk.Label(self, text=attribute_name)
             label.grid(row=row, column=0, sticky="w", padx=(15, 5), pady=5)
 
-            attribute_type = attr_data["type"].upper()
+            attribute_type = attribute_data["type"].upper()
             # Choose widget based on the type
             if attribute_type.upper() in ["CDATA", "ID", "UNION"]:
                 # Entry widget for CDATA type
@@ -71,13 +73,13 @@ class AnnotationTagFrame(tk.Frame):
             else:
                 # Combobox for other types
                 allowed_values = [""]
-                if "allowedValues" in attr_data:
-                    allowed_values = [""] + attr_data["allowedValues"]
+                if "allowedValues" in attribute_data:
+                    allowed_values = [""] + attribute_data["allowedValues"]
                 widget = ttk.Combobox(self, values=allowed_values)
                 widget.set(allowed_values[0])
 
-                if "default" in attr_data:
-                    default_value = attr_data["default"]
+                if "default" in attribute_data:
+                    default_value = attribute_data["default"]
                     if default_value and default_value in allowed_values:
                         widget.set(default_value)
 
@@ -85,9 +87,12 @@ class AnnotationTagFrame(tk.Frame):
             widget.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
             # Rename attribute, if id
             if attribute_type == "ID":
-                attr_name = "id"
+                self._id_string = attribute_name
+                attribute_name = "id"
             # Store reference to the widget
-            self._data_widgets[attr_name] = widget
+            self._data_widgets[attribute_name] = widget
+            if attribute_type.upper() == "IDREF":
+                self._idref_widgets.append(widget)
             row += 1
 
         # Add "Add Tag" button
@@ -101,6 +106,7 @@ class AnnotationTagFrame(tk.Frame):
         edit_label.grid(row=row, column=0, sticky="w", padx=(15, 5), pady=5)
 
         self.edit_id_combobox = ttk.Combobox(self, values=[""])
+        self._idref_widgets.append(self.edit_id_combobox)
         self.edit_id_combobox.grid(
             row=row, column=1, sticky="ew", padx=5, pady=5)
         row += 1
@@ -116,6 +122,7 @@ class AnnotationTagFrame(tk.Frame):
         delete_label.grid(row=row, column=0, sticky="w", padx=(15, 5), pady=5)
 
         self.delete_id_combobox = ttk.Combobox(self, values=[""])
+        self._idref_widgets.append(self.delete_id_combobox)
         self.delete_id_combobox.grid(
             row=row, column=1, sticky="ew", padx=5, pady=5)
         row += 1
@@ -187,10 +194,14 @@ class AnnotationTagFrame(tk.Frame):
 
         # Collect tag attributes from widgets
         attributes = [
-            (attr_name, widget.get().strip())
-            for attr_name, widget in self._data_widgets.items()
+            (attribute_name, widget.get().strip())
+            for attribute_name, widget in self._data_widgets.items()
             if widget.get().strip()
         ]
+
+        # Change the attribute name for the id back to the tag specific id name
+        if "id" in attributes:
+            attributes[self._id_string] = attributes.pop("id")
 
         # Build the tag data dictionary
         tag_data = {
@@ -231,3 +242,18 @@ class AnnotationTagFrame(tk.Frame):
             widget = self._data_widgets.get(attribute_name, None)
             if widget:
                 widget.insert(0, attribute_value)
+
+    def set_idref_list(self, idrefs: List[str]) -> None:
+        """
+        Updates the available options for all ID reference widgets.
+
+        This method sets the given list of ID references as the selectable values 
+        for all stored ID reference widgets, ensuring that they display the correct 
+        choices based on the current application state.
+
+        Args:
+            idrefs (List[str]): A list of available ID references to populate the widgets.
+        """
+        print(f"DEBUG {idrefs=}")
+        for widget in self._idref_widgets:
+            widget.config(values=idrefs)

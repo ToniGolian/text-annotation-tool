@@ -1,5 +1,6 @@
 {
     "type": "EVENT",
+    "id_prefix": "e",
     "attributes": {
         "eid": {
             "type": "ID"

@@ -1,5 +1,6 @@
 {
     "type": "SLINK",
+    "id_prefix": "l",
     "attributes": {
         "lid": {
             "type": "ID"

@@ -170,6 +170,7 @@ class DocumentModel(IDocumentModel):
         Retrieves a dictionary representation of the object's attributes.
 
         The dictionary includes the following attributes:
+            - "document_type": The type of the document (e.g., "annotation", "comparison").
             - "file_path": The path, where the document is stored.
             - "filename": The name of the file associated with the object.
             - "meta_tags": The metadata tags associated with the object.

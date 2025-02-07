@@ -106,6 +106,14 @@
                 ]
             }
         },
+        "AnnotationDocumentModel": {
+            "finalize": false,
+            "source_keys": {
+                "annotation_document_model": [
+                    "tags"
+                ]
+            }
+        },
         "ConfigurationModel": {
             "finalize": true,
             "source_keys": {

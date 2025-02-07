@@ -1,5 +1,6 @@
 {
   "type": "TIMEX3",
+  "id_prefix": "t",
   "attributes": {
     "tid": {
       "type": "ID"

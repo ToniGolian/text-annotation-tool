@@ -114,7 +114,7 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
             publisher (IPublisher): The publisher that triggered the update.
         """
         state = self._controller.get_observer_state(self, publisher)
-
+        print(f"DEBUG {state.keys()=}")
         # Handle selected text updates if available
         if "selected_text" in state:
             for tag_frame in self._tag_frames:
@@ -124,6 +124,11 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
             for tag_frame in self._tag_frames:
                 suggestions = state["suggestions"][tag_frame.get_name()]
                 tag_frame.set_attributes(suggestions)
+
+        if "tags" in state:
+            idref_list = [tag.get_id() for tag in state["tags"]]
+            for tag_frame in self._tag_frames:
+                tag_frame.set_idref_list(idref_list)
 
         # Handle layout updates if available
         if "template_groups" in state:

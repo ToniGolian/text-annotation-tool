@@ -1,5 +1,6 @@
 {
     "type": "MAKEINSTANCE",
+    "id_prefix": "ei",
     "attributes": {
         "eiid": {
             "type": "ID"

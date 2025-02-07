@@ -1,5 +1,6 @@
 {
   "type": "TLINK",
+  "id_prefix": "l",
   "attributes": {
     "lid": {
       "type": "ID"

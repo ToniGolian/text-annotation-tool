@@ -258,6 +258,8 @@ class Controller(IController):
         else:
             source_keys = mapping["source_keys"]
         # Fetch the state from the relevant sources and keys
+        for source_name, keys in source_keys.items():
+            source = getattr(self, f"_{source_name}", None)
         state = {
             key: value
             for source_name, keys in source_keys.items()

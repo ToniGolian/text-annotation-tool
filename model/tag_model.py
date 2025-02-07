@@ -111,7 +111,6 @@ class TagModel(ITagModel):
         Args:
             position (int): The new position of the tag.
         """
-        print(f"DEBUG tag model set position {position=}")
         self._position = position
 
     def get_text(self) -> str:

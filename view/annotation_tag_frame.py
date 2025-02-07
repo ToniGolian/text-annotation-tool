@@ -139,6 +139,8 @@ class AnnotationTagFrame(tk.Frame):
         Args:
             text (str): The selected text to display.
         """
+        if len(text) > 50:
+            text = text[:50]+"..."
         self._selected_text_entry.config(state="normal")
         self._selected_text_entry.delete(0, tk.END)
         self._selected_text_entry.insert(0, text)

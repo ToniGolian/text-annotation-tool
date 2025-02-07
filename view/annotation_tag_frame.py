@@ -254,6 +254,5 @@ class AnnotationTagFrame(tk.Frame):
         Args:
             idrefs (List[str]): A list of available ID references to populate the widgets.
         """
-        print(f"DEBUG {idrefs=}")
         for widget in self._idref_widgets:
             widget.config(values=idrefs)

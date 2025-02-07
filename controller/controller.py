@@ -25,7 +25,7 @@ class Controller(IController):
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
         self._settings_manager = SettingsManager()
         self._tag_processor = TagProcessor()
-        self._tag_manager = TagManager(self._tag_processor)
+        self._tag_manager = TagManager(self, self._tag_processor)
         self._list_manager = ListManager(
             self._file_handler, self._settings_manager)
         self._pdf_extraction_manager = PDFExtractionManager(
@@ -184,38 +184,6 @@ class Controller(IController):
             self._views_to_finalize.remove(observer)
 
         print(f"Observer {type(observer).__name__} removed.")
-
-    # def get_observer_state(self, observer: IObserver, publisher: IPublisher) -> dict:
-    #     """
-    #     Retrieves the updated state information for a specific observer and publisher.
-
-    #     This method accesses the relevant mapping to fetch the state processing logic
-    #     associated with the given observer and publisher. It then retrieves the relevant
-    #     data from the appropriate data source.
-
-    #     Args:
-    #         observer (IObserver): The observer requesting updated state information.
-    #         publisher (IDataPublisher): The publisher that triggered the update.
-
-    #     Returns:
-    #         dict: The computed state information specific to the requesting observer.
-
-    #     Raises:
-    #         KeyError: If the provided observer or publisher is not registered in the mapping.
-    #     """
-    #     # Retrieve the mapping based on the observer and publisher
-    #     mapping = self._get_observer_config(observer, publisher)
-    #     source_keys = mapping["source_keys"]
-
-    #     # Fetch the state from the relevant sources and keys
-    #     state = {
-    #         key: value
-    #         for source, keys in source_keys.items()
-    #         for key, value in source.get_state().items()
-    #         if key in keys
-    #     }
-
-    #     return state
 
     def get_observer_state(self, observer: IObserver, publisher: IPublisher = None) -> dict:
         """
@@ -676,3 +644,12 @@ class Controller(IController):
             List[str]: A list of unique tag types used in the current project.
         """
         return self._configuration_model.get_tag_types()
+
+    def get_id_prefixes(self) -> Dict[str, str]:
+        """
+        Retrieves a dictionary, which maps the tag types to the id prefixes
+
+        Returns:
+            Dict[str,str]: A Dict which maps the tag types to the id prefixes.
+        """
+        return self._configuration_model.get_id_prefixes()

@@ -87,7 +87,6 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
                 "position": start_position,
                 "selected_text": selected_text
             }
-
             # Pass the data to the controller
             self._controller.perform_text_selected(selection_data)
         except tk.TclError:

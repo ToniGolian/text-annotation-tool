@@ -102,14 +102,16 @@ class TagProcessor(ITagProcessor):
 
         return updated_text
 
-    def update_id(self, text: str, position: int, new_id: int) -> str:
+    #!bug here
+
+    def update_id(self, text: str, position: int, new_id: str) -> str:
         """
         Updates the ID attribute of a tag at the specified position in the text using regex.
 
         Args:
             text (str): The full document text containing the tag.
             position (int): The position in the text where the tag starts.
-            new_id (int): The new ID to replace the existing ID.
+            new_id (str): The new ID to replace the existing ID.
 
         Returns:
             str: The updated text with the new ID.
@@ -118,9 +120,8 @@ class TagProcessor(ITagProcessor):
             ValueError: If no valid ID attribute is found at the specified position.
         """
         # Define a regex pattern to match a tag with an attribute ending in 'id' and a numeric value in quotes
-        pattern = r'<[^>]*\b(\w*id)="(\d+)"[^>]*>'
-
-        # Use regex to find the tag starting at or after the given position
+        pattern = r'<[^>]*\b(\w*id)="(\w*\d+)"[^>]*>'
+        # Now, attempt to match from position onwards
         match = re.search(pattern, text[position:])
         if not match:
             raise ValueError(

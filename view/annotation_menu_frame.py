@@ -114,7 +114,6 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
             publisher (IPublisher): The publisher that triggered the update.
         """
         state = self._controller.get_observer_state(self, publisher)
-        print(f"DEBUG {state.keys()=}")
         # Handle selected text updates if available
         if "selected_text" in state:
             for tag_frame in self._tag_frames:

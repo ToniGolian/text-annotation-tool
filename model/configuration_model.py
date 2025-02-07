@@ -42,6 +42,8 @@ class ConfigurationModel(IPublisher):
         # Define path for the color scheme configuration
         self._color_path = self._project_path + "color_scheme.json"
 
+        self._saved_layout = None
+        self.layout_state = {}
         # Initialize layout state
         self.update_state()
 
@@ -109,3 +111,18 @@ class ConfigurationModel(IPublisher):
             for template in group.get("templates", []):
                 tag_types.append(template.get("type", ""))
         return tag_types
+
+    def get_id_prefixes(self) -> Dict[str, str]:
+        """
+        Retrieves a dictionary, which maps the tag types to the id prefixes
+
+        Returns:
+            Dict[str,str]: A Dict which maps the tag types to the id prefixes.
+        """
+        id_prefixes = {}
+
+        for group in self.layout_state["template_groups"]:
+            for template in group.get("templates", []):
+                id_prefixes[template.get("type", "")] = template.get(
+                    "id_prefix", "")
+        return id_prefixes

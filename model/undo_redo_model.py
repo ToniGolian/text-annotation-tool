@@ -22,9 +22,7 @@ class UndoRedoModel:
         Args:
             command (ICommand): The command object to execute.
         """
-        print("Model execute_command")
         self.undo_stack.append(command)
-        print(f"Model execute_command. {len(self.undo_stack)=}")
         self.redo_stack.clear()
 
     def undo_command(self) -> Optional[ICommand]:

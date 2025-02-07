@@ -23,7 +23,8 @@ def main():
     app_view = MainWindow(controller)
     controller.finalize_views()
     #!DEBUG
-    annotation_document_model.notify_observers()
+    testdoc = ["data/annotation/test_doc.json"]
+    controller.perform_open_file(testdoc)
     print("######### END INIT ###########")
     #!END DEBUG
 

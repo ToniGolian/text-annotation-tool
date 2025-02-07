@@ -1,5 +1,7 @@
+import re
 from typing import Dict, List, Tuple
 import uuid
+from controller.interfaces import IController
 from model.interfaces import IDocumentModel, ITagModel
 from model.tag_model import TagModel
 from utils.interfaces import ITagProcessor
@@ -11,16 +13,21 @@ class TagManager:
     retrieving, and deleting tags for a specific document.
     """
 
-    def __init__(self, tag_processor: ITagProcessor) -> None:
+    def __init__(self, controller: IController, tag_processor: ITagProcessor) -> None:
         """
-        Initializes the TagManager with an internal tag list, a reference to the document,
-        and a TagProcessor.
+        Initializes the TagManager with a tag processor and a controller reference.
+
+        This class manages tags within a document, allowing for their processing,
+        transformation, and interaction with the application via the controller.
 
         Args:
-            tag_processor (ITagProcessor): The processor for handling string transformations
-                                           and text manipulation for tags.
+            tag_processor (ITagProcessor): The processor responsible for handling 
+                                            string transformations and text manipulation for tags.
+            controller (IController): The application controller that manages interactions 
+                                    and state updates related to tags.
         """
         self._tag_processor: ITagProcessor = tag_processor
+        self._controller: IController = controller
 
     def _extract_tags_from_document(self, target_model: IDocumentModel) -> None:
         """
@@ -84,11 +91,22 @@ class TagManager:
         Returns:
             str: The UUID of the newly created tag.
         """
+        print("\n###########\n")
         # Generate a unique UUID for the tag
         tag_uuid = self._generate_unique_id()
         tag_data["uuid"] = tag_uuid
-        new_tag = TagModel(**tag_data)
+        id_prefixes = self._controller.get_id_prefixes()
+        id_prefix = id_prefixes.get(tag_data.get("tag_type", ""), "")
+        for i, (key, value) in enumerate(tag_data["attributes"]):
+            if key == "id":
+                match = re.match(r"([a-zA-Z]+)(\d+)", value)
+                id_num = value
+                if match:
+                    _, id_num = match.groups()
+                tag_data["attributes"][i] = (key, f"{id_prefix}{id_num}")
+                break  # Stop after the first match
 
+        new_tag = TagModel(**tag_data)
         # Get tags from current model
         tags = target_model.get_tags()
         # Insert the tag into the sorted position
@@ -108,7 +126,6 @@ class TagManager:
         offset = len(str(new_tag))-len(str(new_tag.get_text()))
         self._update_positions(
             start_position=new_tag.get_position(), offset=offset, target_model=target_model)
-
         # Update IDs and adjust text
         updated_text = self._update_ids(
             new_tag=new_tag, target_model=target_model, text=updated_text)
@@ -196,6 +213,7 @@ class TagManager:
 
                 # Update positions of subsequent tags
                 offset = len(str(tag.get_text()))-len(str(tag))
+
                 self._update_positions(
                     start_position=tag.get_position(), offset=offset, target_model=target_model)
 
@@ -237,16 +255,19 @@ class TagManager:
 
             if tag.get_tag_type() == tag_type:
                 old_id = tag.get_id() or "0"  # Default to "0" if no ID exists
-                new_id = str(current_id)  # Generate the new sequential ID
+                # Generate the new sequential ID
+                new_id = str(current_id)
+                # adjust prefix
+                match = re.match(r"([a-zA-Z]+)(\d+)", old_id)
+                if match:
+                    prefix, _ = match.groups()
+                    new_id = prefix+new_id
 
                 # Update the tag's ID in the model
                 tag.set_id(new_id)
-
                 # Notify the tag processor about the ID update in the text
                 text = self._tag_processor.update_id(
-                    text=text, position=tag.get_position(), new_id=int(new_id)
-                )
-
+                    text=text, position=tag.get_position(), new_id=new_id)
                 # Adjust the offset based on the length difference between old and new ID
                 offset += len(new_id) - len(old_id)
 
@@ -269,6 +290,7 @@ class TagManager:
         """
         # Get tags from current model
         tags = target_model.get_tags()
+
         for tag in tags:
             tag_position = tag.get_position()
             if tag_position > start_position:

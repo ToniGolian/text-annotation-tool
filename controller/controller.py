@@ -393,7 +393,8 @@ class Controller(IController):
             caller_id (str): The unique identifier of the view initiating this action.
         """
         target_model = self._document_source_mapping[self._active_view_id]
-        command = DeleteTagCommand(self._tag_manager, tag_id, target_model)
+        tag_uuid = self._tag_manager.get_uuid_from_id(tag_id, target_model)
+        command = DeleteTagCommand(self._tag_manager, tag_uuid, target_model)
         self._execute_command(command=command, caller_id=caller_id)
 
     def perform_text_selected(self, selection_data: Dict) -> None:

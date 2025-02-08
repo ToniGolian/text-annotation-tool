@@ -195,22 +195,23 @@ class AnnotationTagFrame(tk.Frame):
             raise ValueError("No text is currently selected.")
 
         # Collect tag attributes from widgets
-        attributes = [
-            (attribute_name, widget.get().strip())
+        attributes = {
+            attribute_name: widget.get().strip()
             for attribute_name, widget in self._data_widgets.items()
             if widget.get().strip()
-        ]
+        }
 
-        # Change the attribute name for the id back to the tag specific id name
-        if "id" in attributes:
-            attributes[self._id_string] = attributes.pop("id")
+        # # Change the attribute name for the id back to the tag specific id name
+        # if "id" in attributes:
+        #     attributes[self._id_string] = attributes.pop("id")
 
         # Build the tag data dictionary
         tag_data = {
             "tag_type": self._template.get("type", "Tag"),
             "attributes": attributes,
             "position": position,
-            "text": selected_text
+            "text": selected_text,
+            "id_string": self._id_string
         }
 
         return tag_data

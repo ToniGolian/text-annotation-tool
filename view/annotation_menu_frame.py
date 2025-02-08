@@ -125,8 +125,10 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
                 tag_frame.set_attributes(suggestions)
 
         if "tags" in state:
-            idref_list = [tag.get_id() for tag in state["tags"]]
             for tag_frame in self._tag_frames:
+                tag_type = tag_frame.get_name()
+                idref_list = [tag.get_id() for tag in state["tags"]
+                              if tag.get_tag_type() == tag_type]
                 tag_frame.set_idref_list(idref_list)
 
         # Handle layout updates if available

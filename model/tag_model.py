@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 from model.interfaces import ITagModel
 
 
@@ -17,7 +17,7 @@ class TagModel(ITagModel):
         position (int): The position of the tag in a sequence or structure.
     """
 
-    def __init__(self, uuid: str, tag_type: str, attributes: List[Tuple[str, str]], position: int, text: str):
+    def __init__(self, uuid: str, tag_type: str, attributes: Dict[str, str], position: int, text: str, id_string: str):
         """
         Initializes a TagModel instance with a specific UUID, type, attributes, position, and text.
 
@@ -27,13 +27,15 @@ class TagModel(ITagModel):
             attributes (List[Tuple[str, str]]): A list of key-value pairs representing the tag's attributes.
             position (int): The position of the tag in a sequence or structure.
             text (str): The selected text associated with the tag.
+            id_String (str): The name of the id_attribute.
         """
         super().__init__()
         self._uuid = uuid
         self._tag_type = tag_type
-        self._attributes = {key: value for key, value in attributes}
+        self._attributes = attributes
         self._position = position
         self._text = text
+        self._id_string = id_string
 
     def get_uuid(self) -> str:
         """
@@ -149,6 +151,47 @@ class TagModel(ITagModel):
         """
         self._attributes["id"] = new_id
 
+    def get_id_string(self) -> str:
+        """
+        Gets the name of the id attribute of the tag.
+
+        Returns:
+            str: The name of the id attribute of the tag if it exists, otherwise None.
+        """
+        return self._id_string
+
+    def set_id_string(self, new_id_string: str) -> None:
+        """
+        Sets the name of the id attribute of the tag.
+
+        Args:
+            new_id_string (str): The new name of the id attribute for the tag.
+        """
+        self.id_String = new_id_string
+
+    def get_tag_data(self) -> Dict[str, Any]:
+        """
+        Retrieves the tag data as a dictionary.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the tag's information with the following keys:
+                - "tag_type" (str): The type of the tag.
+                - "attributes" (Dict[str, str]): A dictionary of attribute name-value pairs.
+                - "position" (int): The starting position of the tag in the text.
+                - "text" (str): The content enclosed within the tag.
+                - "uuid" (str): The unique identifier for the tag.
+                - "id_string" (str): The string representation used for the tag's ID.
+        """
+
+        return {
+            "tag_type": self._tag_type,
+            "attributes": self._attributes,
+            "position": self._position,
+            "text": self._text,
+            "uuid": self._uuid,
+            "id_string": self._id_string
+        }
+
     def __str__(self) -> str:
         """
         Returns a string representation of the tag as it would appear in the text.
@@ -160,5 +203,7 @@ class TagModel(ITagModel):
                 <tag_type attr1="value1" attr2="value2">text</tag_type>
         """
         attributes_str = " ".join(
-            f'{key}="{value}"' for key, value in self._attributes.items())
+            f'{self._id_string if key == "id" else key}="{value}"'
+            for key, value in self._attributes.items()
+        )
         return f'<{self._tag_type} {attributes_str}>{self._text}</{self._tag_type}>'

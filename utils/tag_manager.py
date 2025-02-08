@@ -93,18 +93,17 @@ class TagManager:
         """
         print("\n###########\n")
         # Generate a unique UUID for the tag
-        tag_uuid = self._generate_unique_id()
-        tag_data["uuid"] = tag_uuid
+        tag_data.setdefault("uuid", self._generate_unique_id())
         id_prefixes = self._controller.get_id_prefixes()
         id_prefix = id_prefixes.get(tag_data.get("tag_type", ""), "")
-        for i, (key, value) in enumerate(tag_data["attributes"]):
-            if key == "id":
-                match = re.match(r"([a-zA-Z]+)(\d+)", value)
-                id_num = value
-                if match:
-                    _, id_num = match.groups()
-                tag_data["attributes"][i] = (key, f"{id_prefix}{id_num}")
-                break  # Stop after the first match
+        attributes = tag_data["attributes"]
+        if "id" in attributes:
+            tag_id = attributes["id"]
+            match = re.match(r"([a-zA-Z]+)(\d+)", tag_id)
+            id_num = tag_id
+            if match:
+                _, id_num = match.groups()
+            attributes["id"] = f"{id_prefix}{id_num}"
 
         new_tag = TagModel(**tag_data)
         # Get tags from current model
@@ -133,7 +132,7 @@ class TagManager:
         # Apply final text update after all modifications
         target_model.set_text(updated_text)
 
-        return tag_uuid
+        return tag_data["uuid"]
 
     def edit_tag(self, tag_uuid: str, tag_data: Dict, target_model: IDocumentModel) -> None:
         """
@@ -315,12 +314,7 @@ class TagManager:
         tags = target_model.get_tags()
         for tag in tags:
             if tag.get_uuid() == tag_uuid:
-                return {
-                    "uuid": tag.get_uuid(),
-                    "tag_type": tag.get_tag_type(),
-                    "attributes": tag.get_attributes(),
-                    "position": tag.get_position()
-                }
+                return tag.get_tag_data()
 
         raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
 
@@ -361,3 +355,23 @@ class TagManager:
                 - The third element (int) is the end position of the tag.
         """
         return [(tag.get_tag_type(), tag.get_position(), tag.get_position()+len(str(tag))) for tag in target_model.get_tags()]
+
+    def get_uuid_from_id(self, tag_id: str, target_model: IDocumentModel) -> str:
+        """
+        Returns the UUID of a tag with the given ID.
+
+        Args:
+            tag_id (str): The ID of the tag.
+            target_model (IDocumentModel): The document model containing the tag.
+
+        Returns:
+            str: The UUID of the tag.
+
+        Raises:
+            ValueError: If no tag with the specified ID exists.
+        """
+        tags = target_model.get_tags()
+        for tag in tags:
+            if tag.get_id() == tag_id:
+                return tag.get_uuid()
+        raise ValueError(f"No tag found with ID '{tag_id}'.")

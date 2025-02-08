@@ -30,6 +30,8 @@ class AnnotationTagFrame(tk.Frame):
         self._template = template
         self._data_widgets = {}
         self._idref_widgets = []  # list of widgets to chose references to other tags
+        # dict of attribute widgets to chose references to other tags
+        self._idref_attributes = {}
         self._selected_text_entry = None  # Entry for selected text
         self._id_string = ""  # attributename f the id
         self._render()
@@ -92,6 +94,7 @@ class AnnotationTagFrame(tk.Frame):
             # Store reference to the widget
             self._data_widgets[attribute_name] = widget
             if attribute_type.upper() == "IDREF":
+                self._idref_attributes[attribute_name] = widget
                 self._idref_widgets.append(widget)
             row += 1
 
@@ -201,9 +204,11 @@ class AnnotationTagFrame(tk.Frame):
             if widget.get().strip()
         }
 
-        # # Change the attribute name for the id back to the tag specific id name
-        # if "id" in attributes:
-        #     attributes[self._id_string] = attributes.pop("id")
+        id_ref_attributes = {
+            attribute_name: widget.get().strip()
+            for attribute_name, widget in self._idref_attributes.items()
+            if widget.get().strip()
+        }
 
         # Build the tag data dictionary
         tag_data = {
@@ -211,7 +216,8 @@ class AnnotationTagFrame(tk.Frame):
             "attributes": attributes,
             "position": position,
             "text": selected_text,
-            "id_string": self._id_string
+            "id_string": self._id_string,
+            "id_ref_attributes": id_ref_attributes
         }
 
         return tag_data

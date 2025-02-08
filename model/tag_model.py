@@ -4,125 +4,118 @@ from model.interfaces import ITagModel
 
 class TagModel(ITagModel):
     """
-    Represents a tag model with a specific UUID, type, attributes, and position.
+    Represents a tag model with attributes stored in a dictionary.
 
-    This class encapsulates the details of a tag, including its unique identifier (UUID),
-    type, associated attributes, and its position within a sequence or structure.
+    This class encapsulates a tag's details, including its unique identifier (UUID),
+    type, attributes, position, text, ID string, and referenced attributes.
 
     Attributes:
-        uuid (str): A globally unique identifier for the tag.
-        tag_type (str): The type of the tag, describing its category or functionality.
-        attributes (Dict[str, any]): A dictionary containing key-value pairs that define
-                                     additional properties of the tag.
-        position (int): The position of the tag in a sequence or structure.
+        _tag_data (Dict[str, Any]): A dictionary containing all tag-related data.
     """
 
-    def __init__(self, uuid: str, tag_type: str, attributes: Dict[str, str], position: int, text: str, id_string: str):
+    def __init__(self, tag_data: Dict[str, Any]):
         """
-        Initializes a TagModel instance with a specific UUID, type, attributes, position, and text.
+        Initializes a TagModel instance using a dictionary containing all necessary data.
 
         Args:
-            uuid (str): A globally unique identifier for the tag.
-            tag_type (str): The type of the tag, describing its category or functionality.
-            attributes (List[Tuple[str, str]]): A list of key-value pairs representing the tag's attributes.
-            position (int): The position of the tag in a sequence or structure.
-            text (str): The selected text associated with the tag.
-            id_String (str): The name of the id_attribute.
+            tag_data (Dict[str, Any]): A dictionary containing:
+                - "tag_type" (str): The type of the tag.
+                - "attributes" (Dict[str, str]): A dictionary of attribute name-value pairs.
+                - "position" (int): The position of the tag.
+                - "text" (str): The content enclosed within the tag.
+                - "uuid" (str): The unique identifier for the tag.
+                - "id_string" (str): The name of the ID attribute of the tag.
+                - "id_ref_attribute_uuids" (Dict[str, str]): A dictionary mapping attribute names to referenced tag UUIDs.
         """
         super().__init__()
-        self._uuid = uuid
-        self._tag_type = tag_type
-        self._attributes = attributes
-        self._position = position
-        self._text = text
-        self._id_string = id_string
+        self._tag_data = tag_data
 
     def get_uuid(self) -> str:
         """
-        Gets the globally unique identifier (UUID) of the tag.
+        Retrieves the UUID of the tag.
 
         Returns:
-            str: The UUID of the tag.
+            str: The unique identifier of the tag.
         """
-        return self._uuid
+        return self._tag_data.get("uuid", "")
 
     def set_uuid(self, uuid: str) -> None:
         """
-        Sets the globally unique identifier (UUID) of the tag.
+        Sets the UUID of the tag.
 
         Args:
-            uuid (str): The new UUID for the tag.
+            uuid (str): The new UUID to assign to the tag.
         """
-        self._uuid = uuid
+        self._tag_data["uuid"] = uuid
 
     def get_attributes(self, keys: List[str] = None) -> Dict[str, str]:
         """
-        Retrieves attributes based on the provided keys or returns the entire attributes dictionary.
+        Retrieves attributes based on the provided keys or returns all attributes.
 
         Args:
-            keys (Optional[List[str]]): A list of keys to filter the attributes. 
-                                        If None, the entire dictionary is returned.
+            keys (Optional[List[str]]): A list of attribute keys to retrieve.
+                                        If None, all attributes are returned.
 
         Returns:
-            Dict[str, str]: A dictionary containing the requested key-value pairs or the entire attributes dictionary.
+            Dict[str, str]: A dictionary containing the requested attributes or all attributes.
         """
-        return self._attributes if keys is None else {key: self._attributes[key] for key in keys if key in self._attributes}
+        attributes = self._tag_data.get("attributes", {})
+        return attributes if keys is None else {key: attributes[key] for key in keys if key in attributes}
 
     def set_attributes(self, new_attributes: List[Tuple[str, str]]) -> None:
         """
-        Updates the attributes dictionary with the provided list of key-value pairs.
-
-        Existing keys will be updated with new values, and new keys will be added.
+        Updates the attributes dictionary with the provided key-value pairs.
 
         Args:
-            new_attributes (List[Tuple[str, str]]): A list of key-value pairs to merge into the attributes dictionary.
+            new_attributes (List[Tuple[str, str]]): A list of key-value pairs to update in the attributes dictionary.
         """
-        self._attributes.update({key: value for key, value in new_attributes})
+        self._tag_data["attributes"].update(
+            {key: value for key, value in new_attributes})
 
     def get_tag_type(self) -> str:
         """
-        Gets the type of the tag.
+        Retrieves the type of the tag.
 
         Returns:
             str: The type of the tag.
         """
-        return self._tag_type
+        return self._tag_data.get("tag_type", "")
 
     def set_tag_type(self, tag_type: str) -> None:
         """
         Sets the type of the tag.
 
         Args:
-            tag_type (str): The new type of the tag.
+            tag_type (str): The new tag type to set.
         """
-        self._tag_type = tag_type
+        self._tag_data["tag_type"] = tag_type
 
     def get_position(self) -> int:
         """
-        Gets the position of the tag.
+        Retrieves the position of the tag.
 
         Returns:
-            int: The position of the tag.
+            int: The position of the tag in the text.
         """
-        return self._position
+        return self._tag_data.get("position", 0)
 
     def set_position(self, position: int) -> None:
         """
         Sets the position of the tag.
 
         Args:
-            position (int): The new position of the tag.
+            position (int): The new position of the tag in the text.
         """
-        self._position = position
+        self._tag_data["position"] = position
 
     def get_text(self) -> str:
         """
-        Gets the text associated with the tag.
+        Retrieves the text associated with the tag.
 
         Returns:
             str: The text associated with the tag.
         """
-        return self._text
+        return self._tag_data.get("text", "")
 
     def set_text(self, text: str) -> None:
         """
@@ -131,16 +124,16 @@ class TagModel(ITagModel):
         Args:
             text (str): The new text to associate with the tag.
         """
-        self._text = text
+        self._tag_data["text"] = text
 
     def get_id(self) -> str:
         """
-        Gets the ID of the tag from the attributes.
+        Retrieves the ID of the tag from the attributes.
 
         Returns:
-            str: The ID of the tag if it exists in the attributes, otherwise None.
+            str: The ID of the tag, if present in the attributes. Otherwise, an empty string.
         """
-        return self._attributes.get("id")
+        return self._tag_data.get("attributes", {}).get("id", "")
 
     def set_id(self, new_id: str) -> None:
         """
@@ -149,58 +142,59 @@ class TagModel(ITagModel):
         Args:
             new_id (str): The new ID to set for the tag.
         """
-        self._attributes["id"] = new_id
+        self._tag_data["attributes"]["id"] = new_id
 
     def get_id_string(self) -> str:
         """
-        Gets the name of the id attribute of the tag.
+        Retrieves the name of the ID attribute of the tag.
 
         Returns:
-            str: The name of the id attribute of the tag if it exists, otherwise None.
+            str: The name of the ID attribute.
         """
-        return self._id_string
+        return self._tag_data.get("id_string", "")
 
     def set_id_string(self, new_id_string: str) -> None:
         """
-        Sets the name of the id attribute of the tag.
+        Sets the name of the ID attribute of the tag.
 
         Args:
-            new_id_string (str): The new name of the id attribute for the tag.
+            new_id_string (str): The new ID attribute name.
         """
-        self.id_String = new_id_string
+        self._tag_data["id_string"] = new_id_string
+
+    def get_id_ref_attribute_uuids(self) -> Dict[str, str]:
+        """
+        Retrieves the mapping of ID reference attributes to their corresponding tag UUIDs.
+
+        Returns:
+            Dict[str, str]: A dictionary mapping attribute names to referenced tag UUIDs.
+        """
+        return self._tag_data.get("id_ref_attribute_uuids", {})
+
+    def set_id_ref_attribute_uuids(self, id_ref_attribute_uuids: Dict[str, str]) -> None:
+        """
+        Sets the mapping of ID reference attributes to their corresponding tag UUIDs.
+
+        Args:
+            id_ref_attribute_uuids (Dict[str, str]): A dictionary mapping attribute names to referenced tag UUIDs.
+        """
+        self._tag_data["id_ref_attribute_uuids"] = id_ref_attribute_uuids
 
     def get_tag_data(self) -> Dict[str, Any]:
         """
         Retrieves the tag data as a dictionary.
 
         Returns:
-            Dict[str, Any]: A dictionary containing the tag's information with the following keys:
+            Dict[str, Any]: A dictionary containing:
                 - "tag_type" (str): The type of the tag.
                 - "attributes" (Dict[str, str]): A dictionary of attribute name-value pairs.
-                - "position" (int): The starting position of the tag in the text.
+                - "position" (int): The position of the tag in the text.
                 - "text" (str): The content enclosed within the tag.
                 - "uuid" (str): The unique identifier for the tag.
-                - "id_string" (str): The string representation used for the tag's ID.
+                - "id_string" (str): The name of the ID attribute.
+                - "id_ref_attribute_uuids" (Dict[str, str]): A dictionary mapping attribute names to referenced tag UUIDs.
         """
-        #!DEBUG
-        tag_data = {
-            "tag_type": self._tag_type,
-            "attributes": self._attributes,
-            "position": self._position,
-            "text": self._text,
-            "uuid": self._uuid,
-            "id_string": self._id_string
-        }
-        print(f"DEBUG tag model {tag_data=}")
-        #!END DEBUG
-        return {
-            "tag_type": self._tag_type,
-            "attributes": self._attributes,
-            "position": self._position,
-            "text": self._text,
-            "uuid": self._uuid,
-            "id_string": self._id_string
-        }
+        return self._tag_data
 
     def __str__(self) -> str:
         """
@@ -213,7 +207,7 @@ class TagModel(ITagModel):
                 <tag_type attr1="value1" attr2="value2">text</tag_type>
         """
         attributes_str = " ".join(
-            f'{self._id_string if key == "id" else key}="{value}"'
-            for key, value in self._attributes.items()
+            f'{self._tag_data["id_string"] if key == "id" else key}="{value}"'
+            for key, value in self._tag_data.get("attributes", {}).items()
         )
-        return f'<{self._tag_type} {attributes_str}>{self._text}</{self._tag_type}>'
+        return f'<{self._tag_data["tag_type"]} {attributes_str}>{self._tag_data["text"]}</{self._tag_data["tag_type"]}>'

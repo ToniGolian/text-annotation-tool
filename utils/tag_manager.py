@@ -57,7 +57,7 @@ class TagManager:
             tag_data["uuid"] = tag_uuid
 
             # Create a TagModel instance using the tag_data
-            tag = TagModel(**tag_data)
+            tag = TagModel(tag_data)
 
             # Add the TagModel to the internal list
             tags.append(tag)
@@ -105,7 +105,7 @@ class TagManager:
                 _, id_num = match.groups()
             attributes["id"] = f"{id_prefix}{id_num}"
 
-        new_tag = TagModel(**tag_data)
+        new_tag = TagModel(tag_data)
         # Get tags from current model
         tags = target_model.get_tags()
         # Insert the tag into the sorted position
@@ -154,40 +154,7 @@ class TagManager:
         tag_data.setdefault("uuid", tag_uuid)
         self.delete_tag(tag_uuid=tag_uuid, target_model=target_model)
         self.add_tag(tag_data=tag_data, target_model=target_model)
-        # # Get tags from current model
-        # tags = target_model.get_tags()
-        # for index, tag in enumerate(tags):
-        #     if tag.get_uuid() == tag_uuid:
-        #         old_tag = tags[index]
-        #         updated_tag = TagModel(**tag_data)
-        #         tags[index] = updated_tag
-        #         target_model.set_tags(tags)
-
-        #         # Get the current document text
-        #         text = target_model.get_text()
-
-        #         # Remove the old tag from the text
-        #         text = self._tag_processor.delete_tag_from_text(old_tag, text)
-
-        #         # Insert the updated tag into the text
-        #         text = self._tag_processor.insert_tag_into_text(
-        #             text, updated_tag)
-
-        #         # Update positions of subsequent tags
-        #         offset = len(str(updated_tag))-len(str(old_tag))
-        #         self._update_positions(
-        #             updated_tag.get_position(), offset=offset, target_model=target_model)
-        #         print(f"DEBUG tm 1 {text[:100]=}")
-        #         # Update IDs and adjust text
-        #         text = self._update_ids(
-        #             new_tag=updated_tag, target_model=target_model, text=text)
-        #         print(f"DEBUG tm 2 {text[:100]=}")
-
-        #         # Apply final text update after all modifications
-        #         target_model.set_text(text)
         return
-
-        # raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
 
     def delete_tag(self, tag_uuid: str, target_model: IDocumentModel) -> None:
         """
@@ -324,6 +291,7 @@ class TagManager:
 
         raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
 
+#! UNUSED ?
     def get_all_tags(self, target_model: IDocumentModel) -> List[Dict]:
         """
         Retrieves all tags in the document model.
@@ -336,10 +304,7 @@ class TagManager:
         """
         return [
             {
-                "uuid": tag.get_uuid(),
-                "tag_type": tag.get_tag_type(),
-                "attributes": tag.get_attributes(),
-                "position": tag.get_position()
+                "tag_data": tag.get_tag_data()
             }
             for tag in target_model.get_tags()
         ]

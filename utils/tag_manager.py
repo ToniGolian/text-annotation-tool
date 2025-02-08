@@ -150,38 +150,44 @@ class TagManager:
         Raises:
             ValueError: If the tag with the given UUID does not exist.
         """
-        # Get tags from current model
-        tags = target_model.get_tags()
-        for index, tag in enumerate(tags):
-            if tag.get_uuid() == tag_uuid:
-                old_tag = tags[index]
-                updated_tag = TagModel(**tag_data)
-                tags[index] = updated_tag
-                target_model.set_tags(tags)
 
-                # Get the current document text
-                text = target_model.get_text()
+        tag_data.setdefault("uuid", tag_uuid)
+        self.delete_tag(tag_uuid=tag_uuid, target_model=target_model)
+        self.add_tag(tag_data=tag_data, target_model=target_model)
+        # # Get tags from current model
+        # tags = target_model.get_tags()
+        # for index, tag in enumerate(tags):
+        #     if tag.get_uuid() == tag_uuid:
+        #         old_tag = tags[index]
+        #         updated_tag = TagModel(**tag_data)
+        #         tags[index] = updated_tag
+        #         target_model.set_tags(tags)
 
-                # Remove the old tag from the text
-                text = self._tag_processor.delete_tag_from_text(old_tag, text)
+        #         # Get the current document text
+        #         text = target_model.get_text()
 
-                # Insert the updated tag into the text
-                text = self._tag_processor.insert_tag_into_text(
-                    text, updated_tag)
+        #         # Remove the old tag from the text
+        #         text = self._tag_processor.delete_tag_from_text(old_tag, text)
 
-                # Update positions of subsequent tags
-                offset = len(updated_tag)-len(old_tag)
-                self._update_positions(
-                    updated_tag.get_position(), offset=offset, target_model=target_model)
+        #         # Insert the updated tag into the text
+        #         text = self._tag_processor.insert_tag_into_text(
+        #             text, updated_tag)
 
-                # Update IDs and adjust text
-                text = self._update_ids(updated_tag, text)
+        #         # Update positions of subsequent tags
+        #         offset = len(str(updated_tag))-len(str(old_tag))
+        #         self._update_positions(
+        #             updated_tag.get_position(), offset=offset, target_model=target_model)
+        #         print(f"DEBUG tm 1 {text[:100]=}")
+        #         # Update IDs and adjust text
+        #         text = self._update_ids(
+        #             new_tag=updated_tag, target_model=target_model, text=text)
+        #         print(f"DEBUG tm 2 {text[:100]=}")
 
-                # Apply final text update after all modifications
-                target_model.set_text(text)
-                return
+        #         # Apply final text update after all modifications
+        #         target_model.set_text(text)
+        return
 
-        raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
+        # raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
 
     def delete_tag(self, tag_uuid: str, target_model: IDocumentModel) -> None:
         """
@@ -371,7 +377,9 @@ class TagManager:
             ValueError: If no tag with the specified ID exists.
         """
         tags = target_model.get_tags()
+        print(f"\n###\nDEBUG {tag_id=}")
         for tag in tags:
             if tag.get_id() == tag_id:
+                print(f"DEBUG {tag.get_id()=}")
                 return tag.get_uuid()
         raise ValueError(f"No tag found with ID '{tag_id}'.")

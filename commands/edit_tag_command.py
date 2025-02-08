@@ -23,8 +23,13 @@ class EditTagCommand(ICommand):
         self._tag_manager = tag_manager
         self._target_model = target_model
         self._tag_uuid = tag_uuid
-        self._new_tag_data = new_tag_data
-        self._previous_tag_data = None  # Stores the original tag data for undo
+        self._previous_tag_data = self._tag_manager.get_tag_data(
+            self._tag_uuid, self._target_model)  # Stores the original tag data for undo
+
+        new_attributes = new_tag_data["attributes"]
+        new_attributes["id"] = self._previous_tag_data["attributes"]["id"]
+        self._new_tag_data = {**self._previous_tag_data,
+                              "attributes": new_attributes}
 
     def execute(self) -> None:
         """
@@ -32,8 +37,7 @@ class EditTagCommand(ICommand):
 
         Stores the original tag data before applying the modifications.
         """
-        self._previous_tag_data = self._tag_manager.get_tag_data(
-            self._tag_uuid, self._target_model)
+        print(f"DEBUG edit command {self._new_tag_data=}")
         self._tag_manager.edit_tag(
             self._tag_uuid, self._new_tag_data, self._target_model)
 

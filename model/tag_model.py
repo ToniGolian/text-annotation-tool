@@ -182,7 +182,17 @@ class TagModel(ITagModel):
                 - "uuid" (str): The unique identifier for the tag.
                 - "id_string" (str): The string representation used for the tag's ID.
         """
-
+        #!DEBUG
+        tag_data = {
+            "tag_type": self._tag_type,
+            "attributes": self._attributes,
+            "position": self._position,
+            "text": self._text,
+            "uuid": self._uuid,
+            "id_string": self._id_string
+        }
+        print(f"DEBUG tag model {tag_data=}")
+        #!END DEBUG
         return {
             "tag_type": self._tag_type,
             "attributes": self._attributes,

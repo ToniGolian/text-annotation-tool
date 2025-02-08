@@ -160,7 +160,7 @@ class AnnotationTagFrame(tk.Frame):
         """
         tag_data = self._collect_tag_data()
         self._controller.perform_edit_tag(
-            id=self.edit_id_combobox.get(), tag_data=tag_data, caller_id=self._root_view_id)
+            tag_id=self.edit_id_combobox.get(), tag_data=tag_data, caller_id=self._root_view_id)
 
     def _button_pressed_delete_tag(self) -> None:
         """

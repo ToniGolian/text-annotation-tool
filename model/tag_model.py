@@ -29,6 +29,40 @@ class TagModel(ITagModel):
         """
         super().__init__()
         self._tag_data = tag_data
+        self._incoming_references_count = 0
+
+    def increment_reference_count(self) -> None:
+        """
+        Increments the count of incoming references to this tag.
+
+        This method should be called whenever another tag starts referencing this tag.
+        """
+        self._incoming_references_count += 1
+
+    def decrement_reference_count(self) -> None:
+        """
+        Decrements the count of incoming references to this tag.
+
+        This method should be called whenever a referencing tag is removed.
+        It ensures that the reference count never goes below zero.
+
+        Raises:
+            ValueError: If an attempt is made to decrement the reference count below zero.
+        """
+        if self._incoming_references_count - 1 < 0:
+            raise ValueError(
+                "Cannot decrement reference count below zero. This tag is not referenced by any other tag.")
+
+        self._incoming_references_count -= 1
+
+    def is_deletion_prohibited(self) -> bool:
+        """
+        Determines whether the tag is protected from deletion due to incoming references.
+
+        Returns:
+            bool: True if the tag has incoming references and cannot be deleted, False otherwise.
+        """
+        return self._incoming_references_count > 0
 
     def get_uuid(self) -> str:
         """

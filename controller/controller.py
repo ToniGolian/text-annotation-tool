@@ -395,6 +395,14 @@ class Controller(IController):
         """
         target_model = self._document_source_mapping[self._active_view_id]
         tag_uuid = self._tag_manager.get_uuid_from_id(tag_id, target_model)
+
+        # Check if the tag can be deleted before creating the command
+        if self._tag_manager.is_deletion_prohibited(tag_uuid, target_model):
+            self._notify_deletion_prohibited(
+                tag_id, caller_id)  # Notify the UI / View
+            return  # Do not proceed with command creation
+
+        # Create and execute the delete command since deletion is allowed
         command = DeleteTagCommand(self._tag_manager, tag_uuid, target_model)
         self._execute_command(command=command, caller_id=caller_id)
 
@@ -500,6 +508,18 @@ class Controller(IController):
 
     def _perform_annotation_comparison(self, file_paths: List[str]) -> Dict:
         pass
+
+    def _notify_deletion_prohibited(self, tag_id: str, caller_id: str) -> None:
+        """
+        Notifies the user that the deletion of the specified tag is prohibited due to existing references.
+
+        Args:
+            tag_id (str): The ID of the tag that cannot be deleted.
+            caller_id (str): The identifier of the view initiating the deletion attempt.
+        """
+        message = f"Tag '{tag_id}' cannot be deleted because it is referenced by another tag."
+        print(f"DEBUG {message=}")
+        # self._view.notify_user(message, caller_id)  # Assuming a method in the view exists for showing messages
 
     def get_selected_text_data(self) -> Dict:
         """

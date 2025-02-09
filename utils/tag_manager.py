@@ -165,6 +165,8 @@ class TagManager:
         tags = target_model.get_tags()
         for index, tag in enumerate(tags):
             if tag.get_uuid() == tag_uuid:
+                for _, reference in tag.get_references().items():
+                    reference.decrement_reference_count()
                 del tags[index]
                 target_model.set_tags(tags)
 
@@ -276,30 +278,6 @@ class TagManager:
                 tag.set_position(tag_position + offset)
         target_model.set_tags(tags)
 
-    #! DEPR
-    def _update_references(self, target_model: IDocumentModel, text: str) -> None:
-        """
-        This method updates all ids of referred tags if needed. 
-        """
-        offset = 0
-        tags = target_model.get_tags()
-        for tag in tags:
-            # update position
-            tag.set_position(tag.get_position()+offset)
-            if not (references := tag.get_references()):
-                continue
-            attributes = tag.get_attributes()
-            for attribute_name, old_ref_id in attributes:
-                if attribute_name in references:
-                    new_ref_id = references[attribute_name].get_id()
-                    attributes[attribute_name] = new_ref_id
-                    offset += len(new_ref_id)-len(old_ref_id)
-                    # Notify processor about change
-            text = self._tag_processor.update_tag(text, tag)
-        target_model.set_tags(tags)
-        return text
-    #! END DEPR
-
     def _resolve_references(self, references: Dict[str, str], target_model: IDocumentModel) -> Dict[str, str]:
         """
         Resolves reference IDs in the provided dictionary by replacing them with the corresponding UUIDs.
@@ -323,7 +301,34 @@ class TagManager:
                 for key, value in references.items():
                     if value == tag_id:
                         references[key] = tag
+                        tag.increment_reference_count()
         return references
+
+    def is_deletion_prohibited(self, uuid: str, target_model: IDocumentModel) -> bool:
+        """
+        Checks whether a tag is protected from deletion due to existing references.
+
+        This method retrieves the tag associated with the given UUID from the document model
+        and checks if it is currently referenced by other tags. If the tag has incoming references,
+        it cannot be deleted.
+
+        Args:
+            uuid (str): The unique identifier of the tag to check.
+            target_model (IDocumentModel): The document model containing the tag.
+
+        Returns:
+            bool: True if the tag cannot be deleted due to references, False otherwise.
+
+        Raises:
+            ValueError: If no tag with the given UUID exists in the document model.
+        """
+        tags = target_model.get_tags()
+
+        for tag in tags:
+            if tag.get_uuid() == uuid:
+                return tag.is_deletion_prohibited()
+
+        raise ValueError(f"Tag with UUID {uuid} does not exist.")
 
     def get_tag_data(self, tag_uuid: str, target_model: IDocumentModel) -> Dict:
         """
@@ -347,24 +352,24 @@ class TagManager:
 
         raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
 
-#! DEPR ?
-    def get_all_tags(self, target_model: IDocumentModel) -> List[Dict]:
-        """
-        Retrieves all tags in the document model.
+# #! DEPR ?
+#     def get_all_tags(self, target_model: IDocumentModel) -> List[Dict]:
+#         """
+#         Retrieves all tags in the document model.
 
-        Args:
-            target_model (IDocumentModel): The document model from which tags are retrieved.
+#         Args:
+#             target_model (IDocumentModel): The document model from which tags are retrieved.
 
-        Returns:
-            List[Dict]: A list of dictionaries, each containing data about a tag.
-        """
-        return [
-            {
-                "tag_data": tag.get_tag_data()
-            }
-            for tag in target_model.get_tags()
-        ]
-#! END DEPR
+#         Returns:
+#             List[Dict]: A list of dictionaries, each containing data about a tag.
+#         """
+#         return [
+#             {
+#                 "tag_data": tag.get_tag_data()
+#             }
+#             for tag in target_model.get_tags()
+#         ]
+# #! END DEPR
 
     def get_highlight_data(self, target_model: IDocumentModel) -> List[Tuple[str, int, int]]:
         """

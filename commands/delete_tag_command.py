@@ -31,7 +31,6 @@ class DeleteTagCommand(ICommand):
         """
         self._tag_data = self._tag_manager.get_tag_data(
             self._tag_uuid, self._target_model)
-        print(f"DEBUG delete command {self._tag_data=}")
         self._tag_manager.delete_tag(self._tag_uuid, self._target_model)
 
     def undo(self) -> None:

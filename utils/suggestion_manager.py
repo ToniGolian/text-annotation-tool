@@ -56,7 +56,7 @@ class SuggestionManager:
         # todo regexsuggestions
         return suggestions
 
-    def _calc_id_suggstions(self, document_model: IAnnotableDocumentModel, tag_types: List[str]) -> Dict[str, int]:
+    def _calc_id_suggstions(self, document_model: IAnnotableDocumentModel, tag_types: List[str]) -> Dict[str, str]:
         """
         Computes ID suggestions based on existing annotations in the document model.
 
@@ -75,6 +75,10 @@ class SuggestionManager:
         for tag in tags:
             tag_type = tag.get_tag_type()
             id_suggestions[tag_type] = id_suggestions.get(tag_type, 1) + 1
+
+        id_prefixes = self._controller.get_id_prefixes()
+        id_suggestions = {
+            key: f"{id_prefixes[key]}{value}"for key, value in id_suggestions.items()}
         return id_suggestions
 
     # todo implement add suggestion

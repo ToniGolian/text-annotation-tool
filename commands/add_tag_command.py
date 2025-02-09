@@ -25,7 +25,6 @@ class AddTagCommand(ICommand):
         This method adds a new tag using the TagManager and stores its UUID 
         for potential undo operations.
         """
-        print(f"DEBUG execute {self._tag_data=}")
         self._tag_uuid = self._tag_manager.add_tag(
             self._tag_data, self._target_model)
 
@@ -44,7 +43,6 @@ class AddTagCommand(ICommand):
 
         If tag data is available, the tag is re-added to the document.
         """
-        print(f"DEBUG redo {self._tag_data=}")
         if self._tag_data is not None:
             self._tag_uuid = self._tag_manager.add_tag(
                 self._tag_data, self._target_model)

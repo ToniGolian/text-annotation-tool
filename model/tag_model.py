@@ -25,7 +25,7 @@ class TagModel(ITagModel):
                 - "text" (str): The content enclosed within the tag.
                 - "uuid" (str): The unique identifier for the tag.
                 - "id_string" (str): The name of the ID attribute of the tag.
-                - "id_ref_attribute_uuids" (Dict[str, str]): A dictionary mapping attribute names to referenced tag UUIDs.
+                - "references" (Dict[str, ITagModel]): A dictionary mapping attribute names to referenced tags.
         """
         super().__init__()
         self._tag_data = tag_data
@@ -162,23 +162,23 @@ class TagModel(ITagModel):
         """
         self._tag_data["id_string"] = new_id_string
 
-    def get_id_ref_attribute_uuids(self) -> Dict[str, str]:
+    def get_references(self) -> Dict[str, ITagModel]:
         """
         Retrieves the mapping of ID reference attributes to their corresponding tag UUIDs.
 
         Returns:
             Dict[str, str]: A dictionary mapping attribute names to referenced tag UUIDs.
         """
-        return self._tag_data.get("id_ref_attribute_uuids", {})
+        return self._tag_data.get("references", {})
 
-    def set_id_ref_attribute_uuids(self, id_ref_attribute_uuids: Dict[str, str]) -> None:
+    def set_references(self, references: Dict[str, str]) -> None:
         """
         Sets the mapping of ID reference attributes to their corresponding tag UUIDs.
 
         Args:
-            id_ref_attribute_uuids (Dict[str, str]): A dictionary mapping attribute names to referenced tag UUIDs.
+            references (Dict[str, str]): A dictionary mapping attribute names to referenced tag UUIDs.
         """
-        self._tag_data["id_ref_attribute_uuids"] = id_ref_attribute_uuids
+        self._tag_data["references"] = references
 
     def get_tag_data(self) -> Dict[str, Any]:
         """
@@ -192,7 +192,7 @@ class TagModel(ITagModel):
                 - "text" (str): The content enclosed within the tag.
                 - "uuid" (str): The unique identifier for the tag.
                 - "id_string" (str): The name of the ID attribute.
-                - "id_ref_attribute_uuids" (Dict[str, str]): A dictionary mapping attribute names to referenced tag UUIDs.
+                - "references" (Dict[str, ITagModel]): A dictionary mapping attribute names to referenced tags.
         """
         return self._tag_data
 
@@ -210,4 +210,5 @@ class TagModel(ITagModel):
             f'{self._tag_data["id_string"] if key == "id" else key}="{value}"'
             for key, value in self._tag_data.get("attributes", {}).items()
         )
+
         return f'<{self._tag_data["tag_type"]} {attributes_str}>{self._tag_data["text"]}</{self._tag_data["tag_type"]}>'

@@ -91,24 +91,16 @@ class TagManager:
         Returns:
             str: The UUID of the newly created tag.
         """
-        print("\n###########\n")
+        print("\n DEBUG ###########\n")
         # Generate a unique UUID for the tag
         tag_data.setdefault("uuid", self._generate_unique_id())
-        id_prefixes = self._controller.get_id_prefixes()
-        id_prefix = id_prefixes.get(tag_data.get("tag_type", ""), "")
-        attributes = tag_data["attributes"]
-        if "id" in attributes:
-            tag_id = attributes["id"]
-            match = re.match(r"([a-zA-Z]+)(\d+)", tag_id)
-            id_num = tag_id
-            if match:
-                _, id_num = match.groups()
-            attributes["id"] = f"{id_prefix}{id_num}"
+
+        # Set references to the referred objects
+        tag_data["references"] = self._resolve_references(
+            references=tag_data["references"], target_model=target_model)
 
         new_tag = TagModel(tag_data)
-        # Get tags from current model
         tags = target_model.get_tags()
-        # Insert the tag into the sorted position
         for index, tag in enumerate(tags):
             if new_tag.get_position() < tag.get_position():
                 tags.insert(index, new_tag)
@@ -117,7 +109,6 @@ class TagManager:
             tags.append(new_tag)
         target_model.set_tags(tags)
 
-        # Get the current document text
         text = target_model.get_text()
 
         # Insert the new tag into the text
@@ -199,7 +190,7 @@ class TagManager:
 
         raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
 
-    def _update_ids(self, new_tag: ITagModel, target_model: IDocumentModel, text: str, offset: int = 0) -> str:
+    def _update_ids(self, new_tag: ITagModel, target_model: IDocumentModel, text: str) -> str:
         """
         Updates tag IDs sequentially and adjusts positions in the text.
 
@@ -211,7 +202,6 @@ class TagManager:
             new_tag (ITagModel): The tag that triggered the ID update.
             target_model (IDocumentModel): The document model containing the tags.
             text (str): The document text to be updated.
-            offset (int): The initial position adjustment factor.
 
         Returns:
             str: The updated document text reflecting the new tag IDs.
@@ -219,8 +209,10 @@ class TagManager:
         # Get tags from current model
         tags = target_model.get_tags()
         tag_type = new_tag.get_tag_type()
-        current_id = 1
 
+        # Udate IDs sequentially
+        current_id = 1
+        offset = 0
         for tag in tags:
             # Adjust the position with the current offset
             tag.set_position(tag.get_position() + offset)
@@ -235,17 +227,32 @@ class TagManager:
                     prefix, _ = match.groups()
                     new_id = prefix+new_id
 
-                # Update the tag's ID in the model
                 tag.set_id(new_id)
-                # Notify the tag processor about the ID update in the text
-                text = self._tag_processor.update_id(
-                    text=text, position=tag.get_position(), new_id=new_id)
-                # Adjust the offset based on the length difference between old and new ID
-                offset += len(new_id) - len(old_id)
 
+                # Notify processor about change
+                text = self._tag_processor.update_tag(text, tag)
+
+                offset += len(new_id) - len(old_id)
                 current_id += 1
 
+        # Update reference IDs
+        offset = 0
+        for tag in tags:
+            # update position
+            tag.set_position(tag.get_position()+offset)
+            if not (references := tag.get_references()):
+                continue
+            attributes = tag.get_attributes()
+            for attribute_name, old_ref_id in attributes.items():
+                if attribute_name in references:
+                    new_ref_id = references[attribute_name].get_id()
+                    attributes[attribute_name] = new_ref_id
+                    offset += len(new_ref_id)-len(old_ref_id)
+                    # Notify processor about change
+            text = self._tag_processor.update_tag(text, tag)
+
         target_model.set_tags(tags)
+
         return text
 
     def _update_positions(self, start_position: int, offset: int, target_model: IDocumentModel) -> None:
@@ -269,6 +276,55 @@ class TagManager:
                 tag.set_position(tag_position + offset)
         target_model.set_tags(tags)
 
+    #! DEPR
+    def _update_references(self, target_model: IDocumentModel, text: str) -> None:
+        """
+        This method updates all ids of referred tags if needed. 
+        """
+        offset = 0
+        tags = target_model.get_tags()
+        for tag in tags:
+            # update position
+            tag.set_position(tag.get_position()+offset)
+            if not (references := tag.get_references()):
+                continue
+            attributes = tag.get_attributes()
+            for attribute_name, old_ref_id in attributes:
+                if attribute_name in references:
+                    new_ref_id = references[attribute_name].get_id()
+                    attributes[attribute_name] = new_ref_id
+                    offset += len(new_ref_id)-len(old_ref_id)
+                    # Notify processor about change
+            text = self._tag_processor.update_tag(text, tag)
+        target_model.set_tags(tags)
+        return text
+    #! END DEPR
+
+    def _resolve_references(self, references: Dict[str, str], target_model: IDocumentModel) -> Dict[str, str]:
+        """
+        Resolves reference IDs in the provided dictionary by replacing them with the corresponding UUIDs.
+
+        This method iterates over the tags in the given document model and replaces the values in 
+        the `references` dictionary with the corresponding UUIDs of the matching tags.
+
+        Args:
+            references (Dict[str, str]): A dictionary where keys are reference names and values are tag IDs.
+            target_model (IDocumentModel): The document model containing the tags.
+
+        Returns:
+            Dict[str, str]: The updated dictionary with reference values replaced by the corresponding UUIDs.
+        """
+        tags = target_model.get_tags()
+        reference_ids = set(references.values())
+
+        for tag in tags:
+            tag_id = tag.get_id()
+            if tag_id in reference_ids:
+                for key, value in references.items():
+                    if value == tag_id:
+                        references[key] = tag
+        return references
+
     def get_tag_data(self, tag_uuid: str, target_model: IDocumentModel) -> Dict:
         """
         Retrieves the details of a tag by its UUID.
@@ -291,7 +347,7 @@ class TagManager:
 
         raise ValueError(f"Tag with UUID {tag_uuid} does not exist.")
 
-#! UNUSED ?
+#! DEPR ?
     def get_all_tags(self, target_model: IDocumentModel) -> List[Dict]:
         """
         Retrieves all tags in the document model.
@@ -308,6 +364,7 @@ class TagManager:
             }
             for tag in target_model.get_tags()
         ]
+#! END DEPR
 
     def get_highlight_data(self, target_model: IDocumentModel) -> List[Tuple[str, int, int]]:
         """

@@ -33,7 +33,7 @@ class AnnotationTagFrame(tk.Frame):
         # dict of attribute widgets to chose references to other tags
         self._idref_attributes = {}
         self._selected_text_entry = None  # Entry for selected text
-        self._id_string = ""  # attributename f the id
+        self._id_string = ""  # attributename for the id
         self._render()
 
     def _render(self) -> None:
@@ -174,17 +174,19 @@ class AnnotationTagFrame(tk.Frame):
 
     def _collect_tag_data(self) -> dict:
         """
-        Collects data from the widgets in self._data_widgets and returns it as a dictionary.
+        Collects data from the widgets and returns it as a structured dictionary.
 
         The resulting dictionary includes:
-            - "tag_type": The type of the tag as specified in the template.
-            - "attributes": A list of tuples, where each tuple represents an attribute name-value pair.
-            - "position": The position of the selected text in the document, retrieved from the controller.
-            - "text": The currently selected text in the document.
+            - "tag_type" (str): The type of the tag as specified in the template.
+            - "attributes" (Dict[str, str]): A dictionary of attribute name-value pairs.
+            - "position" (int): The position of the selected text in the document, retrieved from the controller.
+            - "text" (str): The currently selected text in the document.
+            - "id_string" (str): The name of the ID attribute.
+            - "references" (Dict[str, str]): A dictionary mapping reference attributes to their corresponding values.
 
         Returns:
             dict: A dictionary containing the collected tag data, including tag attributes, tag type,
-                position, and the selected text.
+                  position, selected text, ID string, and reference attributes.
 
         Raises:
             ValueError: If no text is currently selected.
@@ -204,7 +206,7 @@ class AnnotationTagFrame(tk.Frame):
             if widget.get().strip()
         }
 
-        id_ref_attributes = {
+        references = {
             attribute_name: widget.get().strip()
             for attribute_name, widget in self._idref_attributes.items()
             if widget.get().strip()
@@ -217,7 +219,7 @@ class AnnotationTagFrame(tk.Frame):
             "position": position,
             "text": selected_text,
             "id_string": self._id_string,
-            "id_ref_attributes": id_ref_attributes
+            "references": references
         }
 
         return tag_data

@@ -102,46 +102,84 @@ class TagProcessor(ITagProcessor):
 
         return updated_text
 
-    #!bug here
-
-    def update_id(self, text: str, position: int, new_id: str) -> str:
+    def update_tag(self, text: str, tag: ITagModel) -> str:
         """
-        Updates the ID attribute of a tag at the specified position in the text using regex.
+        Updates a tag in the text at its specified position by replacing it with the new tag representation.
+
+        This method locates an existing tag in the text at the given position using regex and replaces it with
+        the new string representation of the provided tag.
 
         Args:
             text (str): The full document text containing the tag.
-            position (int): The position in the text where the tag starts.
-            new_id (str): The new ID to replace the existing ID.
+            tag (ITagModel): The updated tag instance that should replace the existing one.
 
         Returns:
-            str: The updated text with the new ID.
+            str: The updated text with the modified tag.
 
         Raises:
-            ValueError: If no valid ID attribute is found at the specified position.
+            ValueError: If no valid tag is found at the specified position.
         """
-        # Define a regex pattern to match a tag with an attribute ending in 'id' and a numeric value in quotes
-        pattern = r'<[^>]*\b(\w*id)="(\w*\d+)"[^>]*>'
-        # Now, attempt to match from position onwards
+        # Get the tag position in the text
+        position = tag.get_position()
+
+        # Regex pattern to find an XML-like tag at the given position
+        pattern = r'<\w+\s*[^>]*>.*?</\w+>'
+
+        # Attempt to find a tag starting at or after the given position
         match = re.search(pattern, text[position:])
         if not match:
             raise ValueError(
-                "No valid ID attribute found at the specified position.")
+                f"No valid tag found at the specified position {position}.")
 
-        # Extract the full match, the key (e.g., 'tid'), and the current value
-        full_match = match.group(0)
-        key = match.group(1)
-        current_value = match.group(2)
-
-        # Replace the current value with the new ID
-        updated_tag = full_match.replace(
-            f'{key}="{current_value}"', f'{key}="{new_id}"')
-
-        # Replace the old tag in the text
+        # Replace the old tag with the new tag string representation
         start_index = position + match.start(0)
         end_index = position + match.end(0)
-        updated_text = text[:start_index] + updated_tag + text[end_index:]
+        updated_text = text[:start_index] + str(tag) + text[end_index:]
 
         return updated_text
+
+    #! DEPR
+
+    # def update_id(self, text: str, position: int, new_id: str) -> str:
+    #     """
+    #     Updates the ID attribute of a tag at the specified position in the text using regex.
+
+    #     Args:
+    #         text (str): The full document text containing the tag.
+    #         position (int): The position in the text where the tag starts.
+    #         new_id (str): The new ID to replace the existing ID.
+
+    #     Returns:
+    #         str: The updated text with the new ID.
+
+    #     Raises:
+    #         ValueError: If no valid ID attribute is found at the specified position.
+    #     """
+    #     # Define a regex pattern to match a tag with an attribute ending in 'id' and a numeric value in quotes
+    #     pattern = r'<[^>]*\b(\w*id)="(\w*\d+)"[^>]*>'
+    #     # Now, attempt to match from position onwards
+    #     match = re.search(pattern, text[position:])
+    #     if not match:
+    #         raise ValueError(
+    #             "No valid ID attribute found at the specified position.")
+
+    #     # Extract the full match, the key (e.g., 'tid'), and the current value
+    #     full_match = match.group(0)
+    #     key = match.group(1)
+    #     current_value = match.group(2)
+
+    #     # Replace the current value with the new ID
+    #     updated_tag = full_match.replace(
+    #         f'{key}="{current_value}"', f'{key}="{new_id}"')
+
+    #     # Replace the old tag in the text
+    #     start_index = position + match.start(0)
+    #     end_index = position + match.end(0)
+    #     updated_text = text[:start_index] + updated_tag + text[end_index:]
+
+    #     return updated_text
+
+    #!END DEPR
 
     def extract_tags_from_text(self, text: str) -> List[Dict]:
         """

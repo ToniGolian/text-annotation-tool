@@ -23,19 +23,19 @@ class DocumentModel(IDocumentModel):
 
     def get_file_name(self) -> str:
         """
-        Retrieves the filename of the document.
+        Retrieves the file_name of the document.
 
         Returns:
-            str: The filename of the document.
+            str: The file_name of the document.
         """
         return self._file_name
 
     def set_file_name(self, file_name: str) -> None:
         """
-        Sets the filename of the document.
+        Sets the file_name of the document.
 
         Args:
-            file_name (str): The filename to be set.
+            file_name (str): The file_name to be set.
         """
         self._file_name = file_name
         self.notify_observers()
@@ -143,24 +143,24 @@ class DocumentModel(IDocumentModel):
         """
         Updates the document model with new data.
 
-        This method sets the document type, file path, filename, meta tags, 
+        This method sets the document type, file path, file_name, meta tags, 
         and text of the document model based on the provided dictionary.
 
         Args:
             document (dict): A dictionary containing the document data with the following keys:
                 - "document_type" (str): The type of the document (e.g., "annotation", "comparison").
                 - "file_path" (str): The full path to the file.
-                - "filename" (str): The name of the file.
+                - "file_name" (str): The name of the file.
                 - "meta_tags" (dict): Metadata tags associated with the document.
                 - "text" (str): The text content of the document.
 
         Updates:
-            - Sets the internal attributes for document type, file path, filename, meta tags, and text.
+            - Sets the internal attributes for document type, file path, file_name, meta tags, and text.
             - Notifies all registered data observers about the changes.
         """
         self._document_type = document["document_type"]
         self._file_path: str = document["file_path"]
-        self._file_name = document["filename"]
+        self._file_name = document["file_name"]
         self._meta_tags = document["meta_tags"]
         self._text = document["text"]
         self.notify_observers()
@@ -172,7 +172,7 @@ class DocumentModel(IDocumentModel):
         The dictionary includes the following attributes:
             - "document_type": The type of the document (e.g., "annotation", "comparison").
             - "file_path": The path, where the document is stored.
-            - "filename": The name of the file associated with the object.
+            - "file_name": The name of the file associated with the object.
             - "meta_tags": The metadata tags associated with the object.
             - "text": The textual content managed by the object.
 
@@ -181,6 +181,6 @@ class DocumentModel(IDocumentModel):
         """
         return {"document_type": self._document_type,
                 "file_path": self._file_path,
-                "filename": self._file_name,
+                "file_name": self._file_name,
                 "meta_tags": self._meta_tags,
                 "text": self._text}

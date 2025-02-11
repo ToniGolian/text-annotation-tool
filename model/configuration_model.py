@@ -43,7 +43,9 @@ class ConfigurationModel(IPublisher):
         self._color_path = self._project_path + "color_scheme.json"
 
         self._saved_layout = None
-        self.layout_state = {}
+        self._layout_state = {}
+        self._id_prefixes = {}  # maps tagtype to id prefix
+        self._id_names = {}  # maps tag_type to id name
         # Initialize layout state
         self.update_state()
 
@@ -60,12 +62,24 @@ class ConfigurationModel(IPublisher):
             self._saved_layout_path)
 
         # Store all key-value pairs from the saved layout
-        self.layout_state = {key: value for key,
-                             value in self._saved_layout.items()}
+        self._layout_state = {key: value for key,
+                              value in self._saved_layout.items()}
 
         # Load and add template groups based on the saved project path
-        self.layout_state["template_groups"] = self._template_loader.load_template_groups(
+        self._layout_state["template_groups"] = self._template_loader.load_template_groups(
             self._project_path)
+
+        # Load the id prefixes an id names
+        for group in self._layout_state["template_groups"]:
+            for template in group.get("templates", []):
+                self._id_prefixes[template.get("type", "")] = template.get(
+                    "id_prefix", "")
+                # Extract the key whose value dictionary contains "ID"
+                self._id_names[template.get("type", "")] = next(
+                    (key for key, value in template.get(
+                        "attributes", {}).items() if value.get("type") == "ID"),
+                    ""
+                )
 
     def get_state(self) -> Dict:
         """
@@ -78,7 +92,7 @@ class ConfigurationModel(IPublisher):
         Returns:
             Dict: A dictionary representing the current layout state.
         """
-        return self.layout_state
+        return self._layout_state
 
     def get_color_scheme(self) -> Dict:
         """
@@ -107,7 +121,7 @@ class ConfigurationModel(IPublisher):
         tag_types = []
 
         # Extract tag types from all template groups
-        for group in self.layout_state["template_groups"]:
+        for group in self._layout_state["template_groups"]:
             for template in group.get("templates", []):
                 tag_types.append(template.get("type", ""))
         return tag_types
@@ -119,10 +133,20 @@ class ConfigurationModel(IPublisher):
         Returns:
             Dict[str,str]: A Dict which maps the tag types to the id prefixes.
         """
-        id_prefixes = {}
+        return self._id_prefixes
 
-        for group in self.layout_state["template_groups"]:
-            for template in group.get("templates", []):
-                id_prefixes[template.get("type", "")] = template.get(
-                    "id_prefix", "")
-        return id_prefixes
+    def get_id_name(self, tag_type: str) -> str:
+        """
+        Retrieves the name of the ID attribute for a given tag type.
+
+        This method returns the attribute name that serves as the unique identifier 
+        for a tag of the specified type.
+
+        Args:
+            tag_type (str): The type of the tag whose ID attribute name is requested.
+
+        Returns:
+            str: The name of the ID attribute for the given tag type. Returns an empty string 
+                 if no ID attribute is defined for the tag type.
+        """
+        return self._id_names.get(tag_type, "")

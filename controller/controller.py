@@ -24,7 +24,7 @@ class Controller(IController):
         self._file_handler = FileHandler()
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
         self._settings_manager = SettingsManager()
-        self._tag_processor = TagProcessor()
+        self._tag_processor = TagProcessor(self)
         self._tag_manager = TagManager(self, self._tag_processor)
         self._list_manager = ListManager(
             self._file_handler, self._settings_manager)
@@ -115,7 +115,7 @@ class Controller(IController):
         """
         Registers an observer to all relevant publishers based on the predefined mapping.
 
-        This method retrieves all publishers related to the observer and registers it 
+        This method retrieves all publishers related to the observer and registers it
         dynamically by checking the keys in `source_keys`.
 
         Args:
@@ -358,6 +358,16 @@ class Controller(IController):
         """
         self._extraction_document_model.set_text(text)
 
+    def perform_update_meta_tag(self, tags: Dict[str, str]) -> None:
+        """
+        Updates the meta tag in the model.
+
+        Args:
+            tag_type (str): The type of meta tag to update.
+            value (str): The new value for the meta tag.
+        """
+        self._annotation_document_model.set_meta_tag(tags)
+
     def perform_add_tag(self, tag_data: Dict, caller_id: str) -> None:
         """
         Creates and executes an AddTagCommand to add a new tag to the tag manager.
@@ -367,6 +377,8 @@ class Controller(IController):
             caller_id (str): The unique identifier of the view initiating this action.
         """
         target_model = self._document_source_mapping[self._active_view_id]
+        tag_data["id_name"] = self._configuration_model.get_id_name(
+            tag_data.get("tag_type"))
         command = AddTagCommand(self._tag_manager, tag_data, target_model)
         self._execute_command(command=command, caller_id=caller_id)
 
@@ -380,6 +392,8 @@ class Controller(IController):
             caller_id (str): The unique identifier of the view initiating this action.
         """
         target_model = self._document_source_mapping[self._active_view_id]
+        tag_data["id_name"] = self._configuration_model.get_id_name(
+            tag_data.get("tag_type"))
         tag_uuid = self._tag_manager.get_uuid_from_id(tag_id, target_model)
         command = EditTagCommand(
             self._tag_manager, tag_uuid, tag_data, target_model)
@@ -458,7 +472,10 @@ class Controller(IController):
         Raises:
             ValueError: If `file_paths` is empty or the active view ID is invalid.
         """
+        # Reset old state
+        self._reset_undo_redo()
 
+        # load document
         file_path = file_paths[0]
         if self._active_view_id == "extraction":
             self._extraction_document_model.set_file_path(file_path=file_path)
@@ -484,7 +501,7 @@ class Controller(IController):
         Saves the current document to the specified file path.
 
         This method retrieves the document data from the configured data source,
-        updates the filename and document type, and writes the updated data to the
+        updates the file_name and document type, and writes the updated data to the
         specified file path using the file handler.
 
         Args:
@@ -492,7 +509,7 @@ class Controller(IController):
 
         Behavior:
             - Retrieves the document data from the configured data source.
-            - Updates the "filename" field with the derived file name from the file path.
+            - Updates the "file_name" field with the derived file name from the file path.
             - Updates the "file_path" field the chosen file path.
             - Updates the "document_type" field with the current active view ID.
             - Writes the updated document to the specified file path using the file handler.
@@ -500,8 +517,11 @@ class Controller(IController):
         data_source = self.get_save_as_config()["data_source"]
         document = data_source.get_state()
         document["file_path"] = file_path
-        document["filename"] = self._file_handler.derive_file_name(file_path)
+        document["file_name"] = self._file_handler.derive_file_name(file_path)
         document["document_type"] = self._active_view_id
+        document.pop("tags")
+        if "meta_tags" in document:
+            print(f"DEBUG {document['meta_tags']=}")
         self._file_handler.write_file(file_path, document)
 
         # todo implement
@@ -520,6 +540,16 @@ class Controller(IController):
         message = f"Tag '{tag_id}' cannot be deleted because it is referenced by another tag."
         print(f"DEBUG {message=}")
         # self._view.notify_user(message, caller_id)  # Assuming a method in the view exists for showing messages
+
+    def _reset_undo_redo(self) -> None:
+        """
+        Clears both the undo and redo stacks.
+
+        This method resets the state by removing all stored undo and redo actions, 
+        effectively discarding any command history.
+        """
+        for undo_redo_model in self._undo_redo_models.values():
+            undo_redo_model.reset()
 
     def get_selected_text_data(self) -> Dict:
         """
@@ -638,7 +668,7 @@ class Controller(IController):
         """
         Retrieves the highlight data for text annotation.
 
-        This method fetches the highlight data from the tag manager and maps the tag types 
+        This method fetches the highlight data from the tag manager and maps the tag types
         to their corresponding colors using the color scheme from the configuration model.
 
         Returns:
@@ -659,13 +689,29 @@ class Controller(IController):
         """
         Retrieves all available tag types from the loaded template groups.
 
-        This method iterates through the template groups and collects unique 
+        This method iterates through the template groups and collects unique
         tag types used within the templates.
 
         Returns:
             List[str]: A list of unique tag types used in the current project.
         """
         return self._configuration_model.get_tag_types()
+
+    def get_id_name(self, tag_type: str) -> str:
+        """
+        Retrieves the name of the ID attribute for a given tag type.
+
+        This method returns the attribute name that serves as the unique identifier 
+        for a tag of the specified type.
+
+        Args:
+            tag_type (str): The type of the tag whose ID attribute name is requested.
+
+        Returns:
+            str: The name of the ID attribute for the given tag type. Returns an empty string 
+                 if no ID attribute is defined for the tag type.
+        """
+        return self._configuration_model.get_id_name(tag_type)
 
     def get_id_prefixes(self) -> Dict[str, str]:
         """

@@ -37,7 +37,6 @@ class EditTagCommand(ICommand):
 
         Stores the original tag data before applying the modifications.
         """
-        print(f"DEBUG edit command {self._new_tag_data=}")
         self._tag_manager.edit_tag(
             self._tag_uuid, self._new_tag_data, self._target_model)
 

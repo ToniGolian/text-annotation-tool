@@ -173,7 +173,7 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
 
     def finalize_view(self) -> None:
         """
-        Retrieves the layout state and updates the filenames before rendering the view.
+        Retrieves the layout state and updates the file_names before rendering the view.
         """
         state = self._controller.get_observer_state(self)
         if "num_sentences" in state:

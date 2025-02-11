@@ -24,7 +24,7 @@ class TagModel(ITagModel):
                 - "position" (int): The position of the tag.
                 - "text" (str): The content enclosed within the tag.
                 - "uuid" (str): The unique identifier for the tag.
-                - "id_string" (str): The name of the ID attribute of the tag.
+                - "id_name" (str): The name of the ID attribute of the tag.
                 - "references" (Dict[str, ITagModel]): A dictionary mapping attribute names to referenced tags.
         """
         super().__init__()
@@ -178,23 +178,23 @@ class TagModel(ITagModel):
         """
         self._tag_data["attributes"]["id"] = new_id
 
-    def get_id_string(self) -> str:
+    def get_id_name(self) -> str:
         """
         Retrieves the name of the ID attribute of the tag.
 
         Returns:
             str: The name of the ID attribute.
         """
-        return self._tag_data.get("id_string", "")
+        return self._tag_data.get("id_name", "")
 
-    def set_id_string(self, new_id_string: str) -> None:
+    def set_id_name(self, new_id_name: str) -> None:
         """
         Sets the name of the ID attribute of the tag.
 
         Args:
-            new_id_string (str): The new ID attribute name.
+            new_id_name (str): The new ID attribute name.
         """
-        self._tag_data["id_string"] = new_id_string
+        self._tag_data["id_name"] = new_id_name
 
     def get_references(self) -> Dict[str, ITagModel]:
         """
@@ -225,7 +225,7 @@ class TagModel(ITagModel):
                 - "position" (int): The position of the tag in the text.
                 - "text" (str): The content enclosed within the tag.
                 - "uuid" (str): The unique identifier for the tag.
-                - "id_string" (str): The name of the ID attribute.
+                - "id_name" (str): The name of the ID attribute.
                 - "references" (Dict[str, ITagModel]): A dictionary mapping attribute names to referenced tags.
         """
         return self._tag_data
@@ -241,7 +241,7 @@ class TagModel(ITagModel):
                 <tag_type attr1="value1" attr2="value2">text</tag_type>
         """
         attributes_str = " ".join(
-            f'{self._tag_data["id_string"] if key == "id" else key}="{value}"'
+            f'{self._tag_data["id_name"] if key == "id" else key}="{value}"'
             for key, value in self._tag_data.get("attributes", {}).items()
         )
 

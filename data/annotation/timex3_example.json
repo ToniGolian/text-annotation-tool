@@ -1,5 +1,5 @@
 {
-    "filename": "timex3_example",
+    "file_name": "timex3_example",
     "meta_tags": [
         "<TIMEX3 tid=\"meta1\" type=\"DATE\" value=\"2023-11-01\" functionInDocument=\"CREATION_TIME\"></TIMEX3>"
     ],

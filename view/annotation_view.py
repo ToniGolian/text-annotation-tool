@@ -3,17 +3,14 @@ from tkinter import ttk
 from controller.interfaces import IController
 from view.annotation_text_display_frame import AnnotationTextDisplayFrame
 from view.meta_tags_frame import MetaTagsFrame
-from view.text_display_frame import TextDisplayFrame
 from view.annotation_menu_frame import AnnotationMenuFrame
 from view.view import View
-# from mockclasses.mock_tagging_menu_frame import MockTaggingMenuFrame
-# from mockclasses.mock_text_display_frame import MockTextDisplayFrame
 
 
 class AnnotationView(View):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
-        Initializes the TextAnnotationView with a reference to the parent widget and controller.
+        Initializes the AnnotationView with a reference to the parent widget and controller.
 
         Args:
             parent (tk.Widget): The parent widget where this frame will be placed.
@@ -26,36 +23,36 @@ class AnnotationView(View):
 
     def _render(self) -> None:
         """
-        Sets up the layout for the TextAnnotationView, allowing resizing between 
+        Sets up the layout for the AnnotationView, allowing resizing between 
         the text display frames on the left, a center frame, and the tagging menu frame on the right.
         """
         # Create the main horizontal PanedWindow for the layout
-        self.paned_window = ttk.PanedWindow(self, orient=tk.HORIZONTAL)
+        self.paned_window = ttk.PanedWindow(
+            self, orient=tk.HORIZONTAL)
         self.paned_window.pack(fill=tk.BOTH, expand=True)
 
-        # Center frame containing upper and lower frames for text and metadata display
-        self.left_frame = tk.Frame(self.paned_window)
+        # Left frame with another vertical PanedWindow
+        self.left_paned = ttk.PanedWindow(
+            self.paned_window, orient=tk.VERTICAL)
 
-        # Pack the upper_frame at the top of left_frame
+        # Upper frame for meta tags
         self.upper_frame = MetaTagsFrame(
-            self.left_frame, controller=self._controller)
-        self.upper_frame.pack(fill=tk.X, expand=False, side="top")
+            self.left_paned, controller=self._controller)
 
-        # Pack the lower_frame below the upper_frame
+        # Lower frame for text annotation display
         self.lower_frame = AnnotationTextDisplayFrame(
-            self.left_frame, controller=self._controller)
-        self.lower_frame.pack(fill=tk.BOTH, expand=True, side="top")
+            self.left_paned, controller=self._controller)
 
-        # Now pack left_frame itself in the paned_window
-        self.left_frame.pack(fill=tk.BOTH, expand=True)
+        # Add both frames to the vertical PanedWindow inside left_frame
+        # MetaTagsFrame gets less space
+        self.left_paned.add(self.upper_frame, weight=0)
+        # AnnotationTextDisplayFrame gets more space
+        self.left_paned.add(self.lower_frame, weight=4)
 
         # Right frame for the tagging menu
         self.right_frame = AnnotationMenuFrame(
             self, controller=self._controller, root_view_id=self._view_id)
 
-        # Add frames to the PanedWindow with weights
-        self.paned_window.add(self.left_frame, weight=6)
+        # Add the left PanedWindow and the right frame to the main PanedWindow
+        self.paned_window.add(self.left_paned, weight=6)
         self.paned_window.add(self.right_frame, weight=1)
-
-        # Set initial sash positions
-        self.old_sash = self.paned_window.sashpos(0)

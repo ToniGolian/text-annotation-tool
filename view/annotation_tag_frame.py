@@ -33,7 +33,6 @@ class AnnotationTagFrame(tk.Frame):
         # dict of attribute widgets to chose references to other tags
         self._idref_attributes = {}
         self._selected_text_entry = None  # Entry for selected text
-        self._id_string = ""  # attributename for the id
         self._render()
 
     def _render(self) -> None:
@@ -87,10 +86,13 @@ class AnnotationTagFrame(tk.Frame):
 
             # Place the widget in the grid
             widget.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
+
+            # assign name of the id
+
             # Rename attribute, if id
             if attribute_type == "ID":
-                self._id_string = attribute_name
                 attribute_name = "id"
+
             # Store reference to the widget
             self._data_widgets[attribute_name] = widget
             if attribute_type.upper() == "IDREF":
@@ -181,7 +183,6 @@ class AnnotationTagFrame(tk.Frame):
             - "attributes" (Dict[str, str]): A dictionary of attribute name-value pairs.
             - "position" (int): The position of the selected text in the document, retrieved from the controller.
             - "text" (str): The currently selected text in the document.
-            - "id_string" (str): The name of the ID attribute.
             - "references" (Dict[str, str]): A dictionary mapping reference attributes to their corresponding values.
 
         Returns:
@@ -218,7 +219,6 @@ class AnnotationTagFrame(tk.Frame):
             "attributes": attributes,
             "position": position,
             "text": selected_text,
-            "id_string": self._id_string,
             "references": references
         }
 

@@ -6,7 +6,7 @@ class MockConfigurationModel(IConfigurationModel):
     def __init__(self):
         super().__init__()
         self.tag_types = ["TagType A", "TagType B", "TagType C"]
-        self.filenames = ["file a", "file b", "file c", "file d"]
+        self.file_names = ["file a", "file b", "file c", "file d"]
         self.template_groups = [{"group_name": "Group1", "templates": [{
             "type": "TIMEX3",
             "attributes": {
@@ -125,6 +125,6 @@ class MockConfigurationModel(IConfigurationModel):
     def get_layout_state(self) -> Dict:
         """Retrieves the layout state of the publisher."""
         return {"tag_types": self.tag_types,
-                "filenames": self.filenames,
-                "num_files": len(self.filenames),
+                "file_names": self.file_names,
+                "num_files": len(self.file_names),
                 "template_groups": self.template_groups}

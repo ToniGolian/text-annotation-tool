@@ -167,13 +167,14 @@ class MainWindow(tk.Tk):
         if file_path:
             self._controller.perform_save_as(file_path)
 
-    def _on_save(self):
-        """Handles the 'Save' action from the File menu."""
-        file_path = self._controller.get_file_path()
-        if file_path:
-            self._controller.perform_save_as(file_path)
-        else:
-            self._on_save_as()
+    def _on_save(self) -> None:
+        """
+        Handles the 'Save' action from the File menu.
+
+        If a file path is available, it performs a save operation; otherwise, it prompts the user to specify a path.
+        """
+        self._controller.perform_save_as(
+            self._controller.get_file_path() or self._on_save_as())
 
     def _on_preferences(self):
         """Handles the 'Preferences' action from the Settings menu."""

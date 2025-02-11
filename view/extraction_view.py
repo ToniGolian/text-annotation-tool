@@ -19,7 +19,7 @@ class ExtractionView(View):
             controller (IController): The controller managing actions for this view.
         """
         super().__init__(parent, controller)
-        self._filename = ""  # Initialize file name as an empty string
+        self._file_name = ""  # Initialize file name as an empty string
         self._view_id = "extraction"
         self._controller.register_view(self._view_id)
         self._render()

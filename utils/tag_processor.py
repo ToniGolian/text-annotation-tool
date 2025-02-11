@@ -1,6 +1,7 @@
 import re
 from typing import List, Dict
 
+from controller.interfaces import IController
 from model.interfaces import ITagModel
 from utils.interfaces import ITagProcessor
 
@@ -11,32 +12,8 @@ class TagProcessor(ITagProcessor):
     and performs string operations on the document text.
     """
 
-    def tag_data_to_string(self, tag_data: Dict) -> str:
-        """
-        Converts tag object into it's string representation.
-
-        Args:
-            tag_data (Dict): A dictionary containing the tag data to insert. Expected keys:
-                - "position" (int): The index in the text where the tag should be inserted.
-                - "text" (str): The text content of the tag.
-                - "tag_type" (str): The type of the tag.
-                - "attributes" (List[Tuple[str, str]]): A list of attribute name-value pairs for the tag.
-
-        Returns:
-            str: The string representation of the tag.
-        """
-        tag_text = tag_data["text"]
-        tag_type = tag_data["tag_type"]
-        attributes = tag_data.get("attributes", [])
-
-        # Construct the opening tag with attributes
-        attributes_str = " ".join(
-            f'{key}="{value}"' for key, value in attributes)
-        opening_tag = f"<{tag_type} {attributes_str}>" if attributes else f"<{tag_type}>"
-
-        # Construct the full tag
-        full_tag = f"{opening_tag}{tag_text}</{tag_type}>"
-        return full_tag
+    def __init__(self, controller: IController):
+        self._controller: IController = controller
 
     def insert_tag_into_text(self, text: str, tag_model: ITagModel) -> str:
         """
@@ -138,49 +115,6 @@ class TagProcessor(ITagProcessor):
 
         return updated_text
 
-    #! DEPR
-
-    # def update_id(self, text: str, position: int, new_id: str) -> str:
-    #     """
-    #     Updates the ID attribute of a tag at the specified position in the text using regex.
-
-    #     Args:
-    #         text (str): The full document text containing the tag.
-    #         position (int): The position in the text where the tag starts.
-    #         new_id (str): The new ID to replace the existing ID.
-
-    #     Returns:
-    #         str: The updated text with the new ID.
-
-    #     Raises:
-    #         ValueError: If no valid ID attribute is found at the specified position.
-    #     """
-    #     # Define a regex pattern to match a tag with an attribute ending in 'id' and a numeric value in quotes
-    #     pattern = r'<[^>]*\b(\w*id)="(\w*\d+)"[^>]*>'
-    #     # Now, attempt to match from position onwards
-    #     match = re.search(pattern, text[position:])
-    #     if not match:
-    #         raise ValueError(
-    #             "No valid ID attribute found at the specified position.")
-
-    #     # Extract the full match, the key (e.g., 'tid'), and the current value
-    #     full_match = match.group(0)
-    #     key = match.group(1)
-    #     current_value = match.group(2)
-
-    #     # Replace the current value with the new ID
-    #     updated_tag = full_match.replace(
-    #         f'{key}="{current_value}"', f'{key}="{new_id}"')
-
-    #     # Replace the old tag in the text
-    #     start_index = position + match.start(0)
-    #     end_index = position + match.end(0)
-    #     updated_text = text[:start_index] + updated_tag + text[end_index:]
-
-    #     return updated_text
-
-    #!END DEPR
-
     def extract_tags_from_text(self, text: str) -> List[Dict]:
         """
         Extracts all tags from the given text and returns them as a list of dictionaries.
@@ -195,7 +129,7 @@ class TagProcessor(ITagProcessor):
         Returns:
             List[Dict]: A list of dictionaries where each dictionary represents a tag with the following keys:
                 - "tag_type" (str): The type of the tag (e.g., "TIMEX3").
-                - "attributes" (List[Tuple[str, str]]): A list of key-value pairs for the tag's attributes.
+                - "attributes" (Dict[str, str]): A dictionary mapping attribute names to their values.
                 - "position" (int): The starting position of the tag in the text.
                 - "text" (str): The content enclosed within the tag.
         """
@@ -212,8 +146,11 @@ class TagProcessor(ITagProcessor):
             content = match.group("content")
             start_position = match.start()
 
-            # Parse attributes
-            attributes = attribute_pattern.findall(attributes_raw)
+            id_name = self._controller.get_id_name(tag_type)
+
+            # Parse attributes into a dictionary
+            attributes = dict(attribute_pattern.findall(attributes_raw))
+            attributes["id"] = attributes.pop(id_name)
 
             # Construct tag_data
             tag_data = {
@@ -221,7 +158,8 @@ class TagProcessor(ITagProcessor):
                 "attributes": attributes,
                 "position": start_position,
                 "text": content.strip(),
+                "id_name": id_name
             }
+            print(f"DEBUG {tag_data=}")
             tags.append(tag_data)
-
         return tags

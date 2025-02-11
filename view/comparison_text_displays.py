@@ -19,7 +19,7 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         super().__init__(parent)
         self._controller: IController = controller
 
-        self._filenames: List[str] = []
+        self._file_names: List[str] = []
         self._widget_structure: List[tk.Widget] = []
 
         # Add observer
@@ -100,10 +100,10 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         index += 1
         self._widget_structure.append((original_label, original_text_display))
 
-        for filename in self._filenames:
-            # Create a label with the document's filename
+        for file_name in self._file_names:
+            # Create a label with the document's file_name
             label = tk.Label(self.scrollable_frame,
-                             text=f"Filename: {filename}")
+                             text=f"Filename: {file_name}")
 
             # Create a TextDisplayFrame for displaying the document's content
             text_display_frame = ComparisonTextDisplayFrame(
@@ -126,8 +126,8 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         state = self._controller.get_observer_state(self, publisher)
 
         # Update view attributes dynamically based on the retrieved state
-        if "filenames" in state:
-            self._filenames = state["filenames"]
+        if "file_names" in state:
+            self._file_names = state["file_names"]
 
         # Store the updated controller state (if necessary)
         self._controller = state
@@ -137,8 +137,8 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
 
     def finalize_view(self) -> None:
         """
-        Retrieves the layout state and updates the filenames before rendering the view.
+        Retrieves the layout state and updates the file_names before rendering the view.
         """
         layout = self._controller.get_observer_state(self)
-        self._filenames = layout["filenames"]
+        self._file_names = layout["file_names"]
         self._render()

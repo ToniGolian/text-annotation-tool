@@ -101,18 +101,18 @@ class ITagProcessor(ABC):
     tag objects and strings, and operations on document text.
     """
 
-    @abstractmethod
-    def tag_data_to_string(self, tags: List[Dict]) -> List[str]:
-        """
-        Converts tag objects into their string representations.
+    # @abstractmethod
+    # def tag_data_to_string(self, tags: List[Dict]) -> List[str]:
+    #     """
+    #     Converts tag objects into their string representations.
 
-        Args:
-            tags (List[Dict]): A list of tag dictionaries.
+    #     Args:
+    #         tags (List[Dict]): A list of tag dictionaries.
 
-        Returns:
-            List[str]: A list of string representations of the tags.
-        """
-        pass
+    #     Returns:
+    #         List[str]: A list of string representations of the tags.
+    #     """
+    #     pass
 
     @abstractmethod
     def insert_tag_into_text(self, text: str, tag_data: Dict) -> str:

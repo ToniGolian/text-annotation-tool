@@ -35,20 +35,20 @@ class IDocumentModel(IPublisher):
     @abstractmethod
     def get_file_name(self) -> str:
         """
-        Retrieves the filename of the document.
+        Retrieves the file_name of the document.
 
         Returns:
-            str: The filename of the document.
+            str: The file_name of the document.
         """
         pass
 
     @abstractmethod
     def set_file_name(self, file_name: str) -> None:
         """
-        Sets the filename of the document.
+        Sets the file_name of the document.
 
         Args:
-            file_name (str): The filename to be set.
+            file_name (str): The file_name to be set.
         """
         pass
 
@@ -97,12 +97,12 @@ class IDocumentModel(IPublisher):
         """
         Updates the document model with new data.
 
-        This method sets the filename, meta tags, and text of the document model
+        This method sets the file_name, meta tags, and text of the document model
         based on the provided dictionary.
 
         Args:
             document (dict): A dictionary containing the document data with the following keys:
-                - "filename" (str): The name of the file.
+                - "file_name" (str): The name of the file.
                 - "meta_tags" (dict): Metadata tags associated with the document.
                 - "text" (str): The text content of the document.
         """
@@ -114,7 +114,7 @@ class IDocumentModel(IPublisher):
         Retrieves a dictionary representation of the object's attributes.
 
         The dictionary includes the following attributes:
-            - "filename": The name of the file associated with the object.
+            - "file_name": The name of the file associated with the object.
             - "meta_tags": The metadata tags associated with the object.
             - "text": The textual content managed by the object.
 

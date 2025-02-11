@@ -12,6 +12,7 @@ class AnnotationDocumentModel(DocumentModel, IAnnotableDocumentModel):
     def __init__(self):
         super().__init__()
         self._tags: List[ITagModel] = []
+        self._meta_tags: List[ITagModel] = []
 
     def get_tags(self) -> list:
         """
@@ -32,6 +33,25 @@ class AnnotationDocumentModel(DocumentModel, IAnnotableDocumentModel):
         self._tags = tags
         self.notify_observers()
 
+    def get_meta_tags(self) -> list:
+        """
+        Retrieves the meta_tags associated with the document.
+
+        Returns:
+            list: A list of tags represented as ITagModel objects.
+        """
+        return self._meta_tags
+
+    def set_meta_tags(self, tags: list) -> None:
+        """
+        Sets the meta_tags associated with the document.
+
+        Args:
+            tags (list): A list of tags represented as ITagModel objects to set.
+        """
+        self._meta_tags = tags
+        self.notify_observers()
+
     def get_state(self) -> dict:
         """
         Retrieves a dictionary representation of the object's attributes.
@@ -39,7 +59,7 @@ class AnnotationDocumentModel(DocumentModel, IAnnotableDocumentModel):
         The dictionary includes the following attributes:
             - "document_type": The type of the document (e.g., "annotation", "comparison").
             - "file_path": The path, where the document is stored.
-            - "filename": The name of the file associated with the object.
+            - "file_name": The name of the file associated with the object.
             - "meta_tags": The metadata tags associated with the object.
             - "text": The textual content managed by the object.
             - "tags": The tags managed by the object.

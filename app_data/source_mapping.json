@@ -40,11 +40,12 @@
         }
     },
     "MetaTagsFrame": {
-        "ComparisonModel": {
+        "AnnotationDocumentModel": {
             "finalize": true,
             "source_keys": {
-                "comparison_model": [
-                    "file_names"
+                "annotation_document_model": [
+                    "file_name",
+                    "meta_tags"
                 ]
             }
         },
@@ -70,7 +71,7 @@
             "finalize": true,
             "source_keys": {
                 "configuration_model": [
-                    "filenames",
+                    "file_names",
                     "num_files"
                 ]
             }
@@ -90,7 +91,7 @@
             "finalize": true,
             "source_keys": {
                 "configuration_model": [
-                    "filenames",
+                    "file_names",
                     "num_files"
                 ]
             }

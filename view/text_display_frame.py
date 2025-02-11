@@ -58,7 +58,7 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
 
         # Pack the text widget and scrollbar to fill the frame
         self.text_widget.pack(side=tk.LEFT, fill=tk.BOTH,
-                              expand=True, padx=(10, 0), pady=(10, 10))
+                              expand=True, padx=(10, 0), pady=(5, 5))
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     def _on_selection(self, event: tk.Event) -> None:

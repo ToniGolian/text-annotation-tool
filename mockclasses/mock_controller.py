@@ -105,7 +105,7 @@ class MockController(IController):
         sources = [self._configuration_manager]
 
         if isinstance(observer, (IComparisonTextDisplays, IComparisonHeaderFrame)):
-            keys = ["filenames", "num_files"]
+            keys = ["file_names", "num_files"]
         elif isinstance(observer, IMetaTagsFrame):
             keys = ["tag_types"]
         elif isinstance(observer, IAnnotationMenuFrame):

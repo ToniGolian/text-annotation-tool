@@ -52,3 +52,16 @@ class UndoRedoModel:
             self.undo_stack.append(command)
             return command
         return None
+
+    def reset(self) -> None:
+        """
+        Clears both the undo and redo stacks.
+
+        This method resets the state by removing all stored undo and redo actions, 
+        effectively discarding any command history.
+
+        Returns:
+            None
+        """
+        self.undo_stack.clear()
+        self.redo_stack.clear()

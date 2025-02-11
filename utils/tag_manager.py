@@ -404,9 +404,7 @@ class TagManager:
             ValueError: If no tag with the specified ID exists.
         """
         tags = target_model.get_tags()
-        print(f"\n###\nDEBUG {tag_id=}")
         for tag in tags:
             if tag.get_id() == tag_id:
-                print(f"DEBUG {tag.get_id()=}")
                 return tag.get_uuid()
         raise ValueError(f"No tag found with ID '{tag_id}'.")

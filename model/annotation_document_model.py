@@ -50,6 +50,7 @@ class AnnotationDocumentModel(DocumentModel, IAnnotableDocumentModel):
             tags (list): A list of tags represented as ITagModel objects to set.
         """
         self._meta_tags = tags
+        print(f" {self._meta_tags=}")
         self.notify_observers()
 
     def get_state(self) -> dict:

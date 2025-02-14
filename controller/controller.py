@@ -358,15 +358,19 @@ class Controller(IController):
         """
         self._extraction_document_model.set_text(text)
 
-    def perform_update_meta_tag(self, tags: Dict[str, str]) -> None:
+    def perform_update_meta_tags(self, tag_strings: Dict[str, str]) -> None:
         """
-        Updates the meta tag in the model.
+        Updates multiple meta tags in the model.
 
         Args:
-            tag_type (str): The type of meta tag to update.
-            value (str): The new value for the meta tag.
+            tag_strings (Dict[str, str]): A dictionary where keys are meta tag types
+                                          and values are their corresponding new values.
+
+        This method updates the meta tags in the model, applying the provided
+        key-value pairs to modify the current state of the metadata.
         """
-        self._annotation_document_model.set_meta_tag(tags)
+        target_model = self._document_source_mapping[self._active_view_id]
+        self._tag_manager.set_meta_tags(tag_strings, target_model)
 
     def perform_add_tag(self, tag_data: Dict, caller_id: str) -> None:
         """
@@ -519,9 +523,11 @@ class Controller(IController):
         document["file_path"] = file_path
         document["file_name"] = self._file_handler.derive_file_name(file_path)
         document["document_type"] = self._active_view_id
+        meta_tag_strings = {tag_type: [", ".join(str(
+            tag) for tag in tags)] for tag_type, tags in document.get("meta_tags", {}).items()}
+        document["meta_tags"] = meta_tag_strings
         document.pop("tags")
-        if "meta_tags" in document:
-            print(f"DEBUG {document['meta_tags']=}")
+
         self._file_handler.write_file(file_path, document)
 
         # todo implement
@@ -538,8 +544,8 @@ class Controller(IController):
             caller_id (str): The identifier of the view initiating the deletion attempt.
         """
         message = f"Tag '{tag_id}' cannot be deleted because it is referenced by another tag."
-        print(f"DEBUG {message=}")
-        # self._view.notify_user(message, caller_id)  # Assuming a method in the view exists for showing messages
+        # todo implement
+        # self._view.notify_user(message, caller_id)
 
     def _reset_undo_redo(self) -> None:
         """

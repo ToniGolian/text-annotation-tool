@@ -408,3 +408,24 @@ class TagManager:
             if tag.get_id() == tag_id:
                 return tag.get_uuid()
         raise ValueError(f"No tag found with ID '{tag_id}'.")
+
+    def set_meta_tags(self, tag_strings: Dict[str, str], target_model: IDocumentModel) -> None:
+        """
+        Sets the meta tags for the given document model based on the provided tag strings.
+
+        Args:
+            tag_strings (Dict[str, str]): A dictionary where keys represent tag types and 
+                values contain the corresponding tag strings.
+            target_model (IDocumentModel): The document model to which the processed meta 
+                tags will be assigned.
+        """
+        meta_tags = {}
+        for tag_type, meta_tag_strings in tag_strings.items():
+            tag_data = self._tag_processor.extract_tags_from_text(
+                meta_tag_strings)
+            tags = []
+            for tag in tag_data:
+                tags.append(TagModel(tag_data=tag))
+            meta_tags[tag_type] = tags
+
+        target_model.set_meta_tags(meta_tags)

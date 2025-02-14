@@ -160,6 +160,5 @@ class TagProcessor(ITagProcessor):
                 "text": content.strip(),
                 "id_name": id_name
             }
-            print(f"DEBUG {tag_data=}")
             tags.append(tag_data)
         return tags

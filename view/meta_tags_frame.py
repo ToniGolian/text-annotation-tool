@@ -99,7 +99,8 @@ class MetaTagsFrame(tk.Frame):
         button_frame.grid_columnconfigure(1, weight=1)
 
         # "Update Meta Tags" button
-        update_button = ttk.Button(button_frame, text="Update Meta Tags")
+        update_button = ttk.Button(
+            button_frame, text="Update Meta Tags", command=self._button_pressed_update_meta_tags)
         update_button.grid(row=0, column=1, sticky="e", padx=(0, 30))
 
     def get_meta_tag_labels(self) -> List[str]:
@@ -129,7 +130,6 @@ class MetaTagsFrame(tk.Frame):
         and processes it to adjust the layout of the view.
         """
         state = self._controller.get_observer_state(self, publisher)
-        print(f"DEBUG {state=}")
         # Update tag types and re-render if needed
         if tag_types := state.get("tag_types"):
             self._tag_types = tag_types
@@ -140,10 +140,11 @@ class MetaTagsFrame(tk.Frame):
             self._file_name_label.config(text=file_name)
 
         # Update meta tag entries
-        for tag_type, tag in state.get("meta_tags", {}).items():
+        for tag_type, tags in state.get("meta_tags", {}).items():
             if tag_type in self._meta_tag_entries:
                 self._meta_tag_entries[tag_type].delete(0, tk.END)
-                self._meta_tag_entries[tag_type].insert(0, tag)
+                self._meta_tag_entries[tag_type].insert(
+                    0, ", ".join(str(tag) for tag in tags))
 
     def finalize_view(self) -> None:
         """
@@ -152,3 +153,11 @@ class MetaTagsFrame(tk.Frame):
         layout = self._controller.get_observer_state(self)
         self._tag_types = layout.get("tag_types", [])
         self._render()
+
+    def _button_pressed_update_meta_tags(self) -> None:
+        """
+        Updates the meta tags by retrieving the current values from the input widgets 
+        and passing them to the controller for further processing.
+        """
+        meta_tags = {k: v.get() for k, v in self._meta_tag_entries.items()}
+        self._controller.perform_update_meta_tags(meta_tags)

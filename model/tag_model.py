@@ -240,9 +240,10 @@ class TagModel(ITagModel):
             str: A string representation of the tag in the format:
                 <tag_type attr1="value1" attr2="value2">text</tag_type>
         """
-        attributes_str = " ".join(
-            f'{self._tag_data["id_name"] if key == "id" else key}="{value}"'
-            for key, value in self._tag_data.get("attributes", {}).items()
-        )
+        attributes = self._tag_data.get("attributes", {})
+        attributes_str = (
+            f'{self._tag_data["id_name"]}="{attributes["id"]}"'if "id" in attributes else "")
+        attributes_str += " ".join(f'{key}="{value}"' for key,
+                                   value in attributes.items() if key != "id")
 
         return f'<{self._tag_data["tag_type"]} {attributes_str}>{self._tag_data["text"]}</{self._tag_data["tag_type"]}>'

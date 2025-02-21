@@ -162,3 +162,23 @@ class TagProcessor(ITagProcessor):
             }
             tags.append(tag_data)
         return tags
+
+    def delete_all_tags_from_text(self, text: str) -> str:
+        """
+        Removes all tags from the given text, replacing them with their enclosed content.
+
+        This method identifies and removes XML-like tags from the text, ensuring that only the content
+        between the opening and closing tags remains.
+
+        Args:
+            text (str): The input text containing tags.
+
+        Returns:
+            str: The text with all tags removed, keeping only the inner content.
+        """
+        tag_pattern = re.compile(
+            r'<(?P<tag_type>\w+)\s*(?P<attributes>[^>]*)>(?P<content>.*?)</\1>',
+            re.DOTALL
+        )
+
+        return re.sub(tag_pattern, lambda match: match.group("content"), text)

@@ -9,6 +9,7 @@ from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
 from typing import Dict, List, Tuple
 
+from utils.comparison_manager import ComparisonManager
 from utils.list_manager import ListManager
 from utils.pdf_extraction_manager import PDFExtractionManager
 from utils.settings_manager import SettingsManager
@@ -26,6 +27,7 @@ class Controller(IController):
         self._settings_manager = SettingsManager()
         self._tag_processor = TagProcessor(self)
         self._tag_manager = TagManager(self, self._tag_processor)
+        self._comparison_manager = ComparisonManager(self, self._tag_processor)
         self._list_manager = ListManager(
             self._file_handler, self._settings_manager)
         self._pdf_extraction_manager = PDFExtractionManager(

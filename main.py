@@ -23,8 +23,8 @@ def main():
     app_view = MainWindow(controller)
     controller.finalize_views()
     #!DEBUG
-    testdoc = ["data/annotation/test_doc.json"]
-    controller.perform_open_file(testdoc)
+    # testdoc = ["data/annotation/test_doc.json"]
+    # controller.perform_open_file(testdoc)
     print("######### END INIT ###########")
     #!END DEBUG
 

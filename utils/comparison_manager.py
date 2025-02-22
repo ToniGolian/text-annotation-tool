@@ -61,7 +61,6 @@ class ComparisonManager:
             len(common_sentences) / len(clean_text_set) for clean_text_set in clean_text_sets
         ]
 
-        print(f"DEBUG {intersection_ratios=}")
         # Ensure all clean_texts meet the required similarity threshold
         if not all(ratio >= self._similarity_threshold for ratio in intersection_ratios):
             # Find the lowest similarity ratio
@@ -74,15 +73,12 @@ class ComparisonManager:
         aligned_clean_texts = [[] for _ in clean_texts]
         # align_option=self._controller.get_align_option()
         #!DEBUG
-        align_option = "union"
+        align_option = "intersection"
         #!END DEBUG
 
-        # if align_option.lower() == "union":
         sentence_indices = [0]*len(clean_texts)
         while any(index < len(clean_text) for clean_text, index in zip(clean_texts, sentence_indices)):
             current_elements = get_current_elements()
-            if any(index < 6 for index in sentence_indices):
-                print(f"DEBUG {current_elements=}")
             if are_clean_sentences_similar(current_elements):
                 indices_to_append = [(text_index, sentence_index)
                                      for text_index, sentence_index in enumerate(sentence_indices)]
@@ -91,6 +87,7 @@ class ComparisonManager:
                     sentence_indices[i] += 1
                 continue
 
+            # Handle non aligning sentences
             next_candidates = []  # List of tuples (sentence, text_index)
 
             # Check if sentence appears later in other texts
@@ -101,7 +98,26 @@ class ComparisonManager:
                 if all(sentence not in buffer for buffer in buffers):
                     next_candidates.append((sentence, text_index))
 
-            # Check if potential next sentence is unique
+            # If intersection mode is active and next_candidates is empty, this means that
+            # all current sentences exist somewhere in the upcoming buffers, which likely
+            # indicates a reordering or duplicate sentences with mismatched references.
+            if not next_candidates:
+                if align_option == "intersection":
+                    raise ValueError(
+                        "Ambiguous sentence alignment detected: Possible reordering or duplicate sentences with mismatched references."
+                    )
+                if align_option == "union":
+                    # just pick the sentence from the first text
+                    next_candidates = [current_elements[0]]
+                raise ValueError("No align option selected")
+
+            # drop the sentences, which are not in all texts, if alignoption is intersection
+            if align_option.lower() == "intersection":
+                for _, text_index in next_candidates:
+                    sentence_indices[text_index] += 1
+                continue
+
+                # Check if potential next sentence is unique
             if not are_clean_sentences_similar([sentence for sentence, _ in next_candidates]):
                 # Count occurrences of sentences
                 count = {}

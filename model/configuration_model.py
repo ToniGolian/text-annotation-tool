@@ -46,6 +46,7 @@ class ConfigurationModel(IPublisher):
         self._layout_state = {}
         self._id_prefixes = {}  # maps tagtype to id prefix
         self._id_names = {}  # maps tag_type to id name
+        self._id_ref_attributes = {}
         # Initialize layout state
         self.update_state()
 
@@ -72,14 +73,23 @@ class ConfigurationModel(IPublisher):
         # Load the id prefixes an id names
         for group in self._layout_state["template_groups"]:
             for template in group.get("templates", []):
-                self._id_prefixes[template.get("type", "")] = template.get(
-                    "id_prefix", "")
-                # Extract the key whose value dictionary contains "ID"
-                self._id_names[template.get("type", "")] = next(
-                    (key for key, value in template.get(
-                        "attributes", {}).items() if value.get("type") == "ID"),
+                tag_type = template.get("type")
+                attributes = template.get("attributes", {})
+
+                # Set ID prefix
+                self._id_prefixes[tag_type] = template.get("id_prefix", "")
+
+                # Set ID name (first attribute with type "ID")
+                self._id_names[tag_type] = next(
+                    (attr for attr, details in attributes.items()
+                     if details.get("type") == "ID"),
                     ""
                 )
+
+                # Set ID references (attributes with type "ID" or "IDREF")
+                self._id_ref_attributes[tag_type] = [
+                    attr for attr, details in attributes.items() if details.get("type") in {"ID", "IDREF"}
+                ]
 
     def get_state(self) -> Dict:
         """
@@ -150,3 +160,18 @@ class ConfigurationModel(IPublisher):
                  if no ID attribute is defined for the tag type.
         """
         return self._id_names.get(tag_type, "")
+
+    def get_id_refs(self, tag_type: str) -> str:
+        """
+        Retrieves the ID references for a given tag type.
+
+        This method returns the attribute name that serves as the unique identifier 
+        for a tag of the specified type.
+
+        Args:
+            tag_type (str): The type of the tag whose ID attribute name is requested.
+
+        Returns:
+            List[str]: A list of all attributes with an ID for the given tag type. 
+        """
+        return self._id_ref_attributes

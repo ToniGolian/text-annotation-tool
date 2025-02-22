@@ -1,3 +1,4 @@
+from typing import List
 import re
 from typing import Dict, List, Tuple, Union
 from controller.interfaces import IController
@@ -13,20 +14,54 @@ class ComparisonManager:
         self._max_lookahead = 10
 
     def extract_comparison_data(self, documents: List[IDocumentModel]) -> Dict[str, Union[str, List[str]]]:
-        texts = [document.get("text", "") for document in documents]
-        texts = [self._prepare_text_for_comparison(
-            text) for text in texts]
+        tagged_texts = [document.get("text", "") for document in documents]
+        tagged_texts = [self._prepare_text_for_comparison(
+            text) for text in tagged_texts]
         clean_texts = [[self._tag_processor.delete_all_tags_from_text(
-            sentence) for sentence in text] for text in texts]
-        texts, clean_texts = self.align_similar_texts(texts, clean_texts)
-        return texts, clean_texts
+            sentence) for sentence in text] for text in tagged_texts]
+        tagged_texts, clean_texts = self.align_similar_texts(
+            tagged_texts, clean_texts)
 
-        # compare if closely the same
-        # merge due to mergeoptions
-        # adjust indices in single documents
-        # compare sentences
+        raw_text = clean_texts[0]
+        comparison_sentences = self._extract_differing_tagged_sentences(
+            raw_text, tagged_texts)
+
+        comparison_data = {
+            "raw_text": raw_text,
+            "comparison_sentences": comparison_sentences
+        }
+        return comparison_data
 
     def align_similar_texts(self, texts: List[List[str]], clean_texts: List[List[str]]) -> Tuple[List[List[str]], List[List[str]]]:
+        """
+        Aligns multiple similar texts by merging them using either union or intersection.
+
+        This method aligns the input texts while maintaining sentence order, handling missing
+        sentences, and ensuring structural consistency between all input lists. The alignment
+        can be performed using one of two strategies:
+
+        - "union": Includes all sentences from all texts, preserving their relative order.
+        - "intersection": Retains only sentences that appear in all texts.
+
+        The function first checks if the texts are fully identical. If they are not, it
+        computes an intersection ratio and ensures that all texts meet a predefined similarity
+        threshold before proceeding with the chosen alignment strategy.
+
+        Args:
+            texts (List[List[str]]): A list of texts, where each text is represented as a list of sentences.
+            clean_texts (List[List[str]]): The same texts as in `texts`, but with tags removed.
+
+        Returns:
+            Tuple[List[List[str]], List[List[str]]]: A tuple containing two lists:
+                - The aligned texts with original content.
+                - The aligned clean texts with tags removed.
+
+        Raises:
+            ValueError: If the similarity threshold is not met, meaning the texts are not similar enough.
+            ValueError: If ambiguous sentence alignment is detected (e.g., reordering or duplicate mismatched references).
+            ValueError: If no valid alignment option ("union" or "intersection") is selected.
+
+        """
         # Define helpers
         def get_current_elements():
             """Retrieves a list of clean sentences corresponding to the current indices"""
@@ -71,10 +106,8 @@ class ComparisonManager:
 
         aligned_texts = [[] for _ in texts]
         aligned_clean_texts = [[] for _ in clean_texts]
-        # align_option=self._controller.get_align_option()
-        #!DEBUG
-        align_option = "intersection"
-        #!END DEBUG
+        align_option = self._controller.get_align_option()
+        print(f"DEBUG cm {align_option=}")
 
         sentence_indices = [0]*len(clean_texts)
         while any(index < len(clean_text) for clean_text, index in zip(clean_texts, sentence_indices)):
@@ -146,10 +179,10 @@ class ComparisonManager:
 
     def _prepare_text_for_comparison(self, text: str) -> List[str]:
         """
-        Splits the given text into sentences and removes leading/trailing whitespace 
+        Splits the given text into sentences and removes leading/trailing whitespace
         as well as non-visible characters from each sentence.
 
-        This method ensures that each sentence is cleaned by stripping whitespace 
+        This method ensures that each sentence is cleaned by stripping whitespace
         and removing any non-visible characters.
 
         Args:
@@ -160,5 +193,41 @@ class ComparisonManager:
         """
         return [re.sub(r'\s+', ' ', sentence.strip()) for sentence in text.split("\n\n")]
 
-    def _find_differing_sentences(self, texts: List[str]) -> List[int]:
-        pass
+    def _extract_differing_tagged_sentences(self, raw_text: List[str], tagged_texts: List[List[str]]) -> List[List[str]]:
+        """
+        Extracts sentences that differ across multiple tagged texts.
+
+        The output is a list of lists, where:
+        - The first list contains raw sentences.
+        - Each subsequent list corresponds to a tagged text and contains only 
+        sentences that differ from others in the same position.
+
+        Args:
+            raw_text (List[str]): The original untagged text split into sentences.
+            tagged_texts (List[List[str]]): A list of tagged texts, where each 
+                tagged text is a list of sentences.
+
+        Returns:
+            List[List[str]]: A list containing the differing sentences from the 
+            raw text and each of the tagged texts.
+
+        """
+        # Ensure independent lists, not references to the same list
+        comparison_sentences = [[] for _ in range(len(tagged_texts) + 1)]
+
+        # Iterate over the sentences from all tagged texts simultaneously
+        for index, sentences in enumerate(zip(*tagged_texts)):
+            # Remove ID and IDREF attributes from all sentences
+            cleaned_sentences = [self._tag_processor.remove_ids_from_tags(
+                sentence) for sentence in sentences]
+
+            # Check if all cleaned sentences are identical
+            if any(sentence != cleaned_sentences[0] for sentence in cleaned_sentences[1:]):
+                # Add corresponding raw sentence to the first list
+                comparison_sentences[0].append(raw_text[index])
+
+                # Add the differing sentences to their respective lists
+                for sentence_list, sentence in zip(comparison_sentences[1:], sentences):
+                    sentence_list.append(sentence)
+
+        return comparison_sentences

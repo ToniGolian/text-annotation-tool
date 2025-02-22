@@ -182,3 +182,45 @@ class TagProcessor(ITagProcessor):
         )
 
         return re.sub(tag_pattern, lambda match: match.group("content"), text)
+
+    def remove_ids_from_tags(self, text: str) -> str:
+        """
+        Removes ID and IDREF attributes from all tags in the given text.
+
+        Args:
+            text (str): The input text containing tags.
+
+        Returns:
+            str: The text with the tags where ID and IDREF attributes have been removed.
+        """
+        # Regex pattern to extract tag type, attributes, and content
+        tag_pattern = re.compile(
+            r'<(?P<tag_type>\w+)\s*(?P<attributes>[^>]*)>(?P<content>.*?)</\1>',
+            re.DOTALL
+        )
+        attribute_pattern = re.compile(r'(?P<key>\w+)="(?P<value>[^"]*)"')
+
+        # Process each tag match
+        def clean_tag(match):
+            tag_type = match.group("tag_type")
+            attributes_raw = match.group("attributes")
+            content = match.group("content")
+
+            # Retrieve the attribute names to be removed
+            idrefs = self._controller.get_id_refs(tag_type)
+
+            # Parse attributes and remove ID and IDREF attributes
+            attributes = attribute_pattern.findall(attributes_raw)
+            cleaned_attributes = [
+                f'{key}="{value}"' for key, value in attributes if key not in idrefs.keys()
+            ]
+
+            # Construct the cleaned tag
+            cleaned_tag = f'<{tag_type} {" ".join(cleaned_attributes)}>{content}</{tag_type}>'
+
+            return cleaned_tag
+
+        # Substitute tags in the text with cleaned versions
+        cleaned_text = tag_pattern.sub(clean_tag, text)
+
+        return cleaned_text

@@ -721,6 +721,21 @@ class Controller(IController):
         """
         return self._configuration_model.get_id_name(tag_type)
 
+    def get_id_refs(self, tag_type: str) -> str:
+        """
+        Retrieves the ID references for a given tag type.
+
+        This method returns the attribute name that serves as the unique identifier 
+        for a tag of the specified type.
+
+        Args:
+            tag_type (str): The type of the tag whose ID attribute name is requested.
+
+        Returns:
+            List[str]: A list of all attributes with an ID for the given tag type. 
+        """
+        return self._configuration_model.get_id_refs(tag_type)
+
     def get_id_prefixes(self) -> Dict[str, str]:
         """
         Retrieves a dictionary, which maps the tag types to the id prefixes
@@ -729,3 +744,26 @@ class Controller(IController):
             Dict[str,str]: A Dict which maps the tag types to the id prefixes.
         """
         return self._configuration_model.get_id_prefixes()
+
+    def get_align_option(self) -> str:
+        """
+        Retrieves the alignment option from the default comparison settings.
+
+        This method reads the comparison settings file and extracts the 
+        alignment option, which determines whether texts should be merged 
+        using "union" or "intersection".
+
+        Returns:
+            str: The alignment option, either "union" or "intersection".
+
+        Raises:
+            KeyError: If the "align_option" key is missing from the settings.
+            FileNotFoundError: If the comparison settings file cannot be found.
+        """
+        key = "default_comparison_settings"
+        comparison_settings_path = self._file_handler.get_default_path(key)
+        comparison_settings = self._file_handler.read_file(
+            comparison_settings_path)
+        align_option = comparison_settings["align_option"]
+        print(f"DEBUG {align_option=}")
+        return align_option

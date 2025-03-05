@@ -1,9 +1,9 @@
 import tkinter as tk
-import uuid
 from controller.interfaces import IController
+from view.interfaces import IView
 
 
-class View(tk.Frame):
+class View(tk.Frame, IView):
     """
     Base class for views with shared functionality for managing focus,
     binding keyboard shortcuts, and handling undo/redo actions.

@@ -1,30 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
-from observer.interfaces import IPublisher, IPublisher
+from typing import Dict, List, Tuple, Union
+from observer.interfaces import IObserver, IPublisher, IPublisher
 
 
 class ITagModel(ABC):
     pass
-
-
-class IComparisonModel(IPublisher):
-    pass
-
-
-class IConfigurationModel(IPublisher):
-    @abstractmethod
-    def get_color_scheme(self) -> Dict[str, str]:
-        """
-        Retrieves the current color scheme of the application.
-
-        This method returns a dictionary containing the color scheme settings
-        used in the application. The color scheme typically defines UI colors
-        such as background, foreground, and highlight colors.
-
-        Returns:
-            Dict: A dictionary mapping UI elements to their corresponding colors.
-        """
-        pass
 
 
 class IDocumentModel(IPublisher):
@@ -145,6 +125,95 @@ class IAnnotableDocumentModel(IDocumentModel):
 
         Args:
             tags (List[ITagModel]): The list of tags to set.
+        """
+        pass
+
+
+class IComparisonModel:
+    """
+    Interface for a comparison model that manages document comparisons and iterates over
+    sentence pairs.
+
+    This model allows setting document-observer pairs, storing and navigating comparison
+    sentences, and updating document texts accordingly.
+    """
+
+    def set_documents(self, documents: List[IDocumentModel]) -> None:
+        """
+        Sets the list of documents and updates the file names.
+
+        This method updates the internal document list and ensures that the file names
+        are stored accordingly. It also notifies observers about the changes.
+
+        Args:
+            documents (List[IDocumentModel]): The list of document models.
+        """
+        pass
+
+    def register_comparison_displays(self, observers: List[IObserver]) -> None:
+        """
+        Registers observers for the documents.
+
+        This method assigns an observer to each document to track updates and changes. 
+        The number of documents and observers must match.
+
+        Args:
+            observers (List[IObserver]): The list of observers.
+
+        Raises:
+            ValueError: If the number of documents and observers does not match.
+        """
+        pass
+
+    def set_comparison_data(self, comparison_data: Dict[str, Union[str, List[Tuple[str, ...]]]]) -> None:
+        """
+        Sets the comparison data including common text and sentence comparisons.
+
+        Args:
+            comparison_data (Dict[str, Union[str, List[Tuple[str, ...]]]]]): 
+                A dictionary containing:
+                - "common_text" (str): The shared text across comparisons.
+                - "comparison_sentences" (List[Tuple[str, ...]]): A list of sentence tuples,
+                where each tuple contains a variable number of strings.
+        """
+        pass
+
+    def next_sentence(self) -> None:
+        """
+        Advances to the next sentence tuple in the comparison sentences list.
+        If at the last element, it wraps around to the first element.
+        """
+        pass
+
+    def previous_sentence(self) -> None:
+        """
+        Moves to the previous sentence tuple in the comparison sentences list.
+        If at the first element, it wraps around to the last element.
+        """
+        pass
+
+    def remove_current_sentence(self) -> None:
+        """
+        Removes the currently selected sentence tuple from the comparison sentences list.
+        After removal, it moves to the next available sentence.
+        If the last element is removed, it wraps around to the first element.
+        If the list becomes empty, no further action is taken.
+        """
+        pass
+
+
+class IConfigurationModel(IPublisher):
+    @abstractmethod
+    def get_color_scheme(self) -> Dict[str, str]:
+        """
+        Retrieves the current color scheme of the application.
+
+        This method returns a dictionary containing the color scheme settings
+        used in the application. The color scheme typically defines UI colors
+        such as background, foreground, and highlight colors.
+
+        Returns:
+            Dict: A dictionary mapping UI elements to their corresponding colors.
         """
         pass
 

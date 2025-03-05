@@ -60,6 +60,8 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         # Configure grid weights
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
+        print(
+            f"DEBUG init {type(self._controller)=}")
 
     def _render(self) -> None:
         """
@@ -70,6 +72,8 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
 
+        print(
+            f"DEBUG before self._reconfigure_widgets() {type(self._controller)=}")
         # Reconfigure the widgets
         self._reconfigure_widgets()
 
@@ -129,9 +133,6 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         if "file_names" in state:
             self._file_names = state["file_names"]
 
-        # Store the updated controller state (if necessary)
-        self._controller = state
-
         # Render the updated state
         self._render()
 
@@ -142,3 +143,15 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         layout = self._controller.get_observer_state(self)
         self._file_names = layout["file_names"]
         self._render()
+
+    def get_displays(self) -> List[tk.Widget]:
+        """
+        Returns a list of all widgets representing the text display frames.
+
+        This method provides access to the widgets used in the scrollable frame, including 
+        both labels and `ComparisonTextDisplayFrame` instances.
+
+        Returns:
+            List[tk.Widget]: A list of widgets that are part of the display structure.
+        """
+        return [widget for _, widget in self._widget_structure]

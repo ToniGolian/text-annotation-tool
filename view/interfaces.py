@@ -1,4 +1,9 @@
+from abc import ABC
 from observer.interfaces import IObserver
+
+
+class IView(ABC):
+    pass
 
 
 class IMetaTagsFrame(IObserver):
@@ -26,4 +31,8 @@ class ITextDisplayFrame(IObserver):
 
 
 class IComparisonTextDisplayFrame(ITextDisplayFrame):
+    pass
+
+
+class IComparisonView(ITextDisplayFrame):
     pass

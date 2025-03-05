@@ -88,8 +88,10 @@ class MainWindow(tk.Tk):
 
         # Choose the second page as default
         #!DEBUG change to 0
-        notebook.select(1)
-        self._controller.set_active_view("annotation")
+        NUM = 2
+        active_views = ["extraction", "annotation", "comparison"]
+        notebook.select(NUM)
+        self._controller.set_active_view(active_views[NUM])
         #!END DEBUG
 
     def _on_open(self):

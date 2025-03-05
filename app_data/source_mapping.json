@@ -59,15 +59,6 @@
                     "file_names"
                 ]
             }
-        },
-        "ConfigurationModel": {
-            "finalize": true,
-            "source_keys": {
-                "configuration_model": [
-                    "file_names",
-                    "num_files"
-                ]
-            }
         }
     },
     "ComparisonHeaderFrame": {
@@ -75,6 +66,7 @@
             "finalize": true,
             "source_keys": {
                 "comparison_model": [
+                    "file_names",
                     "num_sentences",
                     "current_sentence_index"
                 ]
@@ -84,7 +76,6 @@
             "finalize": true,
             "source_keys": {
                 "configuration_model": [
-                    "file_names",
                     "num_files"
                 ]
             }

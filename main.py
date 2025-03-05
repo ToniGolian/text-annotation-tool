@@ -13,13 +13,12 @@ def main():
     # Initialize model and controller
     preview_document_model = ExtractionDocumentModel()
     annotation_document_model = AnnotationDocumentModel()
-    comparison_document_model = ComparisonModel()
-    comparison_model = MockComparisonModel()
+    comparison_model = ComparisonModel()
     configuration_model = ConfigurationModel()
     selection_model = SelectionModel()
 
     controller = Controller(
-        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model, comparison_document_model=comparison_document_model, comparison_model=comparison_model, selection_model=selection_model, configuration_model=configuration_model)
+        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, configuration_model=configuration_model)
     app_view = MainWindow(controller)
     controller.finalize_views()
     #!DEBUG

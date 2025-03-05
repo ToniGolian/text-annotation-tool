@@ -24,7 +24,7 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         """
         super().__init__(parent)
         self._controller: IController = controller
-        self._num_files: int = None
+        self._num_files: int = 0
         self._radio_var = tk.IntVar()  # Shared variable for the radio buttons
         self.MAX_BUTTONS_PER_ROW = 8
         self._current_sentence_index: int = 0

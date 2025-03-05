@@ -1,3 +1,4 @@
+from typing import List
 from controller.interfaces import IController
 import tkinter as tk
 from tkinter import ttk
@@ -7,10 +8,11 @@ from view.annotation_menu_frame import AnnotationMenuFrame
 # from view.comparison_controls_frame import ComparisonControlsFrame
 from view.comparison_header_frame import ComparisonHeaderFrame
 from view.comparison_text_displays import ComparisonTextDisplays
+from view.interfaces import IComparisonView
 from view.view import View
 
 
-class ComparisonView(View):
+class ComparisonView(View, IComparisonView):
     def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the TextAnnotationView with a reference to the parent widget and controller.
@@ -21,7 +23,8 @@ class ComparisonView(View):
         """
         super().__init__(parent, controller)
         self._view_id = "comparison"
-        self._controller.register_view(self._view_id)
+        self._controller.register_view(view_id=self._view_id, view=self)
+        self._text_displays = None
         self._render()
 
     def _render(self):
@@ -40,10 +43,10 @@ class ComparisonView(View):
             self.left_frame, controller=self._controller)
         header_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
-        text_displays = ComparisonTextDisplays(
+        self._text_displays = ComparisonTextDisplays(
             self.left_frame, self._controller)
-        text_displays.pack(side=tk.TOP, fill=tk.BOTH,
-                           expand=True, padx=10, pady=5)
+        self._text_displays.pack(side=tk.TOP, fill=tk.BOTH,
+                                 expand=True, padx=10, pady=5)
 
         # Now pack left_frame itself in the paned_window
         self.left_frame.pack(fill="both", expand=True)
@@ -58,3 +61,15 @@ class ComparisonView(View):
 
         # Set initial sash positions
         self.old_sash = self.paned_window.sashpos(0)
+
+    def get_comparison_displays(self) -> List[tk.Widget]:
+        """
+        Returns a list of all text display widgets managed by this view.
+
+        This method retrieves the text display widgets from `_text_displays` 
+        and provides them as a flat list.
+
+        Returns:
+            List[tk.Widget]: A list of widgets representing the text displays.
+        """
+        return self._text_displays.get_displays()

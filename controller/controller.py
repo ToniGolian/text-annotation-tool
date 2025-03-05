@@ -7,7 +7,7 @@ from input_output.file_handler import FileHandler
 from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISelectionModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 from utils.comparison_manager import ComparisonManager
 from utils.list_manager import ListManager
@@ -16,10 +16,11 @@ from utils.settings_manager import SettingsManager
 from utils.suggestion_manager import SuggestionManager
 from utils.tag_manager import TagManager
 from utils.tag_processor import TagProcessor
+from view.interfaces import IComparisonView, IView
 
 
 class Controller(IController):
-    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_document_model: IPublisher = None, selection_model: IPublisher = None, comparison_model: IPublisher = None):
+    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None):
 
         # dependencies
         self._file_handler = FileHandler()
@@ -39,16 +40,18 @@ class Controller(IController):
         self._source_mapping = self._file_handler.read_file(
             "app_data/source_mapping.json")
 
+        # views
+        self._comparison_view: IComparisonView = None
+        self._views_to_finalize: List = []
+
         # state
         self._dynamic_observer_index: int = 0
         self._observer_data_map: Dict[IObserver:Dict] = {}
         self._observer_layout_map: Dict[IObserver, Dict] = {}
-        self._views_to_finalize: List = []
 
         self._configuration_model: IPublisher = configuration_model
         self._extraction_document_model: IDocumentModel = preview_document_model
         self._annotation_document_model: IDocumentModel = annotation_document_model
-        self._comparison_document_model: IDocumentModel = comparison_document_model
         self._comparison_model: IComparisonModel = comparison_model
         self._selection_model: ISelectionModel = selection_model
 
@@ -59,7 +62,7 @@ class Controller(IController):
         # maps view ids to document sources for save actions
         self._document_source_mapping = {"extraction": self._extraction_document_model,
                                          "annotation": self._annotation_document_model,
-                                         "comparison": self._comparison_document_model}
+                                         "comparison": self._comparison_model}
 
     # command pattern
 
@@ -211,7 +214,6 @@ class Controller(IController):
         mapping = self._get_observer_config(observer, publisher)
 
         if publisher is None:
-            print(f"DEBUG if")
             # Merge source keys from all registered publishers for this observer
             merged_source_keys = {}
             for publisher_mapping in mapping.values():
@@ -231,14 +233,12 @@ class Controller(IController):
                 for source_name in source_keys
             ]
         else:
-            print(f"DEBUG else")
             # If a publisher is provided, it acts as the sole data source
             source_keys = mapping["source_keys"]
             sources = [publisher]
 
         # Filter out invalid sources (None values)
         sources = [source for source in sources if source is not None]
-        print(f"DEBUG {sources=}")
         # Collect state data from all valid sources
         state = {
             key: value
@@ -248,7 +248,6 @@ class Controller(IController):
             if key in keys
         }
 
-        print(f"DEBUG {state=}")
         return state
 
     def _get_observer_config(self, observer: IObserver, publisher: IPublisher = None) -> Dict:
@@ -312,7 +311,7 @@ class Controller(IController):
         for view in self._views_to_finalize:
             view.finalize_view()
 
-    def register_view(self, view_id: str) -> None:
+    def register_view(self, view_id: str, view: IView = None) -> None:
         """
         Initializes an Undo/Redo model for a specific view.
 
@@ -321,6 +320,8 @@ class Controller(IController):
                            Undo/Redo model is being set up.
         """
         self._undo_redo_models[view_id] = UndoRedoModel()
+        if view_id == "comparison":
+            self._comparison_view = view
 
     # Perform methods
 
@@ -499,20 +500,25 @@ class Controller(IController):
             self._extraction_document_model.set_file_path(file_path=file_path)
             return
 
-        document = self._file_handler.read_file(file_path=file_path)
-        document["file_path"] = file_path
-        document["document_type"] = self._active_view_id
+        documents = [self._file_handler.read_file(
+            file_path=file_path) for file_path in file_paths]
+        for document in documents:
+            document["file_path"] = file_path
+            # document["document_type"] = self._active_view_id
 
         if self._active_view_id == "annotation":
             self._annotation_document_model.set_document(document)
             self._tag_manager._extract_tags_from_document(
                 self._annotation_document_model)
         if self._active_view_id == "comparison":
-            # todo improve
-            if len(file_path) > 1 or document.get("document_type", "") != "comparison":
-                document = self._perform_annotation_comparison(
-                    file_paths)
-            self._comparison_document_model.set_document(document)
+            self._comparison_model.set_documents(documents)
+            # Don't change the order since the documents trigger the displaycreation
+            comparison_displays = self._comparison_view.get_comparison_displays()
+            self._comparison_model.register_comparison_displays(
+                comparison_displays)
+            comparison_data = self._perform_annotation_comparison(
+                documents)  # todo implement
+            self._comparison_model.set_comparison_data(comparison_data)
 
     def perform_save_as(self, file_path: str):
         """
@@ -546,7 +552,7 @@ class Controller(IController):
 
         # todo implement
 
-    def _perform_annotation_comparison(self, file_paths: List[str]) -> Dict:
+    def _perform_annotation_comparison(self, documents: List[IDocumentModel]) -> Dict[str, Union[str, List[Tuple[str, ...]]]]:
         pass
 
     def _notify_deletion_prohibited(self, tag_id: str, caller_id: str) -> None:
@@ -777,5 +783,4 @@ class Controller(IController):
         comparison_settings = self._file_handler.read_file(
             comparison_settings_path)
         align_option = comparison_settings["align_option"]
-        print(f"DEBUG {align_option=}")
         return align_option

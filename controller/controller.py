@@ -576,6 +576,25 @@ class Controller(IController):
 
         # todo implement
 
+    def perform_prev_sentence(self) -> None:
+        """
+        Moves the comparison model to the previous sentence.
+
+        This method instructs the comparison model to shift to the previous sentence
+        in the comparison sequence, triggering updates to all registered observers.
+        """
+        self._comparison_model.previous_sentence()
+
+    def perform_next_sentence(self) -> None:
+        """
+        Moves the comparison model to the next sentence.
+
+        This method instructs the comparison model to advance to the next sentence
+        in the comparison sequence, triggering updates to all registered observers.
+        """
+        self._comparison_model.next_sentence()
+
+# Helpers
     def _notify_deletion_prohibited(self, tag_id: str, caller_id: str) -> None:
         """
         Notifies the user that the deletion of the specified tag is prohibited due to existing references.
@@ -597,6 +616,7 @@ class Controller(IController):
         """
         for undo_redo_model in self._undo_redo_models.values():
             undo_redo_model.reset()
+# Getters/setters
 
     def get_selected_text_data(self) -> Dict:
         """

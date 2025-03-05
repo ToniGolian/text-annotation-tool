@@ -36,36 +36,21 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
 
     def _render(self):
         """Sets up and arranges all widgets in a single grid layout."""
-
-        # # Directory Label, Entry, and Button (Row 0)
-        # self.dir_label = tk.Label(self, text="Directory:")
-        # self.dir_label.grid(row=0, column=0, sticky="w", padx=5, pady=5)
-
-        # self.dir_entry = tk.Entry(self)
-        # self.dir_entry.insert(0, self._default_directory)
-        # self.dir_entry.grid(row=0, column=1, columnspan=3,
-        #                     sticky="ew", padx=5, pady=5)
-
-        # self.dir_button = ttk.Button(
-        #     self, text="Select Directory", command=self.on_button_pressed_select_directory
-        # )
-        # self.dir_button.grid(row=0, column=4, sticky="ew", padx=5, pady=5)
-
         # Filter Label, Combobox, and Start Button (Row 1)
-        self.filter_label = tk.Label(self, text="Filter:")
-        self.filter_label.grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        # self.filter_label = tk.Label(self, text="Filter:")
+        # self.filter_label.grid(row=1, column=0, sticky="w", padx=5, pady=5)
 
-        self.filter_var = tk.StringVar()
-        self.filter_combobox = ttk.Combobox(self, textvariable=self.filter_var)
-        self.filter_combobox['values'] = ("No Filter", "Timex3", "Geo")
-        self.filter_combobox.current(0)
-        self.filter_combobox.grid(
-            row=1, column=1, columnspan=3, sticky="ew", padx=5, pady=0)
+        # self.filter_var = tk.StringVar()
+        # self.filter_combobox = ttk.Combobox(self, textvariable=self.filter_var)
+        # self.filter_combobox['values'] = ("No Filter", "Timex3", "Geo")
+        # self.filter_combobox.current(0)
+        # self.filter_combobox.grid(
+        #     row=1, column=1, columnspan=3, sticky="ew", padx=5, pady=0)
 
-        self.start_button = ttk.Button(
-            self, text="Start Comparison", command=self._on_button_pressed_start_comparison
-        )
-        self.start_button.grid(row=1, column=4, sticky="ew", padx=5, pady=0)
+        # self.start_button = ttk.Button(
+        #     self, text="Start Comparison", command=self._on_button_pressed_start_comparison
+        # )
+        # self.start_button.grid(row=1, column=4, sticky="ew", padx=5, pady=0)
 
         # Radio Buttons Label (Row 2)
         self.radio_label = tk.Label(self, text="Choose preferred annotation:")
@@ -153,23 +138,31 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         # Render the updated state
         self._render()
 
-    def _on_button_pressed_select_directory(self):
-        """Placeholder for directory selection logic."""
-        pass
-
-    def _on_button_pressed_start_comparison(self):
-        """Placeholder for start comparison logic."""
-        pass
+    # def _on_button_pressed_start_comparison(self):
+    #     """Placeholder for start comparison logic."""
+    #     pass
 
     def _on_button_pressed_overwrite(self):
         """Placeholder for overwrite logic."""
         pass
 
-    def _on_button_pressed_prev_sentence(self):
-        pass
+    def _on_button_pressed_prev_sentence(self) -> None:
+        """
+        Handles the event when the 'Previous Sentence' button is pressed.
 
-    def _on_button_pressed_next_sentence(self):
-        pass
+        This method triggers the controller to switch to the previous sentence
+        in the comparison view.
+        """
+        self._controller.perform_prev_sentence()
+
+    def _on_button_pressed_next_sentence(self) -> None:
+        """
+        Handles the event when the 'Next Sentence' button is pressed.
+
+        This method triggers the controller to switch to the next sentence
+        in the comparison view.
+        """
+        self._controller.perform_next_sentence()
 
     def finalize_view(self) -> None:
         """

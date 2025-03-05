@@ -136,6 +136,7 @@ class ComparisonModel(IPublisher):
 
         for document, sentence in zip(self._document_models, sentence_list):
             document.set_text(sentence)
+        self.notify_observers()
 
     def get_state(self) -> Dict[str, int]:
         """
@@ -149,6 +150,8 @@ class ComparisonModel(IPublisher):
                 - "num_sentences" (int): The total number of sentence tuples available.
                 - "current_sentence_index" (int): The index of the currently selected sentence tuple.
         """
+        num_sentences = len(
+            self._comparison_sentences[0]) if self._comparison_sentences else 0
         return {"file_names": self._file_names,
-                "num_sentences": len(self._comparison_sentences),
+                "num_sentences": num_sentences,
                 "current_sentence_index": self._current_index}

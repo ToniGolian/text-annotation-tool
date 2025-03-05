@@ -1,6 +1,7 @@
 from controller.controller import Controller
 from mockclasses.mock_configuration_model import MockConfigurationModel
 from model.annotation_document_model import AnnotationDocumentModel
+from model.appearance_model import AppearanceModel
 from model.comparison_model import ComparisonModel
 from model.configuration_model import ConfigurationModel
 from model.extraction_document_model import ExtractionDocumentModel
@@ -16,9 +17,10 @@ def main():
     comparison_model = ComparisonModel()
     configuration_model = ConfigurationModel()
     selection_model = SelectionModel()
+    appearance_model = AppearanceModel()
 
     controller = Controller(
-        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, configuration_model=configuration_model)
+        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, configuration_model=configuration_model, appearance_model=appearance_model)
     app_view = MainWindow(controller)
     controller.finalize_views()
     #!DEBUG

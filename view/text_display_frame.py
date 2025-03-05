@@ -2,6 +2,7 @@ import tkinter as tk
 from controller.interfaces import IController
 from observer.interfaces import IPublisher
 from view.interfaces import ITextDisplayFrame
+import uuid
 
 
 class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
@@ -12,7 +13,7 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
 
     DEBOUNCE_DELAY = 300  # milliseconds
 
-    def __init__(self, parent: tk.Widget, controller: IController, editable: bool = False, register_as_observer: bool = False) -> None:
+    def __init__(self, parent: tk.Widget, controller: IController, editable: bool = False, is_static_observer: bool = False) -> None:
         """
         Initializes the TextDisplayFrame with a text widget, scrollbar, and optional observer registration.
 
@@ -33,12 +34,13 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
         self._is_typing = False  # Indicates if the user is typing
         self._internal_update = False  # Tracks if the update is internal
         self._cursor_position: str = None  # Stores cursor position for internal updates
+        self._is_static_observer: bool = is_static_observer
 
         # Render the GUI components
         self._render()
 
         # Register as an observer
-        if register_as_observer:
+        if is_static_observer:
             self._controller.add_observer(self)
 
     def _render(self) -> None:
@@ -160,11 +162,13 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
         text = self._controller.get_observer_state(
             self, publisher).get("text", "NOTEXT")
 
-        # Update the display
-        if not self._editable:
-            self.text_widget.config(state="normal")
+        self.text_widget.config(state="normal")
         self.text_widget.delete("1.0", tk.END)
         self.text_widget.insert("1.0", text)
+        self.text_widget.update_idletasks()
+        self.text_widget.update()
+
+        actual_text = self.text_widget.get("1.0", tk.END).strip()
 
         # Restore cursor position if available
         if self._cursor_position:
@@ -175,3 +179,15 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
 
         self._cursor_position = None  # Reset the cursor position
         self._internal_update = False  # Reset the internal update flag
+
+    def is_static_observer(self) -> bool:
+        """
+        Checks whether this observer is static.
+
+        A static observer is permanently registered and does not change dynamically
+        during runtime.
+
+        Returns:
+            bool: True if the observer is static, False otherwise.
+        """
+        return self._is_static_observer

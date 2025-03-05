@@ -19,6 +19,8 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         super().__init__(parent)
         self._controller: IController = controller
 
+        self._num_comparison_displays: int = 0
+
         self._file_names: List[str] = []
         self._widget_structure: List[tk.Widget] = []
 
@@ -86,28 +88,25 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
 
     def _reconfigure_widgets(self) -> None:
         """
-        Reconfigures the widgets based on the current state of self._file_names.
+        Reconfigures the widgets based on the current state of num_comparison_displays.
         Creates a new Label and TextDisplayFrame pair for each document and updates self._widget_structure.
         """
         self._widget_structure = []
 
-        # just to ensure at least one display
-        if not self._file_names:
-            self._file_names = [""]
+        for _ in range(self._num_comparison_displays):
+            # if index != 0:
+            #     # Create a label with the document's file_name
+            #     label = tk.Label(self.scrollable_frame,
+            #                      text=f"Filename: {file_name}")
+            # else:
+            #     label = tk.Label(self.scrollable_frame, text="Original Text:")
 
-        for file_name in self._file_names:
-            if file_name:
-                # Create a label with the document's file_name
-                label = tk.Label(self.scrollable_frame,
-                                 text=f"Filename: {file_name}")
-            else:
-                label = tk.Label(self.scrollable_frame, text="Original Text:"
-                                 )
             # Create a TextDisplayFrame for displaying the document's content
             text_display_frame = AnnotationTextDisplayFrame(
                 parent=self.scrollable_frame, controller=self._controller)
             # Add the label and text display frame as a pair in the widget structure
-            self._widget_structure.append((label, text_display_frame))
+            self._widget_structure.append(
+                (tk.Label(self.scrollable_frame), text_display_frame))
 
     def update(self, publisher: IPublisher) -> None:
         """
@@ -123,11 +122,17 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         state = self._controller.get_observer_state(self, publisher)
 
         # Update view attributes dynamically based on the retrieved state
+        if "num_comparison_displays" in state:
+            self._num_comparison_displays = state["num_comparison_displays"]
+            # Render the updated state
+            self._render()
         if "file_names" in state:
             self._file_names = state["file_names"]
-
-        # Render the updated state
-        self._render()
+            for index, (file_name, (label, _)) in enumerate(zip(self._file_names, self._widget_structure)):
+                if index == 0:
+                    label.config(text="Original Text:")
+                else:
+                    label.config(text=f"Filename: {file_name}")
 
     def finalize_view(self) -> None:
         """

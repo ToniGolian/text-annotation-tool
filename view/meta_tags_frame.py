@@ -1,13 +1,13 @@
 import tkinter as tk
 from tkinter import ttk
-from controller.interfaces import IController
 from typing import List, Dict
+from controller.interfaces import IController
 from observer.interfaces import IPublisher
 from view.interfaces import IMetaTagsFrame
 
 
-class MetaTagsFrame(tk.Frame):
-    def __init__(self, parent: tk.Widget, controller) -> None:
+class MetaTagsFrame(tk.Frame, IMetaTagsFrame):
+    def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
         Initializes the MetaTagsFrame with a controller and a scrollable area.
 

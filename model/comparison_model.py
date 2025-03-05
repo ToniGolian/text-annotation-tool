@@ -29,8 +29,6 @@ class ComparisonModel(IPublisher):
         """
         self._document_models = documents
         self._file_names = [document.get_file_name() for document in documents]
-        # This triggers the construction of the corresponding displays
-        self.notify_observers()
 
     def register_comparison_displays(self, observers: List[IObserver]) -> None:
         """
@@ -65,8 +63,8 @@ class ComparisonModel(IPublisher):
         self._merged_text = comparison_data["common_text"]
         self._comparison_sentences = comparison_data["comparison_sentences"]
         self._current_index = 0
-        self._update_document_texts()
         self.notify_observers()
+        self._update_document_texts()
 
     def next_sentence(self) -> None:
         """

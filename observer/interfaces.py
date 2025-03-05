@@ -9,6 +9,10 @@ class IObserver(ABC):
         """Called when data changes."""
         pass
 
+    def is_static_observer(self) -> bool:
+        """Default implementation that can be overridden"""
+        return True
+
 
 class IPublisher(ABC):
     """

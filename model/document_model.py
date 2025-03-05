@@ -97,9 +97,7 @@ class DocumentModel(IDocumentModel):
             text (str): The new text content to set.
         """
         self._text = text
-        print(f"DEBUG set text 1 {self._text=}")
         self.notify_observers()
-        print(f"DEBUG set text 2 {self._text=}")
 
     def get_document_type(self) -> str:
         """

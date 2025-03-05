@@ -8,8 +8,7 @@ from model.annotation_document_model import AnnotationDocumentModel
 from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISelectionModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
-from typing import Dict, List, Tuple, Union
-
+from typing import Dict, List, Tuple
 from utils.comparison_manager import ComparisonManager
 from utils.list_manager import ListManager
 from utils.pdf_extraction_manager import PDFExtractionManager
@@ -21,7 +20,7 @@ from view.interfaces import IComparisonView, IView
 
 
 class Controller(IController):
-    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None):
+    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None):
 
         # dependencies
         self._file_handler = FileHandler()
@@ -51,6 +50,7 @@ class Controller(IController):
         self._observer_layout_map: Dict[IObserver, Dict] = {}
 
         self._configuration_model: IPublisher = configuration_model
+        self._appearance_model: IPublisher = appearance_model
         self._extraction_document_model: IDocumentModel = preview_document_model
         self._annotation_document_model: IDocumentModel = annotation_document_model
         self._comparison_model: IComparisonModel = comparison_model
@@ -196,7 +196,8 @@ class Controller(IController):
         Retrieves the updated state information for a specific observer and publisher.
 
         This method determines the relevant data sources for the observer. If a publisher is provided,
-        it serves as the sole data source. Otherwise, the sources are derived from the observer's
+        it serves as the primary data source. If the publisher is not static, it is used directly in
+        place of a dynamically mapped source. Otherwise, the sources are derived from the observer's 
         configuration mapping.
 
         The state information is then extracted based on the specified source keys.
@@ -214,8 +215,29 @@ class Controller(IController):
         # Retrieve the observer's configuration mapping
         mapping = self._get_observer_config(observer, publisher)
 
-        if publisher is None:
-            # Merge source keys from all registered publishers for this observer
+        if publisher:
+            # Extract source keys from mapping
+            source_keys = mapping["source_keys"]
+
+            if observer.is_static_observer():
+                # Static publisher: Use all sources from the mapping (retrieved with getattr)
+                sources = [
+                    getattr(self, f"_{source_name}", None)
+                    for source_name in source_keys
+                ]
+            else:
+                # Dynamic publisher: Use it directly for its mapped source_name, others from getattr
+                sources = [
+                    publisher if source_name in mapping["source_keys"] else getattr(
+                        self, f"_{source_name}", None)
+                    for source_name in source_keys
+                ]
+
+            # Filter out invalid sources (None values)
+            sources = [source for source in sources if source is not None]
+
+        else:
+            # No publisher: Merge source keys from all registered publishers for this observer
             merged_source_keys = {}
             for publisher_mapping in mapping.values():
                 for source_name, keys in publisher_mapping["source_keys"].items():
@@ -228,23 +250,18 @@ class Controller(IController):
                 source_name: list(keys) for source_name, keys in merged_source_keys.items()
             }
 
-            # Retrieve sources dynamically based on the source names
+            # Retrieve sources dynamically based on the source names (only if they are not None)
             sources = [
                 getattr(self, f"_{source_name}", None)
                 for source_name in source_keys
             ]
-        else:
-            # If a publisher is provided, it acts as the sole data source
-            source_keys = mapping["source_keys"]
-            sources = [publisher]
+            sources = [source for source in sources if source is not None]
 
-        # Filter out invalid sources (None values)
-        sources = [source for source in sources if source is not None]
         # Collect state data from all valid sources
         state = {
             key: value
-            for source_name, keys in source_keys.items()
-            if (source := getattr(self, f"_{source_name}", None)) is not None
+            for source, keys in zip(sources, source_keys.values())
+            if source is not None  # Ensure source is valid
             for key, value in source.get_state().items()
             if key in keys
         }
@@ -513,6 +530,8 @@ class Controller(IController):
                 self._annotation_document_model)
 
         if self._active_view_id == "comparison":
+            self._appearance_model.set_num_comparison_displays(
+                len(documents)+1)
             document_models = [AnnotationDocumentModel()]+[AnnotationDocumentModel(
                 document) for document in documents]
             self._comparison_model.set_documents(document_models)

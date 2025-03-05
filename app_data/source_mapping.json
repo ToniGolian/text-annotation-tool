@@ -47,6 +47,14 @@
                     "file_names"
                 ]
             }
+        },
+        "AppearanceModel": {
+            "finalize": false,
+            "source_keys": {
+                "appearance_model": [
+                    "num_comparison_displays"
+                ]
+            }
         }
     },
     "ComparisonHeaderFrame": {

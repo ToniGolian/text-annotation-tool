@@ -41,7 +41,7 @@ class AnnotationView(View):
 
         # Lower frame for text annotation display
         self.lower_frame = AnnotationTextDisplayFrame(
-            self.left_paned, controller=self._controller, register_as_observer=True)
+            self.left_paned, controller=self._controller, is_static_observer=True)
 
         # Add both frames to the vertical PanedWindow inside left_frame
         # MetaTagsFrame gets less space

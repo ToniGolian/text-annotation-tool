@@ -82,8 +82,6 @@ class ComparisonManager:
         # Convert clean_texts to sets for comparison
         clean_text_sets = [set(map(tuple, clean_text))
                            for clean_text in clean_texts]
-        for clean_text in clean_texts:
-            print(f"DEBUG {clean_text[:6]=}")
 
         # Find the intersection across all clean_texts
         common_sentences = set.intersection(*clean_text_sets)
@@ -108,7 +106,6 @@ class ComparisonManager:
         aligned_texts = [[] for _ in texts]
         aligned_clean_texts = [[] for _ in clean_texts]
         align_option = self._controller.get_align_option()
-        print(f"DEBUG cm {align_option=}")
 
         sentence_indices = [0]*len(clean_texts)
         while any(index < len(clean_text) for clean_text, index in zip(clean_texts, sentence_indices)):

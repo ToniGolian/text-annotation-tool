@@ -11,7 +11,7 @@ class ComparisonModel(IPublisher):
 
     def __init__(self):
         super().__init__()
-        self._documents: List[IDocumentModel] = []
+        self._document_models: List[IDocumentModel] = []
         self._file_names: List[str] = []
         self._merged_text: str = ""
         self._comparison_sentences = []
@@ -27,7 +27,7 @@ class ComparisonModel(IPublisher):
         Args:
             documents (List[IDocumentModel]): The list of document models.
         """
-        self._documents = documents
+        self._document_models = documents
         self._file_names = [document.get_file_name() for document in documents]
         # This triggers the construction of the corresponding displays
         self.notify_observers()
@@ -45,11 +45,11 @@ class ComparisonModel(IPublisher):
         Raises:
             ValueError: If the number of documents and observers does not match.
         """
-        if len(self._documents)+1 != len(observers):
+        if len(self._document_models)+1 != len(observers):
             raise ValueError(
-                f"Mismatch between number of documents ({len(self._documents)+1}) and observers ({len(observers)})")
-        for document, observer in zip(self._documents, observers):
-            document.add_observer(observer)
+                f"Mismatch between number of documents ({len(self._document_models)+1}) and observers ({len(observers)})")
+        for document_model, observer in zip(self._document_models, observers):
+            document_model.add_observer(observer)
 
     def set_comparison_data(self, comparison_data: Dict[str, Union[str, List[Tuple[str, ...]]]]) -> None:
         """
@@ -132,7 +132,7 @@ class ComparisonModel(IPublisher):
 
         sentence_tuple: Tuple[str, ...] = self._comparison_sentences[self._current_index]
 
-        for document, sentence in zip(self._documents, sentence_tuple):
+        for document, sentence in zip(self._document_models, sentence_tuple):
             document.set_text(sentence)
 
     def get_state(self) -> Dict[str, int]:

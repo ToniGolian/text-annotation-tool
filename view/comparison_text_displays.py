@@ -91,18 +91,18 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         """
         self._widget_structure = []
 
-        original_label = tk.Label(
-            self.scrollable_frame, text="Original Text:"
-        )
-        original_text_display = AnnotationTextDisplayFrame(
-            parent=self.scrollable_frame, controller=self._controller)
-        self._widget_structure.append((original_label, original_text_display))
+        # just to ensure at least one display
+        if not self._file_names:
+            self._file_names = [""]
 
         for file_name in self._file_names:
-            # Create a label with the document's file_name
-            label = tk.Label(self.scrollable_frame,
-                             text=f"Filename: {file_name}")
-
+            if file_name:
+                # Create a label with the document's file_name
+                label = tk.Label(self.scrollable_frame,
+                                 text=f"Filename: {file_name}")
+            else:
+                label = tk.Label(self.scrollable_frame, text="Original Text:"
+                                 )
             # Create a TextDisplayFrame for displaying the document's content
             text_display_frame = AnnotationTextDisplayFrame(
                 parent=self.scrollable_frame, controller=self._controller)

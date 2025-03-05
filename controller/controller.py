@@ -513,7 +513,7 @@ class Controller(IController):
                 self._annotation_document_model)
 
         if self._active_view_id == "comparison":
-            document_models = [AnnotationDocumentModel()] + [AnnotationDocumentModel(
+            document_models = [AnnotationDocumentModel()]+[AnnotationDocumentModel(
                 document) for document in documents]
             self._comparison_model.set_documents(document_models)
             # Don't change the order since the documents trigger the displaycreation
@@ -522,7 +522,8 @@ class Controller(IController):
                 comparison_displays)
             comparison_data = self._perform_annotation_comparison(
                 documents)  # todo implement
-            self._comparison_model.set_comparison_data(comparison_data)
+            self._comparison_model.set_comparison_data(
+                comparison_data)  # todo implement
 
     def perform_save_as(self, file_path: str):
         """

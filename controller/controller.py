@@ -520,8 +520,8 @@ class Controller(IController):
             comparison_displays = self._comparison_view.get_comparison_displays()
             self._comparison_model.register_comparison_displays(
                 comparison_displays)
-            comparison_data = self._perform_annotation_comparison(
-                documents)  # todo implement
+            comparison_data = self._comparison_manager.extract_comparison_data(
+                documents)
             self._comparison_model.set_comparison_data(
                 comparison_data)  # todo implement
 
@@ -556,9 +556,6 @@ class Controller(IController):
         self._file_handler.write_file(file_path, document)
 
         # todo implement
-
-    def _perform_annotation_comparison(self, documents: List[IDocumentModel]) -> Dict[str, Union[str, List[Tuple[str, ...]]]]:
-        pass
 
     def _notify_deletion_prohibited(self, tag_id: str, caller_id: str) -> None:
         """
@@ -695,7 +692,7 @@ class Controller(IController):
         data_source = self._document_source_mapping[self._active_view_id]
         return data_source.get_file_path()
 
-    def get_highlight_data(self) -> List[Tuple[str, int, int]]:
+    def get_highlight_data(self, target_model: IPublisher = None) -> List[Tuple[str, int, int]]:
         """
         Retrieves the highlight data for text annotation.
 
@@ -708,7 +705,8 @@ class Controller(IController):
                 - The second element (int) is the start position of the highlight in the text.
                 - The third element (int) is the end position of the highlight in the text.
         """
-        target_model = self._document_source_mapping[self._active_view_id]
+        # if not target_model:
+        #     target_model = self._document_source_mapping[self._active_view_id]
         color_scheme = self._configuration_model.get_color_scheme()
         highlight_data = self._tag_manager.get_highlight_data(target_model)
         highlight_data = [

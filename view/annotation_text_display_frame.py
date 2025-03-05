@@ -23,7 +23,7 @@ class AnnotationTextDisplayFrame(TextDisplayFrame):
         """
         super().update(publisher)
         # use this controller method, because the publisher doesn't know the highlight data and doesn't need to
-        highlight_data = self._controller.get_highlight_data()
+        highlight_data = self._controller.get_highlight_data(publisher)
         self.unhighlight_text()
         self.highlight_text(highlight_data)
 

@@ -84,7 +84,7 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         manual_radio.grid(row=0, column=0, padx=5, pady=0, sticky="w")
 
         # Annotator Radio Buttons in multiple rows using grid
-        for i in range(self._num_files):
+        for i in range(max(0, self._num_files-1)):
             # Calculate the row index
             row = ((i+1) // self.MAX_BUTTONS_PER_ROW)
             # Calculate the column index
@@ -108,7 +108,7 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         nav_frame.grid(row=3, column=4, padx=5, pady=(5, 0), sticky="ew")
 
         self.sentence_label = tk.Label(
-            nav_frame, text=f"Current Sentence: {self._current_sentence_index}/{self._num_sentences}")
+            nav_frame, text=f"Current Sentence: {self._current_sentence_index+1}/{self._num_sentences}")
         self.sentence_label.pack(side=tk.LEFT, pady=0)
 
         self.prev_button = ttk.Button(
@@ -148,7 +148,6 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
 
         # Update layout-related attributes if available
         if "file_names" in state:
-            print(f"DEBUG {state['file_names']=}")
             self._num_files = len(state["file_names"])
 
         # Render the updated state

@@ -97,7 +97,9 @@ class DocumentModel(IDocumentModel):
             text (str): The new text content to set.
         """
         self._text = text
+        print(f"DEBUG set text 1 {self._text=}")
         self.notify_observers()
+        print(f"DEBUG set text 2 {self._text=}")
 
     def get_document_type(self) -> str:
         """
@@ -181,8 +183,9 @@ class DocumentModel(IDocumentModel):
         Returns:
             dict: A dictionary containing the object's attributes as keys and their corresponding values.
         """
-        return {"document_type": self._document_type,
-                "file_path": self._file_path,
-                "file_name": self._file_name,
-                "meta_tags": self._meta_tags,
-                "text": self._text}
+        state = {"document_type": self._document_type,
+                 "file_path": self._file_path,
+                 "file_name": self._file_name,
+                 "meta_tags": self._meta_tags,
+                 "text": self._text}
+        return state

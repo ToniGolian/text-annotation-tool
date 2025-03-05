@@ -45,9 +45,9 @@ class ComparisonModel(IPublisher):
         Raises:
             ValueError: If the number of documents and observers does not match.
         """
-        if len(self._document_models)+1 != len(observers):
+        if len(self._document_models) != len(observers):
             raise ValueError(
-                f"Mismatch between number of documents ({len(self._document_models)+1}) and observers ({len(observers)})")
+                f"Mismatch between number of documents ({len(self._document_models)}) and observers ({len(observers)})")
         for document_model, observer in zip(self._document_models, observers):
             document_model.add_observer(observer)
 
@@ -65,74 +65,78 @@ class ComparisonModel(IPublisher):
         self._merged_text = comparison_data["common_text"]
         self._comparison_sentences = comparison_data["comparison_sentences"]
         self._current_index = 0
+        self._update_document_texts()
         self.notify_observers()
 
     def next_sentence(self) -> None:
         """
-        Advances to the next sentence tuple in the comparison sentences list.
-        If at the last element, it wraps around to the first element.
+        Advances to the next sentence index in the comparison sentences list.
+        If at the last index, it wraps around to the first index.
         If the current element has been removed, it automatically moves to the next available element.
         """
-        if not self._comparison_sentences:
+        if not self._comparison_sentences or not self._comparison_sentences[0]:
             return  # No sentences available
 
         # Move to next index, wrapping around if necessary
         self._current_index = (self._current_index +
-                               1) % len(self._comparison_sentences)
+                               1) % len(self._comparison_sentences[0])
 
         self._update_document_texts()
 
     def previous_sentence(self) -> None:
         """
-        Moves to the previous sentence tuple in the comparison sentences list.
-        If at the first element, it wraps around to the last element.
+        Moves to the previous sentence index in the comparison sentences list.
+        If at the first index, it wraps around to the last index.
         If the current element has been removed, it automatically moves to the next available element.
         """
-        if not self._comparison_sentences:
+        if not self._comparison_sentences or not self._comparison_sentences[0]:
             return  # No sentences available
 
         # Move to previous index, wrapping around if necessary
         self._current_index = (self._current_index -
-                               1) % len(self._comparison_sentences)
+                               1) % len(self._comparison_sentences[0])
 
         self._update_document_texts()
 
     def remove_current_sentence(self) -> None:
         """
-        Removes the currently selected sentence tuple from the comparison sentences list.
+        Removes the currently selected sentence across all lists in the comparison sentences.
         After removal, it moves to the next available sentence.
         If the last element is removed, it wraps around to the first element.
         If the list becomes empty, no further action is taken.
         """
-        if not self._comparison_sentences:
+        if not self._comparison_sentences or not self._comparison_sentences[0]:
             return  # No sentences available
 
-        # Remove the current sentence
-        del self._comparison_sentences[self._current_index]
+        # Remove the current sentence from all sublists
+        for sentence_list in self._comparison_sentences:
+            del sentence_list[self._current_index]
 
-        # Handle case where list becomes empty after removal
-        if not self._comparison_sentences:
+        # Handle case where sentences become empty after removal
+        if not self._comparison_sentences[0]:
             self._current_index = 0  # Reset index, but nothing to navigate
             return
 
         # Ensure index remains valid after removal
-        self._current_index %= len(self._comparison_sentences)
+        self._current_index %= len(self._comparison_sentences[0])
 
         self._update_document_texts()
 
     def _update_document_texts(self) -> None:
         """
         Updates the text of each document in self._documents with the corresponding sentence
-        from the current tuple in self._comparison_sentences.
+        from the current index in the comparison sentences list.
 
         Assumes that self._current_index is set correctly.
         """
-        if not self._comparison_sentences:
+        if not self._comparison_sentences or not self._comparison_sentences[0]:
             return  # No sentences to update
 
-        sentence_tuple: Tuple[str, ...] = self._comparison_sentences[self._current_index]
+        # Extract the current sentence for each document
+        sentence_list = [sentence[self._current_index]
+                         for sentence in self._comparison_sentences]
 
-        for document, sentence in zip(self._document_models, sentence_tuple):
+        for document, sentence in zip(self._document_models, sentence_list):
             document.set_text(sentence)
 
     def get_state(self) -> Dict[str, int]:

@@ -26,8 +26,9 @@ class ComparisonManager:
         comparison_sentences = self._extract_differing_tagged_sentences(
             raw_text, tagged_texts)
 
+        common_text = raw_text  # todo calc text with common tags
         comparison_data = {
-            "raw_text": raw_text,
+            "common_text": common_text,
             "comparison_sentences": comparison_sentences
         }
         return comparison_data

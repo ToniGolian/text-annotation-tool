@@ -191,12 +191,11 @@ class Controller(IController):
         """
         Retrieves the updated state information for a specific observer and publisher.
 
-        This method accesses the relevant mapping to fetch the state processing logic
-        associated with the given observer and publisher. It then retrieves the relevant
-        data from the appropriate data source.
+        This method determines the relevant data sources for the observer. If a publisher is provided,
+        it serves as the sole data source. Otherwise, the sources are derived from the observer's
+        configuration mapping.
 
-        If no publisher is provided, it merges all publisher-specific state mappings
-        into a single dictionary.
+        The state information is then extracted based on the specified source keys.
 
         Args:
             observer (IObserver): The observer requesting updated state information.
@@ -208,28 +207,39 @@ class Controller(IController):
         Raises:
             KeyError: If the provided observer or publisher is not registered in the mapping.
         """
-        # Retrieve the mapping based on the observer and publisher
+        # Retrieve the observer's configuration mapping
         mapping = self._get_observer_config(observer, publisher)
 
-        # If no publisher is provided, merge all publisher-specific mappings
         if publisher is None:
+            print(f"DEBUG if")
+            # Merge source keys from all registered publishers for this observer
             merged_source_keys = {}
-            for publisher_mapping in mapping.values():  # Iterate over all publisher configs
+            for publisher_mapping in mapping.values():
                 for source_name, keys in publisher_mapping["source_keys"].items():
                     if source_name not in merged_source_keys:
                         merged_source_keys[source_name] = set()
                     merged_source_keys[source_name].update(keys)
 
             # Convert merged sets back to lists
-            merged_source_keys = {
+            source_keys = {
                 source_name: list(keys) for source_name, keys in merged_source_keys.items()
             }
-            source_keys = merged_source_keys
+
+            # Retrieve sources dynamically based on the source names
+            sources = [
+                getattr(self, f"_{source_name}", None)
+                for source_name in source_keys
+            ]
         else:
+            print(f"DEBUG else")
+            # If a publisher is provided, it acts as the sole data source
             source_keys = mapping["source_keys"]
-        # Fetch the state from the relevant sources and keys
-        for source_name, keys in source_keys.items():
-            source = getattr(self, f"_{source_name}", None)
+            sources = [publisher]
+
+        # Filter out invalid sources (None values)
+        sources = [source for source in sources if source is not None]
+        print(f"DEBUG {sources=}")
+        # Collect state data from all valid sources
         state = {
             key: value
             for source_name, keys in source_keys.items()
@@ -237,6 +247,8 @@ class Controller(IController):
             for key, value in source.get_state().items()
             if key in keys
         }
+
+        print(f"DEBUG {state=}")
         return state
 
     def _get_observer_config(self, observer: IObserver, publisher: IPublisher = None) -> Dict:

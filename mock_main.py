@@ -3,7 +3,7 @@ from mockclasses.mock_controller import MockController
 from mockclasses.mock_list_manager import ListManager
 from mockclasses.mock_models import MockComparisonModel, MockDocumentModel, MockTagModel
 from model.annotation_document_model import AnnotationDocumentModel
-from model.comparison_document_model import ComparisonDocumentModel
+from model.comparison_model import ComparisonModel
 from model.configuration_model import ConfigurationModel
 from model.extraction_document_model import ExtractionDocumentModel
 from model.selection_model import SelectionModel
@@ -23,7 +23,7 @@ margins = [10, 10, 10, 10]
 pages = "6-36"
 preview_document_model = ExtractionDocumentModel()
 annotation_document_model = AnnotationDocumentModel()
-comparison_document_model = ComparisonDocumentModel()
+comparison_document_model = ComparisonModel()
 comparison_model = MockComparisonModel()
 configuration_model = ConfigurationModel()
 selection_model = SelectionModel()

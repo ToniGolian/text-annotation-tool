@@ -21,20 +21,13 @@
         }
     },
     "ComparisonTextDisplayFrame": {
-        "ComparisonDocumentModel": {
-            "finalize": false,
-            "source_keys": {
-                "comparison_document_model": [
-                    "text"
-                ]
-            }
-        },
         "ComparisonModel": {
             "finalize": false,
             "source_keys": {
                 "comparison_model": [
                     "comparison_sentences",
-                    "highlight_data"
+                    "highlight_data",
+                    "text"
                 ]
             }
         }

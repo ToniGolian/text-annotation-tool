@@ -13,7 +13,7 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
 
     DEBOUNCE_DELAY = 300  # milliseconds
 
-    def __init__(self, parent: tk.Widget, controller: IController, editable: bool = False, is_static_observer: bool = False) -> None:
+    def __init__(self, parent: tk.Widget, controller: IController, editable: bool = False, is_static_observer: bool = False, height: int = None) -> None:
         """
         Initializes the TextDisplayFrame with a text widget, scrollbar, and optional observer registration.
 
@@ -35,6 +35,7 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
         self._internal_update = False  # Tracks if the update is internal
         self._cursor_position: str = None  # Stores cursor position for internal updates
         self._is_static_observer: bool = is_static_observer
+        self._height = height
 
         # Render the GUI components
         self._render()
@@ -46,13 +47,15 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
     def _render(self) -> None:
         """
         Sets up and arranges the text widget and scrollbar within the frame.
+        If a height is specified, ensures the widget does not expand beyond this height.
         """
         # Create a scrollbar
         scrollbar = tk.Scrollbar(self, orient="vertical")
 
         # Initialize the text widget and configure the scrollbar
         self.text_widget = tk.Text(
-            self, wrap="word", yscrollcommand=scrollbar.set, state="disabled")
+            self, wrap="word", yscrollcommand=scrollbar.set, state="disabled"
+        )
         scrollbar.config(command=self.text_widget.yview)
 
         if self._editable:
@@ -61,7 +64,10 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
 
         self.text_widget.bind("<ButtonRelease-1>", self._on_selection)
 
-        # Pack the text widget and scrollbar to fill the frame
+        # Ensure the widget respects the given height, if specified
+        if self._height is not None:
+            self.text_widget.config(height=self._height)
+        # Pack the text widget and scrollbar
         self.text_widget.pack(side=tk.LEFT, fill=tk.BOTH,
                               expand=True, padx=(10, 0), pady=(5, 5))
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)

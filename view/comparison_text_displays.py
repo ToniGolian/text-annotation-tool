@@ -21,6 +21,8 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
 
         self._num_comparison_displays: int = 0
 
+        self._comparison_display_height = 8  # todo settings
+
         self._file_names: List[str] = []
         self._widget_structure: List[tk.Widget] = []
 
@@ -65,26 +67,32 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
 
     def _render(self) -> None:
         """
-        Clears all existing widgets, reconfigures the layout with the scrollable frame,
-        and updates the layout with the new widgets.
+        Clears all existing widgets and updates the layout with the new ones.
+        Ensures that each text display maintains its predefined height.
         """
-        # Remove all existing widgets in the scrollable frame
+        # Destroy existing widgets
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
 
-        # Reconfigure the widgets
         self._reconfigure_widgets()
 
-        # Add subsequent labels and text displays
+        # Configure layout for each label and text display frame
         for index, (label, text_display_frame) in enumerate(self._widget_structure):
-            row = (index) * 2  # Alternate rows for label and text display
+            row = index * 2
             label.grid(row=row, column=0, sticky="w", pady=(2, 0))
-            text_display_frame.grid(
-                row=row + 1, column=0, sticky="nsew", pady=(0, 0)
-            )
 
-        # Expand horizontally
+            # Ensure the text display does not expand beyond its height
+            text_display_frame.grid(
+                row=row + 1, column=0, sticky="ew", pady=(0, 0))
+            text_display_frame.grid_propagate(False)
+
+        # Prevent the entire frame from expanding vertically
         self.scrollable_frame.grid_columnconfigure(0, weight=1)
+
+        # Ensure each row is properly configured
+        for i in range(len(self._widget_structure) * 2):
+            self.scrollable_frame.grid_rowconfigure(
+                i, weight=0)  # Ensure no unexpected expansion
 
     def _reconfigure_widgets(self) -> None:
         """
@@ -94,17 +102,14 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         self._widget_structure = []
 
         for _ in range(self._num_comparison_displays):
-            # if index != 0:
-            #     # Create a label with the document's file_name
-            #     label = tk.Label(self.scrollable_frame,
-            #                      text=f"Filename: {file_name}")
-            # else:
-            #     label = tk.Label(self.scrollable_frame, text="Original Text:")
-
-            # Create a TextDisplayFrame for displaying the document's content
+            # Create a TextDisplayFrame with a fixed height
             text_display_frame = AnnotationTextDisplayFrame(
-                parent=self.scrollable_frame, controller=self._controller)
-            # Add the label and text display frame as a pair in the widget structure
+                parent=self.scrollable_frame, controller=self._controller, height=self._comparison_display_height
+            )
+
+            # Ensure the frame does not expand vertically
+            text_display_frame.grid_propagate(False)
+
             self._widget_structure.append(
                 (tk.Label(self.scrollable_frame), text_display_frame))
 

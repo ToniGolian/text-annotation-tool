@@ -147,8 +147,8 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
             self._current_sentence_index = state["current_sentence_index"]
 
         # Update layout-related attributes if available
-        if "num_files" in state:
-            self._num_files = state["num_files"]
+        if "file_names" in state:
+            self._num_files = len(state["file_names"])
 
         # Render the updated state
         self._render()
@@ -180,6 +180,6 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
             self._num_sentences = state["num_sentences"]
         if "current_sentence_index" in state:
             self._current_sentence_index = state["current_sentence_index"]
-        if "num_files" in state:
-            self._num_files = state["num_files"]
+        if "file_names" in state:
+            self._num_files = len(state["file_names"])
         self._render()

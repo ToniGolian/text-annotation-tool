@@ -30,8 +30,8 @@ class ITextDisplayFrame(IObserver):
     pass
 
 
-class IComparisonTextDisplayFrame(ITextDisplayFrame):
-    pass
+# class IComparisonTextDisplayFrame(ITextDisplayFrame):
+#     pass
 
 
 class IComparisonView(ITextDisplayFrame):

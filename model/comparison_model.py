@@ -28,7 +28,7 @@ class ComparisonModel(IPublisher):
             documents (List[IDocumentModel]): The list of document models.
         """
         self._documents = documents
-        self._file_names = [document["file_name"] for document in documents]
+        self._file_names = [document.get_file_name() for document in documents]
         # This triggers the construction of the corresponding displays
         self.notify_observers()
 
@@ -45,9 +45,9 @@ class ComparisonModel(IPublisher):
         Raises:
             ValueError: If the number of documents and observers does not match.
         """
-        if len(self._documents) != len(observers):
+        if len(self._documents)+1 != len(observers):
             raise ValueError(
-                f"Mismatch between number of documents ({len(self._documents)}) and observers ({len(observers)})")
+                f"Mismatch between number of documents ({len(self._documents)+1}) and observers ({len(observers)})")
         for document, observer in zip(self._documents, observers):
             document.add_observer(observer)
 

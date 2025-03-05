@@ -2,8 +2,8 @@ from tkinter import ttk
 from typing import List
 from controller.interfaces import IController
 from observer.interfaces import IPublisher
+from view.annotation_text_display_frame import AnnotationTextDisplayFrame
 from view.interfaces import IComparisonTextDisplays
-from view.comparison_text_display_frame import ComparisonTextDisplayFrame
 import tkinter as tk
 
 
@@ -60,8 +60,6 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         # Configure grid weights
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        print(
-            f"DEBUG init {type(self._controller)=}")
 
     def _render(self) -> None:
         """
@@ -72,8 +70,6 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
 
-        print(
-            f"DEBUG before self._reconfigure_widgets() {type(self._controller)=}")
         # Reconfigure the widgets
         self._reconfigure_widgets()
 
@@ -94,14 +90,12 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         Creates a new Label and TextDisplayFrame pair for each document and updates self._widget_structure.
         """
         self._widget_structure = []
-        index = 0
 
         original_label = tk.Label(
             self.scrollable_frame, text="Original Text:"
         )
-        original_text_display = ComparisonTextDisplayFrame(
-            index=index, parent=self.scrollable_frame, controller=self._controller, selectable=True)
-        index += 1
+        original_text_display = AnnotationTextDisplayFrame(
+            parent=self.scrollable_frame, controller=self._controller)
         self._widget_structure.append((original_label, original_text_display))
 
         for file_name in self._file_names:
@@ -110,9 +104,8 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
                              text=f"Filename: {file_name}")
 
             # Create a TextDisplayFrame for displaying the document's content
-            text_display_frame = ComparisonTextDisplayFrame(
-                index=index, parent=self.scrollable_frame, controller=self._controller, selectable=True)
-            index += 1
+            text_display_frame = AnnotationTextDisplayFrame(
+                parent=self.scrollable_frame, controller=self._controller)
             # Add the label and text display frame as a pair in the widget structure
             self._widget_structure.append((label, text_display_frame))
 
@@ -147,9 +140,6 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
     def get_displays(self) -> List[tk.Widget]:
         """
         Returns a list of all widgets representing the text display frames.
-
-        This method provides access to the widgets used in the scrollable frame, including 
-        both labels and `ComparisonTextDisplayFrame` instances.
 
         Returns:
             List[tk.Widget]: A list of widgets that are part of the display structure.

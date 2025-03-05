@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 from model.document_model import DocumentModel
 from model.interfaces import IAnnotableDocumentModel, ITagModel
 from test_data.json.timex3_example_2 import doc
@@ -9,8 +9,8 @@ class AnnotationDocumentModel(DocumentModel, IAnnotableDocumentModel):
     A specialized DocumentModel for managing annotation text.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, document_data: Dict = None):
+        super().__init__(document_data)
         self._tags: List[ITagModel] = []
         self._meta_tags: List[ITagModel] = []
 

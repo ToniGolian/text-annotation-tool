@@ -9,4 +9,5 @@ class PreviewTextDisplayFrame(TextDisplayFrame):
     """
 
     def __init__(self, parent: tk.Widget, controller: IController, editable=True) -> None:
-        super().__init__(parent=parent, controller=controller, editable=editable)
+        super().__init__(parent=parent, controller=controller,
+                         editable=editable, register_as_observer=True)

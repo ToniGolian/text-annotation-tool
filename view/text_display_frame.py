@@ -12,15 +12,17 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
 
     DEBOUNCE_DELAY = 300  # milliseconds
 
-    def __init__(self, parent: tk.Widget, controller: IController, editable=False) -> None:
+    def __init__(self, parent: tk.Widget, controller: IController, editable: bool = False, register_as_observer: bool = False) -> None:
         """
-        Initializes the TextDisplayFrame with a text widget, scrollbar, and observer registration.
+        Initializes the TextDisplayFrame with a text widget, scrollbar, and optional observer registration.
 
         Args:
             parent (tk.Widget): The parent tkinter container for this frame.
             controller (IController): The controller managing interactions.
-            editable (bool): Whether the text can be edited.
+            editable (bool, optional): Whether the text can be edited. Defaults to False.
+            register_as_observer (bool, optional): Whether this instance should register itself as an observer. Defaults to False.
         """
+
         super().__init__(parent)
 
         self._controller: IController = controller
@@ -36,7 +38,8 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
         self._render()
 
         # Register as an observer
-        self._controller.add_observer(self)
+        if register_as_observer:
+            self._controller.add_observer(self)
 
     def _render(self) -> None:
         """

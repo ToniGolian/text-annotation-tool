@@ -10,8 +10,9 @@ class AnnotationTextDisplayFrame(TextDisplayFrame):
     A specialized TextDisplayFrame for annotation purposes.
     """
 
-    def __init__(self, parent: tk.Widget, controller: IController) -> None:
-        super().__init__(parent=parent, controller=controller, editable=False)
+    def __init__(self, parent: tk.Widget, controller: IController, register_as_observer: bool = False) -> None:
+        super().__init__(parent=parent, controller=controller,
+                         editable=False, register_as_observer=register_as_observer)
 
     def update(self, publisher: IPublisher) -> None:
         """

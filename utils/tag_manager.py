@@ -91,7 +91,6 @@ class TagManager:
         Returns:
             str: The UUID of the newly created tag.
         """
-        print("\n DEBUG ###########\n")
         # Generate a unique UUID for the tag
         tag_data.setdefault("uuid", self._generate_unique_id())
 

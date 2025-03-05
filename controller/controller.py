@@ -4,6 +4,7 @@ from commands.edit_tag_command import EditTagCommand
 from controller.interfaces import IController
 from commands.interfaces import ICommand
 from input_output.file_handler import FileHandler
+from model.annotation_document_model import AnnotationDocumentModel
 from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISelectionModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
@@ -510,8 +511,11 @@ class Controller(IController):
             self._annotation_document_model.set_document(document)
             self._tag_manager._extract_tags_from_document(
                 self._annotation_document_model)
+
         if self._active_view_id == "comparison":
-            self._comparison_model.set_documents(documents)
+            document_models = [AnnotationDocumentModel()] + [AnnotationDocumentModel(
+                document) for document in documents]
+            self._comparison_model.set_documents(document_models)
             # Don't change the order since the documents trigger the displaycreation
             comparison_displays = self._comparison_view.get_comparison_displays()
             self._comparison_model.register_comparison_displays(

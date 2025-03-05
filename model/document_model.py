@@ -8,16 +8,18 @@ class DocumentModel(IDocumentModel):
     text, and associated tags.
     """
 
-    def __init__(self):
+    def __init__(self, document_data: Dict = None):
         """
         Initializes the DocumentModel with default values for its attributes.
         """
         super().__init__()
-        self._document_type = ""
-        self._file_path: str = ""
-        self._file_name: str = ""
-        self._meta_tags: Dict = {}
-        self._text: str = ""
+        document_data = document_data or {}
+
+        self._document_type: str = document_data.get("document_type", "")
+        self._file_path: str = document_data.get("file_path", "")
+        self._file_name: str = document_data.get("file_name", "")
+        self._meta_tags: Dict = document_data.get("meta_tags", {})
+        self._text: str = document_data.get("text", "")
 
     # Getters and Setters
 

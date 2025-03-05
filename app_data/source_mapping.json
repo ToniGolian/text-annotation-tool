@@ -20,18 +20,6 @@
             }
         }
     },
-    "ComparisonTextDisplayFrame": {
-        "ComparisonModel": {
-            "finalize": false,
-            "source_keys": {
-                "comparison_model": [
-                    "comparison_sentences",
-                    "highlight_data",
-                    "text"
-                ]
-            }
-        }
-    },
     "MetaTagsFrame": {
         "AnnotationDocumentModel": {
             "finalize": true,
@@ -69,14 +57,6 @@
                     "file_names",
                     "num_sentences",
                     "current_sentence_index"
-                ]
-            }
-        },
-        "ConfigurationModel": {
-            "finalize": true,
-            "source_keys": {
-                "configuration_model": [
-                    "num_files"
                 ]
             }
         }

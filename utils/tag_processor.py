@@ -212,7 +212,7 @@ class TagProcessor(ITagProcessor):
             # Parse attributes and remove ID and IDREF attributes
             attributes = attribute_pattern.findall(attributes_raw)
             cleaned_attributes = [
-                f'{key}="{value}"' for key, value in attributes if key not in idrefs.keys()
+                f'{key}="{value}"' for key, value in attributes if key not in idrefs
             ]
 
             # Construct the cleaned tag

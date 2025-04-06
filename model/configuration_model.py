@@ -174,4 +174,4 @@ class ConfigurationModel(IPublisher):
         Returns:
             List[str]: A list of all attributes with an ID for the given tag type. 
         """
-        return self._id_ref_attributes
+        return self._id_ref_attributes.get(tag_type, [])

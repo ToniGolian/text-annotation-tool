@@ -594,7 +594,11 @@ class Controller(IController):
         """
         self._comparison_model.next_sentence()
 
-# Helpers
+    def perform_adopt_annotation(self, adoption_index: int) -> None:
+        adopted_sentence = self._comparison_model.adopt_sentence(
+            adoption_index)  # todo implement
+        # Helpers
+
     def _notify_deletion_prohibited(self, tag_id: str, caller_id: str) -> None:
         """
         Notifies the user that the deletion of the specified tag is prohibited due to existing references.

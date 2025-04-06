@@ -12,26 +12,43 @@ class ComparisonManager:
         self._tag_processor = tag_processor
         self._similarity_threshold = 0.90
         self._max_lookahead = 10
+        self._comparison_sentences = None
+        self._common_text = ""
 
     def extract_comparison_data(self, documents: List[IDocumentModel]) -> Dict[str, Union[str, List[str]]]:
-        tagged_texts = [document.get("text", "") for document in documents]
-        tagged_texts = [self._prepare_text_for_comparison(
-            text) for text in tagged_texts]
-        clean_texts = [[self._tag_processor.delete_all_tags_from_text(
-            sentence) for sentence in text] for text in tagged_texts]
-        tagged_texts, clean_texts = self.align_similar_texts(
-            tagged_texts, clean_texts)
+        """
+        Extracts comparison-relevant data from a list of annotated documents.
 
-        raw_text = clean_texts[0]
-        comparison_sentences = self._extract_differing_tagged_sentences(
-            raw_text, tagged_texts)
+        This method prepares tagged and clean text versions from each document, aligns the sentences 
+        across annotators using the configured alignment strategy (union or intersection), and 
+        identifies sentence-level differences by removing ID-related attributes. The results are 
+        stored internally and returned as structured data.
 
-        common_text = raw_text  # todo calc text with common tags
-        comparison_data = {
-            "common_text": common_text,
-            "comparison_sentences": comparison_sentences
+        Args:
+            documents (List[IDocumentModel]): A list of annotated documents to compare.
+
+        Returns:
+            Dict[str, Union[str, List[str]]]: A dictionary containing:
+                - "common_text": A list of aligned raw sentences shared across documents.
+                - "comparison_sentences": A list of lists where the first element contains 
+                raw sentences and each subsequent list contains differing tagged sentences 
+                per annotator.
+        """
+
+        tagged_texts = self._prepare_tagged_texts(documents)
+        raw_texts = self._extract_clean_texts(tagged_texts)
+        aligned_tagged, aligned_clean = self.align_similar_texts(
+            tagged_texts, raw_texts)
+
+        self._common_text = aligned_tagged[0]
+        raw_text = aligned_clean[0]
+
+        self._extract_differing_tagged_sentences(raw_text, aligned_tagged)
+
+        return {
+            "common_text": self._common_text,
+            "comparison_sentences": self._comparison_sentences
         }
-        return comparison_data
 
     def align_similar_texts(self, texts: List[List[str]], clean_texts: List[List[str]]) -> Tuple[List[List[str]], List[List[str]]]:
         """
@@ -144,6 +161,7 @@ class ComparisonManager:
 
             # drop the sentences, which are not in all texts, if alignoption is intersection
             if align_option.lower() == "intersection":
+                print(f"DEBUG next_candidates and intersection ")
                 for _, text_index in next_candidates:
                     sentence_indices[text_index] += 1
                 continue
@@ -191,27 +209,57 @@ class ComparisonManager:
         """
         return [re.sub(r'\s+', ' ', sentence.strip()) for sentence in text.split("\n\n")]
 
-    def _extract_differing_tagged_sentences(self, raw_text: List[str], tagged_texts: List[List[str]]) -> List[List[str]]:
+    def _prepare_tagged_texts(self, documents: List[IDocumentModel]) -> List[List[str]]:
         """
-        Extracts sentences that differ across multiple tagged texts.
+        Extracts and splits the raw tagged text from each document into cleaned sentence lists.
 
-        The output is a list of lists, where:
-        - The first list contains raw sentences.
-        - Each subsequent list corresponds to a tagged text and contains only 
-        sentences that differ from others in the same position.
+        This method accesses the 'text' field from each document, splits it into sentences,
+        and normalizes whitespace and invisible characters for consistent comparison.
 
         Args:
-            raw_text (List[str]): The original untagged text split into sentences.
-            tagged_texts (List[List[str]]): A list of tagged texts, where each 
-                tagged text is a list of sentences.
+            documents (List[IDocumentModel]): The documents to be processed.
 
         Returns:
-            List[List[str]]: A list containing the differing sentences from the 
-            raw text and each of the tagged texts.
+            List[List[str]]: A list of sentence lists, one per document.
+        """
+        tagged_texts = [document.get("text", "") for document in documents]
+        return [self._prepare_text_for_comparison(text) for text in tagged_texts]
 
+    def _extract_clean_texts(self, tagged_texts: List[List[str]]) -> List[List[str]]:
+        """
+        Removes all tags from the tagged sentence lists to produce raw textual content.
+
+        This method converts each tagged sentence into plain text by stripping all markup,
+        which is used for alignment and comparison purposes.
+
+        Args:
+            tagged_texts (List[List[str]]): A list of sentence lists containing tagged content.
+
+        Returns:
+            List[List[str]]: A list of sentence lists with all tags removed.
+        """
+        return [[self._tag_processor.delete_all_tags_from_text(sentence) for sentence in text]
+                for text in tagged_texts]
+
+    def _extract_differing_tagged_sentences(self, raw_text: List[str], tagged_texts: List[List[str]]) -> None:
+        """
+        Extracts differing sentences across multiple tagged versions of a text 
+        and stores them in internal instance variables.
+
+        This method compares aligned sentences from multiple tagged texts 
+        after removing ID and IDREF attributes. If differences are found, 
+        the corresponding raw sentence is added to the common text, and the 
+        differing tagged versions are stored for later use.
+
+        Side effects:
+            - Updates `self._comparison_sentences`: A list of lists where the first 
+              list contains the untagged raw sentences and the remaining lists contain 
+              differing tagged sentences per annotator.
+            - Updates `self._common_text`: A dictionary mapping sentence indices to 
+              the corresponding raw sentence, used as shared reference text.
         """
         # Ensure independent lists, not references to the same list
-        comparison_sentences = [[] for _ in range(len(tagged_texts) + 1)]
+        self._comparison_sentences = [[] for _ in range(len(tagged_texts) + 1)]
 
         # Iterate over the sentences from all tagged texts simultaneously
         for index, sentences in enumerate(zip(*tagged_texts)):
@@ -222,10 +270,10 @@ class ComparisonManager:
             # Check if all cleaned sentences are identical
             if any(sentence != cleaned_sentences[0] for sentence in cleaned_sentences[1:]):
                 # Add corresponding raw sentence to the first list
-                comparison_sentences[0].append(raw_text[index])
+                self._comparison_sentences[0].append(raw_text[index])
 
                 # Add the differing sentences to their respective lists
-                for sentence_list, sentence in zip(comparison_sentences[1:], sentences):
+                for sentence_list, sentence in zip(self._comparison_sentences[1:], sentences):
                     sentence_list.append(sentence)
 
-        return comparison_sentences
+                self._common_text[index] = raw_text[index]

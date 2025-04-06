@@ -76,21 +76,21 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
             col = ((i+1) % self.MAX_BUTTONS_PER_ROW)
 
             radio_button = tk.Radiobutton(
-                radio_frame, text=f"Annotator {i + 1}", variable=self._radio_var, value=i + 1
+                radio_frame, text=f"Annotation {i + 1}", variable=self._radio_var, value=i + 1
             )
             radio_button.grid(row=row, column=col,
                               padx=5, pady=0, sticky="w")
 
         # Overwrite Button (Row 3, Column 4)
-        self.overwrite_button = ttk.Button(
-            self, text="Overwrite", command=self._on_button_pressed_overwrite
+        self.adopt_button = ttk.Button(
+            self, text="Adopt", command=self._on_button_pressed_adopt
         )
-        self.overwrite_button.grid(
-            row=2, column=4, sticky="ew", padx=5, pady=(5, 0))
+        self.adopt_button.grid(
+            row=3, column=4, sticky="ew", padx=5, pady=(5, 0))
 
         # Frame for current sentence and navigation
         nav_frame = tk.Frame(self)
-        nav_frame.grid(row=3, column=4, padx=5, pady=(5, 0), sticky="ew")
+        nav_frame.grid(row=4, column=4, padx=5, pady=(5, 0), sticky="ew")
 
         self.sentence_label = tk.Label(
             nav_frame, text=f"Current Sentence: {self._current_sentence_index+1}/{self._num_sentences}")
@@ -138,13 +138,12 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
         # Render the updated state
         self._render()
 
-    # def _on_button_pressed_start_comparison(self):
-    #     """Placeholder for start comparison logic."""
-    #     pass
-
-    def _on_button_pressed_overwrite(self):
-        """Placeholder for overwrite logic."""
-        pass
+    def _on_button_pressed_adopt(self):
+        """
+        Handles adopt button press and sends selected annotation to the controller.
+        """
+        adoption_index = self._collect_adoption_index()
+        self._controller.perform_adopt_annotation(adoption_index)
 
     def _on_button_pressed_prev_sentence(self) -> None:
         """
@@ -177,3 +176,12 @@ class ComparisonHeaderFrame(tk.Frame, IComparisonHeaderFrame):
 
             self._num_files = len(state["file_names"])
         self._render()
+
+    def _collect_adoption_index(self) -> int:
+        """
+        Returns the selected annotation index from the radio buttons.
+
+        Returns:
+            int: The index of the selected annotation (0 = manual, >0 = predefined annotation).
+        """
+        return self._radio_var.get()

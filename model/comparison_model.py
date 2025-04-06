@@ -113,11 +113,10 @@ class ComparisonModel(IPublisher):
         # Handle case where sentences become empty after removal
         if not self._comparison_sentences[0]:
             self._current_index = 0  # Reset index, but nothing to navigate
-            return
-
-        # Ensure index remains valid after removal
-        self._current_index %= len(self._comparison_sentences[0])
-
+            self._update_document_texts()
+        else:
+            # Ensure index remains valid after removal
+            self._current_index %= len(self._comparison_sentences[0])
         self._update_document_texts()
 
     def _update_document_texts(self) -> None:
@@ -128,7 +127,12 @@ class ComparisonModel(IPublisher):
         Assumes that self._current_index is set correctly.
         """
         if not self._comparison_sentences or not self._comparison_sentences[0]:
-            return  # No sentences to update
+            # Important: Notify observers with empty state
+            self._document_models[0].set_text("NO MORE DIFFERING SENTENCES.")
+            for document in self._document_models[1:]:
+                document.set_text("")
+            self.notify_observers()
+            return
 
         # Extract the current sentence for each document
         sentence_list = [sentence[self._current_index]
@@ -155,3 +159,19 @@ class ComparisonModel(IPublisher):
         return {"file_names": self._file_names,
                 "num_sentences": num_sentences,
                 "current_sentence_index": self._current_index}
+
+    def adopt_sentence(self, adoption_index: int) -> str:
+        """
+        Returns the sentence variant at the current index for the given annotator 
+        and leaves the model unchanged.
+
+        Args:
+            adoption_index (int): The index of the annotation variant to adopt 
+                                  (0 = raw, >0 = annotated).
+
+        Returns:
+            str: The selected sentence variant.
+        """
+        adoption_sentence = self._comparison_sentences[adoption_index][self._current_index]
+        self.remove_current_sentence()
+        return adoption_sentence

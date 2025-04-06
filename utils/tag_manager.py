@@ -29,7 +29,7 @@ class TagManager:
         self._tag_processor: ITagProcessor = tag_processor
         self._controller: IController = controller
 
-    def _extract_tags_from_document(self, target_model: IDocumentModel) -> None:
+    def extract_tags_from_document(self, target_model: IDocumentModel) -> None:
         """
         Extracts tags from the document text and stores them in the target model.
 
@@ -428,3 +428,62 @@ class TagManager:
             meta_tags[tag_type] = tags
 
         target_model.set_meta_tags(meta_tags)
+
+    # TODO COmplete
+    def insert_sentence(self, sentence: str, global_index: int, target_model: IDocumentModel) -> None:
+        """
+        Inserts a tagged sentence into the document model at the specified global index.
+
+        This method calculates the correct insertion offset based on the global index of the
+        sentence in the common text, extracts the tags from the sentence, and inserts each tag
+        at the appropriate position in the model text.
+
+        Args:
+            sentence (str): The tagged sentence to be inserted.
+            global_index (int): The global index of the sentence in the common text.
+            target_model (IDocumentModel): The target document model to be updated.
+        """
+        # Get required data from the model
+        full_text = target_model.get_text()
+        sentences = target_model.get_common_text()
+        separator = "\n\n"
+
+        # Compute character offset in the full text
+        offset = sum(len(s) + len(separator) for s in sentences[:global_index])
+
+        # Extract tag data from sentence
+        extracted_tag_data = self._tag_processor.extract_tags_from_text(
+            sentence)
+
+        # TODO: Adjust tag positions relative to sentence
+        # Currently extract_tags_from_text() gives absolute positions within the sentence,
+        # we need to shift them by the offset in the full text.
+
+        for tag_data in extracted_tag_data:
+            tag_data["position"] += offset
+            tag_data["uuid"] = self._generate_unique_id()
+            tag_data["references"] = self._resolve_references(
+                tag_data.get("references", {}), target_model)
+
+            # Create tag object
+            tag = TagModel(tag_data)
+
+            # Insert tag into model using add_tag logic
+            # This must be done directly to avoid triggering full ID updates repeatedly
+            tags = target_model.get_tags()
+            for index, existing in enumerate(tags):
+                if tag.get_position() < existing.get_position():
+                    tags.insert(index, tag)
+                    break
+            else:
+                tags.append(tag)
+            target_model.set_tags(tags)
+
+        # Insert tag strings into the document text
+        # (Assumes tags are inserted in correct order already)
+        # TODO: Implement batch tag insertion to text via TagProcessor
+        # For now we fall back to re-generating from tags
+        new_text = self._tag_processor.insert_tags_from_model(
+            full_text, target_model.get_tags()
+        )
+        target_model.set_text(new_text)

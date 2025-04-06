@@ -2,6 +2,7 @@ import hashlib
 from pprint import pprint
 from typing import List, Tuple
 from typing import Dict, List, Tuple, Union
+from model.annotation_document_model import AnnotationDocumentModel
 from model.interfaces import IDocumentModel
 from observer.interfaces import IObserver, IPublisher
 
@@ -15,7 +16,7 @@ class ComparisonModel(IPublisher):
         super().__init__()
         self._document_models: List[IDocumentModel] = []
         self._file_names: List[str] = []
-        self._merged_text: List[str] = []
+        self._merged_text_model: IDocumentModel = None
         self._comparison_sentences: List[str] = []
         self._differing_to_global: Dict[int:int] = {}
         self._current_sentence_hash: str = ""
@@ -38,7 +39,7 @@ class ComparisonModel(IPublisher):
         """
         Registers observers for the documents.
 
-        This method assigns an observer to each document to track updates and changes. 
+        This method assigns an observer to each document to track updates and changes.
         The number of documents and observers must match.
 
         Args:
@@ -58,16 +59,15 @@ class ComparisonModel(IPublisher):
         Sets the comparison data including common text, differing sentences, and index mapping.
 
         Args:
-            comparison_data (Dict[str, Union[str, List[Tuple[str, ...]], Dict[int, int]]]): 
+            comparison_data (Dict[str, Union[str, List[Tuple[str, ...]], Dict[int, int]]]):
                 A dictionary containing:
                 - "common_text" (str): The full merged reference text.
-                - "comparison_sentences" (List[Tuple[str, ...]]): A list of sentence tuples where each tuple 
+                - "comparison_sentences" (List[Tuple[str, ...]]): A list of sentence tuples where each tuple
                   contains one sentence per annotator and the first item is the unannotated base version.
-                - "differing_to_global" (Dict[int, int]): A mapping from the local index in the differing 
+                - "differing_to_global" (Dict[int, int]): A mapping from the local index in the differing
                   sentence list to the corresponding index in the global merged text.
         """
-        self._merged_text = comparison_data["common_text"]
-        pprint(f"DEBUG {self._merged_text=}")
+        self._merged_text_model = comparison_data["merged_text_model"]
         self._comparison_sentences = comparison_data["comparison_sentences"]
         self._differing_to_global = comparison_data["differing_to_global"]
         self._current_index = 0
@@ -186,6 +186,5 @@ class ComparisonModel(IPublisher):
         """
         adoption_sentence = self._comparison_sentences[adoption_index][self._current_index]
         global_index = self._differing_to_global[self._current_sentence_hash]
-        self._merged_text[global_index] = adoption_sentence
+        self._merged_text_model[global_index] = adoption_sentence
         self.remove_current_sentence()
-        pprint(f"DEBUG {self._merged_text=}\n\n####\n\n")

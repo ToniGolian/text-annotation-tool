@@ -1,3 +1,4 @@
+from pathlib import Path
 from commands.add_tag_command import AddTagCommand
 from commands.delete_tag_command import DeleteTagCommand
 from commands.edit_tag_command import EditTagCommand
@@ -6,6 +7,7 @@ from commands.interfaces import ICommand
 from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
 from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISelectionModel
+from model.merge_document_model import MergeDocumentModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
 from typing import Dict, List, Tuple
@@ -526,7 +528,7 @@ class Controller(IController):
 
         if self._active_view_id == "annotation":
             self._annotation_document_model.set_document(document)
-            self._tag_manager._extract_tags_from_document(
+            self._tag_manager.extract_tags_from_document(
                 self._annotation_document_model)
 
         if self._active_view_id == "comparison":
@@ -541,6 +543,19 @@ class Controller(IController):
                 comparison_displays)
             comparison_data = self._comparison_manager.extract_comparison_data(
                 documents)
+            file_path = Path(file_path)
+            file_name_merged = file_path.stem+"_merged"
+            merge_document_data = {
+                "document_type": "comparison",
+                "file_path": file_path.parent/file_name_merged,
+                "file_name": file_name_merged,
+                "meta_tags": {},
+                "common_text": comparison_data["common_text"],
+            }
+            merged_text_model = MergeDocumentModel(
+                merge_document_data)
+            self._tag_manager.extract_tags_from_document(merged_text_model)
+            comparison_data["merged_text_model"] = merged_text_model
             self._comparison_model.set_comparison_data(
                 comparison_data)
 

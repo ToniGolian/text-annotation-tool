@@ -1,3 +1,4 @@
+import hashlib
 from typing import List
 import re
 from typing import Dict, List, Tuple, Union
@@ -12,29 +13,31 @@ class ComparisonManager:
         self._tag_processor = tag_processor
         self._similarity_threshold = 0.90
         self._max_lookahead = 10
-        self._comparison_sentences = None
-        self._common_text = ""
+        self._comparison_sentences = []
+        self._common_text: List[str] = []
+        self._differing_to_global: Dict[str:int] = {}
 
-    def extract_comparison_data(self, documents: List[IDocumentModel]) -> Dict[str, Union[str, List[str]]]:
+    def extract_comparison_data(self, documents: List[IDocumentModel]) -> Dict[str, Union[List[str], List[List[str]], Dict[int, int]]]:
         """
         Extracts comparison-relevant data from a list of annotated documents.
 
-        This method prepares tagged and clean text versions from each document, aligns the sentences 
-        across annotators using the configured alignment strategy (union or intersection), and 
-        identifies sentence-level differences by removing ID-related attributes. The results are 
+        This method prepares tagged and clean text versions from each document, aligns the sentences
+        across annotators using the configured alignment strategy (union or intersection), and
+        identifies sentence-level differences by removing ID-related attributes. The results are
         stored internally and returned as structured data.
 
         Args:
             documents (List[IDocumentModel]): A list of annotated documents to compare.
 
         Returns:
-            Dict[str, Union[str, List[str]]]: A dictionary containing:
+            Dict[str, Union[List[str], List[List[str]], Dict[int, int]]]: A dictionary containing:
                 - "common_text": A list of aligned raw sentences shared across documents.
-                - "comparison_sentences": A list of lists where the first element contains 
-                raw sentences and each subsequent list contains differing tagged sentences 
-                per annotator.
+                - "comparison_sentences": A list of lists where the first element contains
+                  raw sentences and each subsequent list contains differing tagged sentences
+                  per annotator.
+                - "differing_to_global": A mapping from the index in the differing sentence list
+                  to the corresponding index in the full aligned text.
         """
-
         tagged_texts = self._prepare_tagged_texts(documents)
         raw_texts = self._extract_clean_texts(tagged_texts)
         aligned_tagged, aligned_clean = self.align_similar_texts(
@@ -47,7 +50,8 @@ class ComparisonManager:
 
         return {
             "common_text": self._common_text,
-            "comparison_sentences": self._comparison_sentences
+            "comparison_sentences": self._comparison_sentences,
+            "differing_to_global": self._differing_to_global
         }
 
     def align_similar_texts(self, texts: List[List[str]], clean_texts: List[List[str]]) -> Tuple[List[List[str]], List[List[str]]]:
@@ -161,7 +165,6 @@ class ComparisonManager:
 
             # drop the sentences, which are not in all texts, if alignoption is intersection
             if align_option.lower() == "intersection":
-                print(f"DEBUG next_candidates and intersection ")
                 for _, text_index in next_candidates:
                     sentence_indices[text_index] += 1
                 continue
@@ -269,11 +272,17 @@ class ComparisonManager:
 
             # Check if all cleaned sentences are identical
             if any(sentence != cleaned_sentences[0] for sentence in cleaned_sentences[1:]):
+                raw_sentence = raw_text[index]
                 # Add corresponding raw sentence to the first list
-                self._comparison_sentences[0].append(raw_text[index])
+                self._comparison_sentences[0].append(raw_sentence)
 
                 # Add the differing sentences to their respective lists
                 for sentence_list, sentence in zip(self._comparison_sentences[1:], sentences):
                     sentence_list.append(sentence)
 
-                self._common_text[index] = raw_text[index]
+                self._common_text[index] = raw_sentence
+
+                # Generate a stable key for the mapping
+                sentence_hash = hashlib.md5(
+                    raw_sentence.encode("utf-8")).hexdigest()
+                self._differing_to_global[sentence_hash] = index

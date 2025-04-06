@@ -1,3 +1,5 @@
+import hashlib
+from pprint import pprint
 from typing import List, Tuple
 from typing import Dict, List, Tuple, Union
 from model.interfaces import IDocumentModel
@@ -13,9 +15,11 @@ class ComparisonModel(IPublisher):
         super().__init__()
         self._document_models: List[IDocumentModel] = []
         self._file_names: List[str] = []
-        self._merged_text: str = ""
-        self._comparison_sentences = []
-        self._current_index = 0
+        self._merged_text: List[str] = []
+        self._comparison_sentences: List[str] = []
+        self._differing_to_global: Dict[int:int] = {}
+        self._current_sentence_hash: str = ""
+        self._current_index: int = 0
 
     def set_documents(self, documents: List[IDocumentModel]) -> None:
         """
@@ -49,19 +53,23 @@ class ComparisonModel(IPublisher):
         for document_model, observer in zip(self._document_models, observers):
             document_model.add_observer(observer)
 
-    def set_comparison_data(self, comparison_data: Dict[str, Union[str, List[Tuple[str, ...]]]]) -> None:
+    def set_comparison_data(self, comparison_data: Dict[str, Union[str, List[Tuple[str, ...]], Dict[str, int]]]) -> None:
         """
-        Sets the comparison data including common text and sentence comparisons.
+        Sets the comparison data including common text, differing sentences, and index mapping.
 
         Args:
-            comparison_data (Dict[str, Union[str, List[Tuple[str, ...]]]]): 
+            comparison_data (Dict[str, Union[str, List[Tuple[str, ...]], Dict[int, int]]]): 
                 A dictionary containing:
-                - "common_text" (str): The shared text across comparisons.
-                - "comparison_sentences" (List[Tuple[str, ...]]): A list of sentence tuples,
-                where each tuple contains a variable number of strings.
+                - "common_text" (str): The full merged reference text.
+                - "comparison_sentences" (List[Tuple[str, ...]]): A list of sentence tuples where each tuple 
+                  contains one sentence per annotator and the first item is the unannotated base version.
+                - "differing_to_global" (Dict[int, int]): A mapping from the local index in the differing 
+                  sentence list to the corresponding index in the global merged text.
         """
         self._merged_text = comparison_data["common_text"]
+        pprint(f"DEBUG {self._merged_text=}")
         self._comparison_sentences = comparison_data["comparison_sentences"]
+        self._differing_to_global = comparison_data["differing_to_global"]
         self._current_index = 0
         self.notify_observers()
         self._update_document_texts()
@@ -142,6 +150,10 @@ class ComparisonModel(IPublisher):
             document.set_text(sentence)
         self.notify_observers()
 
+        # Calc the hash for the current sentence
+        self._current_sentence_hash = hashlib.md5(
+            sentence_list[0].encode("utf-8")).hexdigest()
+
     def get_state(self) -> Dict[str, int]:
         """
         Returns the current state of the comparison model.
@@ -160,7 +172,7 @@ class ComparisonModel(IPublisher):
                 "num_sentences": num_sentences,
                 "current_sentence_index": self._current_index}
 
-    def adopt_sentence(self, adoption_index: int) -> str:
+    def adopt_sentence(self, adoption_index: int) -> None:
         """
         Returns the sentence variant at the current index for the given annotator 
         and leaves the model unchanged.
@@ -173,5 +185,7 @@ class ComparisonModel(IPublisher):
             str: The selected sentence variant.
         """
         adoption_sentence = self._comparison_sentences[adoption_index][self._current_index]
+        global_index = self._differing_to_global[self._current_sentence_hash]
+        self._merged_text[global_index] = adoption_sentence
         self.remove_current_sentence()
-        return adoption_sentence
+        pprint(f"DEBUG {self._merged_text=}\n\n####\n\n")

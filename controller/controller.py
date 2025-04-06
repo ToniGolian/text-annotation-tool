@@ -542,7 +542,7 @@ class Controller(IController):
             comparison_data = self._comparison_manager.extract_comparison_data(
                 documents)
             self._comparison_model.set_comparison_data(
-                comparison_data)  # todo implement
+                comparison_data)
 
     def perform_save_as(self, file_path: str):
         """
@@ -595,9 +595,10 @@ class Controller(IController):
         self._comparison_model.next_sentence()
 
     def perform_adopt_annotation(self, adoption_index: int) -> None:
-        adopted_sentence = self._comparison_model.adopt_sentence(
-            adoption_index)  # todo implement
-        # Helpers
+        self._comparison_model.adopt_sentence(
+            adoption_index)
+
+    # Helpers
 
     def _notify_deletion_prohibited(self, tag_id: str, caller_id: str) -> None:
         """

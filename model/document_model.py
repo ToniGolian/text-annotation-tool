@@ -1,5 +1,5 @@
 from typing import List, Dict, Tuple
-from model.interfaces import IDocumentModel, ITagModel
+from model.interfaces import IDocumentModel
 
 
 class DocumentModel(IDocumentModel):

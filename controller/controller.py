@@ -524,7 +524,10 @@ class Controller(IController):
             file_path=file_path) for file_path in file_paths]
         for document in documents:
             document["file_path"] = file_path
-            # document["document_type"] = self._active_view_id
+            self._tag_manager.extract_tags_from_document(document)
+
+        if len(documents) == 1:
+            document = documents[0]
 
         if self._active_view_id == "annotation":
             self._annotation_document_model.set_document(document)
@@ -532,32 +535,59 @@ class Controller(IController):
                 self._annotation_document_model)
 
         if self._active_view_id == "comparison":
-            self._appearance_model.set_num_comparison_displays(
-                len(documents)+1)
-            document_models = [AnnotationDocumentModel()]+[AnnotationDocumentModel(
-                document) for document in documents]
-            self._comparison_model.set_documents(document_models)
-            # Don't change the order since the documents trigger the displaycreation
-            comparison_displays = self._comparison_view.get_comparison_displays()
-            self._comparison_model.register_comparison_displays(
-                comparison_displays)
-            comparison_data = self._comparison_manager.extract_comparison_data(
-                documents)
-            file_path = Path(file_path)
-            file_name_merged = file_path.stem+"_merged"
-            merge_document_data = {
-                "document_type": "comparison",
-                "file_path": file_path.parent/file_name_merged,
-                "file_name": file_name_merged,
-                "meta_tags": {},
-                "common_text": comparison_data["common_text"],
-            }
-            merged_text_model = MergeDocumentModel(
-                merge_document_data)
-            self._tag_manager.extract_tags_from_document(merged_text_model)
-            comparison_data["merged_text_model"] = merged_text_model
-            self._comparison_model.set_comparison_data(
-                comparison_data)
+            if documents[0]["document_type"] == "comparison":
+                self._load_comparison_model(document)
+            else:
+                self._setup_comparison_model(documents)
+
+    def _setup_comparison_model(self, documents) -> None:
+        self._appearance_model.set_num_comparison_displays(len(documents)+1)
+
+        document_models = [AnnotationDocumentModel()]+[AnnotationDocumentModel(
+            document) for document in documents]
+        self._comparison_model.set_documents(document_models)
+        #! Don't change the order since the documents trigger the displaycreation
+        comparison_displays = self._comparison_view.get_comparison_displays()
+        self._comparison_model.register_comparison_displays(
+            comparison_displays)
+
+        comparison_data = self._comparison_manager.extract_comparison_data(
+            documents)
+        self._comparison_model.set_comparison_data(
+            comparison_data)
+
+    def _load_comparison_model() -> None:
+        # todo implement
+        pass
+
+    def extract_tags_from_document(self, documents) -> None:
+        """
+        Extracts tags for all given documents and stores them in their corresponding models.
+
+        Args:
+            documents (List[IDocumentModel]): A list of document models to extract tags from.
+        """
+        for document in documents:
+            self._tag_manager.extract_tags_from_document(document)
+
+    def _find_equivalent_tags(self, documents, merged_document) -> None:
+        """
+        Identifies and marks equivalent tags across multiple document versions.
+
+        This method analyzes tags across all annotator documents and the merged document 
+        to determine equivalence based on structure and content. It updates each tag 
+        with a list of UUIDs representing all of its equivalent counterparts.
+
+        Args:
+            documents (List[IDocumentModel]): The annotator-specific document models.
+            merged_document (IDocumentModel): The merged reference document.
+
+        Side Effects:
+            Each tag in the documents and the merged document will be updated via 
+            `set_equivalent_uuids()` to include the UUIDs of all semantically 
+            equivalent tags across versions.
+        """
+        self._tag_manager._find_equivalent_tags(documents, merged_document)
 
     def perform_save_as(self, file_path: str):
         """

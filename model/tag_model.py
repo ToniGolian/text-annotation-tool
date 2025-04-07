@@ -29,6 +29,7 @@ class TagModel(ITagModel):
         """
         super().__init__()
         self._tag_data = tag_data
+        self._tag_data["equivalent_uuids"] = []
         self._incoming_references_count = 0
 
     def increment_reference_count(self) -> None:
@@ -229,6 +230,46 @@ class TagModel(ITagModel):
                 - "references" (Dict[str, ITagModel]): A dictionary mapping attribute names to referenced tags.
         """
         return self._tag_data
+
+    def get_equivalent_uuids(self) -> List[str]:
+        """
+        Returns the list of UUIDs that are considered equivalent to this tag.
+
+        Returns:
+            List[str]: A list of UUIDs including this tag's own UUID and those of equivalent tags.
+        """
+        return self._equivalent_uuids
+
+    def set_equivalent_uuids(self, uuids: List[str]) -> None:
+        """
+        Sets the list of equivalent UUIDs for this tag, removing duplicates.
+
+        Args:
+            uuids (List[str]): A list of UUIDs considered equivalent to this tag.
+        """
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_uuids = [uuid for uuid in uuids if not (
+            uuid in seen or seen.add(uuid))]
+        self._tag_data["equivalent_uuids"] = unique_uuids
+
+    def get_tag_hash(self) -> str:
+        """
+        Returns the computed hash representing this tag's equivalence signature.
+
+        Returns:
+            str: The tag's equivalence hash.
+        """
+        return self._tag_hash
+
+    def set_tag_hash(self, tag_hash: str) -> None:
+        """
+        Sets the hash value used to identify equivalent tags.
+
+        Args:
+            tag_hash (str): The hash value to associate with this tag.
+        """
+        self._tag_hash = tag_hash
 
     def __str__(self) -> str:
         """

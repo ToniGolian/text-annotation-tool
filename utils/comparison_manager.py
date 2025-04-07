@@ -1,9 +1,11 @@
 import hashlib
+from pathlib import Path
 from typing import List
 import re
 from typing import Dict, List, Tuple, Union
 from controller.interfaces import IController
 from model.interfaces import IDocumentModel
+from model.merge_document_model import MergeDocumentModel
 from utils.interfaces import ITagProcessor
 
 
@@ -40,21 +42,27 @@ class ComparisonManager:
         """
         tagged_texts = self._prepare_tagged_texts(documents)
         raw_texts = self._extract_clean_texts(tagged_texts)
-        aligned_tagged, aligned_clean = self.align_similar_texts(
+        aligned_tagged, aligned_clean = self._align_similar_texts(
             tagged_texts, raw_texts)
 
         self._common_text = aligned_tagged[0]
         raw_text = aligned_clean[0]
 
         self._extract_differing_tagged_sentences(raw_text, aligned_tagged)
+        file_path = documents[0]["file_path"]
+
+        merged_document = self._create_merge_document(file_path)
+
+        self._controller._find_equivalent_tags(
+            tagged_texts, merged_document.get_common_text())
 
         return {
-            "common_text": self._common_text,
             "comparison_sentences": self._comparison_sentences,
-            "differing_to_global": self._differing_to_global
+            "differing_to_global": self._differing_to_global,
+            "merged_document": merged_document,
         }
 
-    def align_similar_texts(self, texts: List[List[str]], clean_texts: List[List[str]]) -> Tuple[List[List[str]], List[List[str]]]:
+    def _align_similar_texts(self, texts: List[List[str]], clean_texts: List[List[str]]) -> Tuple[List[List[str]], List[List[str]]]:
         """
         Aligns multiple similar texts by merging them using either union or intersection.
 
@@ -195,6 +203,19 @@ class ComparisonManager:
                 sentence_indices[text_index] += 1
 
         return aligned_texts, aligned_clean_texts
+
+    def _create_merge_document(self, file_path) -> MergeDocumentModel:
+        file_path = Path(file_path)
+        file_name_merged = file_path.stem+"_merged"
+        merge_document_data = {
+            "document_type": "comparison",
+            "file_path": file_path.parent/file_name_merged,
+            "file_name": file_name_merged,
+            "meta_tags": {},
+            "common_text": self._common_text,
+        }
+        return MergeDocumentModel(
+            merge_document_data)
 
     def _prepare_text_for_comparison(self, text: str) -> List[str]:
         """

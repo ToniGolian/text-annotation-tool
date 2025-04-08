@@ -40,6 +40,7 @@ class ComparisonManager:
                 - "differing_to_global": A mapping from the index in the differing sentence list
                   to the corresponding index in the full aligned text.
         """
+        # todo change datatypes. unpack from documentmodel
         tagged_texts = self._prepare_tagged_texts(documents)
         raw_texts = self._extract_clean_texts(tagged_texts)
         aligned_tagged, aligned_clean = self._align_similar_texts(
@@ -53,8 +54,8 @@ class ComparisonManager:
 
         merged_document = self._create_merge_document(file_path)
 
-        self._controller._find_equivalent_tags(
-            tagged_texts, merged_document.get_common_text())
+        self._controller.find_equivalent_tags(
+            documents, merged_document)
 
         return {
             "comparison_sentences": self._comparison_sentences,
@@ -212,7 +213,7 @@ class ComparisonManager:
             "file_path": file_path.parent/file_name_merged,
             "file_name": file_name_merged,
             "meta_tags": {},
-            "common_text": self._common_text,
+            "splitted_text": self._common_text,
         }
         return MergeDocumentModel(
             merge_document_data)
@@ -246,8 +247,9 @@ class ComparisonManager:
         Returns:
             List[List[str]]: A list of sentence lists, one per document.
         """
-        tagged_texts = [document.get("text", "") for document in documents]
-        return [self._prepare_text_for_comparison(text) for text in tagged_texts]
+        tagged_texts = [self._prepare_text_for_comparison(
+            document.get_text()) for document in documents]
+        return tagged_texts
 
     def _extract_clean_texts(self, tagged_texts: List[List[str]]) -> List[List[str]]:
         """
@@ -267,19 +269,19 @@ class ComparisonManager:
 
     def _extract_differing_tagged_sentences(self, raw_text: List[str], tagged_texts: List[List[str]]) -> None:
         """
-        Extracts differing sentences across multiple tagged versions of a text 
+        Extracts differing sentences across multiple tagged versions of a text
         and stores them in internal instance variables.
 
-        This method compares aligned sentences from multiple tagged texts 
-        after removing ID and IDREF attributes. If differences are found, 
-        the corresponding raw sentence is added to the common text, and the 
+        This method compares aligned sentences from multiple tagged texts
+        after removing ID and IDREF attributes. If differences are found,
+        the corresponding raw sentence is added to the common text, and the
         differing tagged versions are stored for later use.
 
         Side effects:
-            - Updates `self._comparison_sentences`: A list of lists where the first 
-              list contains the untagged raw sentences and the remaining lists contain 
+            - Updates `self._comparison_sentences`: A list of lists where the first
+              list contains the untagged raw sentences and the remaining lists contain
               differing tagged sentences per annotator.
-            - Updates `self._common_text`: A dictionary mapping sentence indices to 
+            - Updates `self._common_text`: A dictionary mapping sentence indices to
               the corresponding raw sentence, used as shared reference text.
         """
         # Ensure independent lists, not references to the same list

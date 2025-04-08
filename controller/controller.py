@@ -524,7 +524,6 @@ class Controller(IController):
             file_path=file_path) for file_path in file_paths]
         for document in documents:
             document["file_path"] = file_path
-            self._tag_manager.extract_tags_from_document(document)
 
         if len(documents) == 1:
             document = documents[0]
@@ -543,8 +542,10 @@ class Controller(IController):
     def _setup_comparison_model(self, documents) -> None:
         self._appearance_model.set_num_comparison_displays(len(documents)+1)
 
-        document_models = [AnnotationDocumentModel()]+[AnnotationDocumentModel(
+        document_models = [MergeDocumentModel()]+[MergeDocumentModel(
             document) for document in documents]
+        for document_model in document_models:
+            self._tag_manager.extract_tags_from_document(document_model)
         self._comparison_model.set_documents(document_models)
         #! Don't change the order since the documents trigger the displaycreation
         comparison_displays = self._comparison_view.get_comparison_displays()
@@ -552,7 +553,7 @@ class Controller(IController):
             comparison_displays)
 
         comparison_data = self._comparison_manager.extract_comparison_data(
-            documents)
+            document_models)
         self._comparison_model.set_comparison_data(
             comparison_data)
 
@@ -570,7 +571,7 @@ class Controller(IController):
         for document in documents:
             self._tag_manager.extract_tags_from_document(document)
 
-    def _find_equivalent_tags(self, documents, merged_document) -> None:
+    def find_equivalent_tags(self, documents: List[IDocumentModel], merged_document: IDocumentModel) -> None:
         """
         Identifies and marks equivalent tags across multiple document versions.
 
@@ -587,7 +588,16 @@ class Controller(IController):
             `set_equivalent_uuids()` to include the UUIDs of all semantically 
             equivalent tags across versions.
         """
-        self._tag_manager._find_equivalent_tags(documents, merged_document)
+        documents_tags = [document.get_tags() for document in documents]
+        merged_document_tags = merged_document.get_tags()
+        documents_sentences = [document.get_splitted_text()
+                               for document in documents]
+        merged_sentences = merged_document.get_splitted_text()
+        for index, merged_sentence in enumerate(merged_sentences):
+            sentences = [document_sentences[index]
+                         for document_sentences in documents_sentences]
+            self._tag_manager._find_equivalent_tags(
+                sentences=sentences, common_sentence=merged_sentence, documents_tags=documents_tags, merged_tags=merged_document_tags)
 
     def perform_save_as(self, file_path: str):
         """

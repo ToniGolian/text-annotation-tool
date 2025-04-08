@@ -453,13 +453,7 @@ class TagManager:
     #     for index,common_sentence in enumerate(merged_document):
     #         sentences=[document[index] for document in documents]
 
-    def _find_equivalent_tags(
-        self,
-        sentences: List[str],
-        common_sentence: str,
-        documents_tags: List[List[ITagModel]],
-        merged_tags: List[ITagModel]
-    ) -> None:
+    def _find_equivalent_tags(self, sentences: List[str], common_sentence: str, documents_tags: List[List[ITagModel]], merged_tags: List[ITagModel]) -> None:
         """
         Identifies and marks equivalent tags across different annotator sentence versions.
 

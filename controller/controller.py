@@ -8,6 +8,7 @@ from commands.interfaces import ICommand
 from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
 from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISelectionModel
+from model.tag_model import TagModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
 from typing import Dict, List, Tuple
@@ -672,9 +673,19 @@ class Controller(IController):
         """
         adoption_data = self._comparison_model.pop_adoption_data(
             adoption_index)
+        tag_data_from_sentence = self._tag_processor.extract_tags_from_text(
+            adoption_data["sentence"])
+        sentence_tags = [TagModel(tag_data)
+                         for tag_data in tag_data_from_sentence]
+        original_tag_models = []
+        for sentence_tag in sentence_tags:
+            for tag in adoption_data["document_tags"]:
+                if sentence_tag.get_tag_hash() == tag.get_tag_hash():
+                    original_tag_models.append(tag)
+                    break
         command = AdoptAnnotationCommand(
             tag_manager=self._tag_manager,
-            tag_models=adoption_data["tag_models"],
+            tag_models=original_tag_models,
             target_model=adoption_data["target_model"]
         )
         self._execute_command(command=command, caller_id="comparison")

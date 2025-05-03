@@ -534,20 +534,22 @@ class TagManager:
                     str(relative_position)
                 ]
                 signature_string = "|".join(signature_components)
-                tag_hash = md5(signature_string.encode("utf-8")).hexdigest()
+                positional_tag_hash = md5(
+                    signature_string.encode("utf-8")).hexdigest()
 
                 # Find UUID from TagModel with same ID
                 tag_id = tag["attributes"]["id"]
                 for global_tag in documents_tags[annotator_index]:
                     if global_tag.get_id() == tag_id:
-                        global_tag.set_tag_hash(tag_hash)
+                        global_tag.set_positional_tag_hash(positional_tag_hash)
                         equivalence_map.setdefault(
-                            tag_hash, []).append(global_tag.get_uuid())
+                            positional_tag_hash, []).append(global_tag.get_uuid())
                         break
 
         # Map back equivalent UUIDs to all TagModel objects
         for document_index, document in enumerate(documents_tags):
             for tag in document:
-                tag_hash = tag.get_tag_hash()
-                if tag_hash in equivalence_map:
-                    tag.set_equivalent_uuids(equivalence_map[tag_hash])
+                positional_tag_hash = tag.get_positional_tag_hash()
+                if positional_tag_hash in equivalence_map:
+                    tag.set_equivalent_uuids(
+                        equivalence_map[positional_tag_hash])

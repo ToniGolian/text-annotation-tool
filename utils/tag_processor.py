@@ -152,13 +152,22 @@ class TagProcessor(ITagProcessor):
             attributes = dict(attribute_pattern.findall(attributes_raw))
             attributes["id"] = attributes.pop(id_name)
 
+            # Extract reference keys from controller
+            ref_keys = self._controller.get_id_refs(tag_type)
+
+            # Extract references from attributes
+            references = {
+                key: value for key, value in attributes.items() if key in ref_keys
+            }
+
             # Construct tag_data
             tag_data = {
                 "tag_type": tag_type,
                 "attributes": attributes,
                 "position": start_position,
                 "text": content.strip(),
-                "id_name": id_name
+                "id_name": id_name,
+                "references": references
             }
             tags.append(tag_data)
         return tags

@@ -2,7 +2,6 @@ import hashlib
 from pprint import pprint
 from typing import List, Tuple
 from typing import Dict, List, Tuple, Union
-from model.annotation_document_model import AnnotationDocumentModel
 from model.interfaces import IDocumentModel, ITagModel
 from observer.interfaces import IObserver, IPublisher
 
@@ -17,8 +16,7 @@ class ComparisonModel(IPublisher):
         self._document_models: List[IDocumentModel] = []
         self._file_names: List[str] = []
         self._merged_document: IDocumentModel = None
-        self._comparison_sentences: List[str] = []
-        self._comparison_sentences_tags: List[List[ITagModel]] = []
+        self._comparison_sentences: List[List[str]] = []
         self._differing_to_global: Dict[int:int] = {}
         self._current_sentence_hash: str = ""
         self._current_index: int = 0
@@ -70,7 +68,6 @@ class ComparisonModel(IPublisher):
         """
         self._merged_document = comparison_data["merged_document"]
         self._comparison_sentences = comparison_data["comparison_sentences"]
-        self._comparison_sentences_tags = comparison_data["comparison_sentences_tags"]
         self._differing_to_global = comparison_data["differing_to_global"]
         self._unresolved_references: List[ITagModel] = []
         self._current_index = 0
@@ -191,16 +188,16 @@ class ComparisonModel(IPublisher):
                 - "tag_models": The list of tag models to adopt.
                 - "target_model": The merged document model to insert the tags into.
         """
-        current_sentence_hash = self._current_sentence_hash
-        global_index = self._differing_to_global[current_sentence_hash]
-        print(f"DEBUG {self._comparison_sentences=}")
-        print(f"DEBUG {self._comparison_sentences_tags=}")
-        tag_models = self._comparison_sentences_tags[adoption_index][self._current_index]
-
+        document_tags = self._document_models[adoption_index].get_tags()
+        sentence = self._comparison_sentences[adoption_index][self._current_index]
         self.remove_current_sentence()
 
+        for tag in document_tags:
+            print(tag.get_tag_data())
+
         return {
-            "tag_models": tag_models,
+            "document_tags": document_tags,
+            "sentence": sentence,
             "target_model": self._merged_document
         }
 

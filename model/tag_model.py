@@ -1,3 +1,4 @@
+from hashlib import md5
 from typing import Any, Dict, List, Tuple
 from model.interfaces import ITagModel
 
@@ -29,8 +30,27 @@ class TagModel(ITagModel):
         """
         super().__init__()
         self._tag_data = tag_data
+        self._tag_data["tag_hash"] = self._compute_hash()
         self._incoming_references_count = 0
-        self._tag_hash = None
+
+    def _compute_hash(self) -> str:
+        """
+        Computes a content-based hash excluding positional data.
+        """
+        tag_type = self._tag_data.get("tag_type", "")
+        text = self._tag_data.get("text", "")
+        attributes = {k: v for k, v in self._tag_data.get(
+            "attributes", {}).items() if k != "id"}
+        references = sorted(self._tag_data.get("references", {}).keys())
+
+        signature = "|".join([
+            tag_type,
+            text,
+            str(sorted(attributes.items())),
+            str(references)
+        ])
+
+        return md5(signature.encode("utf-8")).hexdigest()
 
     def increment_reference_count(self) -> None:
         """
@@ -233,6 +253,7 @@ class TagModel(ITagModel):
                 - "id_name" (str): The name of the ID attribute.
                 - "references" (Dict[str, ITagModel]): Attribute-to-tag reference mapping.
                 - "equivalent_uuids" (List[str]): List of UUIDs this tag is equivalent to.
+                - "tag_hash" (str): a hash to identify the tag
         """
         return self._tag_data
 
@@ -265,7 +286,7 @@ class TagModel(ITagModel):
         Returns:
             str: The tag's equivalence hash.
         """
-        return self._tag_hash
+        return self._tag_data["tag_hash"]
 
     def set_tag_hash(self, tag_hash: str) -> None:
         """
@@ -274,7 +295,25 @@ class TagModel(ITagModel):
         Args:
             tag_hash (str): The hash value to associate with this tag.
         """
-        self._tag_hash = tag_hash
+        self._tag_data["tag_hash"] = tag_hash
+
+    def get_positional_tag_hash(self) -> str:
+        """
+        Returns the computed hash representing this tag's equivalence signature (considering the position).
+
+        Returns:
+            str: The tag's equivalence hash.
+        """
+        return self._tag_data.get("positional_tag_hash", None)
+
+    def set_positional_tag_hash(self, positional_tag_hash: str) -> None:
+        """
+        Sets the hash value (considering the position) used to identify equivalent tags.
+
+        Args:
+            tag_hash (str): The hash value to associate with this tag.
+        """
+        self._tag_data["positional_tag_hash"] = positional_tag_hash
 
     def __str__(self) -> str:
         """

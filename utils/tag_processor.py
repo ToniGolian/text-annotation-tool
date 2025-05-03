@@ -38,6 +38,9 @@ class TagProcessor(ITagProcessor):
         tag_text = tag_model.get_text()
 
         # Validate if the text at the position matches the tag text
+        print(f"DEBUG {text=}")
+        print(f"DEBUG {text[position:position + len(tag_text)]=}")
+        print(f"DEBUG {tag_text=}")
         if text[position:position + len(tag_text)] != tag_text:
             raise ValueError(
                 f"Text at position {position} does not match the provided tag text.")

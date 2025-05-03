@@ -192,9 +192,6 @@ class ComparisonModel(IPublisher):
         sentence = self._comparison_sentences[adoption_index][self._current_index]
         self.remove_current_sentence()
 
-        for tag in document_tags:
-            print(tag.get_tag_data())
-
         return {
             "document_tags": document_tags,
             "sentence": sentence,

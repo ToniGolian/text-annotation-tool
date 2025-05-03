@@ -208,12 +208,13 @@ class ComparisonManager:
     def _create_merge_document(self, file_path) -> AnnotationDocumentModel:
         file_path = Path(file_path)
         file_name_merged = file_path.stem+"_merged"
+        text = "\n\n".join(self._common_text)
         merge_document_data = {
             "document_type": "comparison",
             "file_path": file_path.parent/file_name_merged,
             "file_name": file_name_merged,
             "meta_tags": {},
-            "splitted_text": self._common_text,
+            "text": text,
         }
         return AnnotationDocumentModel(
             merge_document_data)

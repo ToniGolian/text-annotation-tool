@@ -3,6 +3,7 @@
     "source_mapping": "app_data/source_mapping.json",
     "saved_layout": "app_data/saved_layout.json",
     "default_project_config": "app_data/project_config/",
+    "default_project_data": "app_data/project_data/",
     "default_path_settings": "app_data/settings/",
     "default_comparison_settings": "app_data/settings/comparison_settings.json",
     "default_extraction_load_folder": "data/extraction/",

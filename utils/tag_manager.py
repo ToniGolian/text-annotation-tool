@@ -1,6 +1,6 @@
 from hashlib import md5
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 import uuid
 from controller.interfaces import IController
 from model.interfaces import IDocumentModel, ITagModel
@@ -77,53 +77,53 @@ class TagManager:
         """
         return str(uuid.uuid4())
 
-    def add_tag(self, tag: ITagModel, target_model: IDocumentModel) -> str:
+    def add_tag(self, tag_data: Dict, target_model: IDocumentModel) -> str:
         """
-        Adds a TagModel object to the document and updates the model accordingly.
+        Adds a new tag to the document and updates the model accordingly.
 
-        This method inserts the given tag object into the correct position within the
-        document model, resolves references, updates tag positions, and modifies the
-        document text to reflect the change.
+        This method creates a new tag with a unique UUID, inserts it into the 
+        correct position within the document model, updates tag positions, 
+        and modifies the document text to reflect the change.
 
         Args:
-            tag (ITagModel): The tag object to be added.
+            tag_data (Dict): The data defining the tag attributes.
             target_model (IDocumentModel): The document model where the tag is added.
 
         Returns:
-            str: The UUID of the newly added tag.
+            str: The UUID of the newly created tag.
         """
-        # Ensure UUID is set
-        if not tag.get_uuid():
-            tag.set_uuid(self._generate_unique_id())
+        # Generate a unique UUID for the tag
+        tag_data.setdefault("uuid", self._generate_unique_id())
 
-        # Resolve references using the stored reference UUIDs
-        resolved_refs = self._resolve_references(
-            references=tag.get_references(), target_model=target_model)
-        tag.set_references(resolved_refs)
+        # Set references to the referred objects
+        tag_data["references"] = self._resolve_references(
+            references=tag_data["references"], target_model=target_model)
 
-        # Insert tag at correct position in the tag list
+        new_tag = TagModel(tag_data)
         tags = target_model.get_tags()
-        for index, existing_tag in enumerate(tags):
-            if tag.get_position() < existing_tag.get_position():
-                tags.insert(index, tag)
+        for index, tag in enumerate(tags):
+            if new_tag.get_position() < tag.get_position():
+                tags.insert(index, new_tag)
                 break
         else:
-            tags.append(tag)
+            tags.append(new_tag)
         target_model.set_tags(tags)
 
-        # Update text with tag insertion
         text = target_model.get_text()
-        updated_text = self._tag_processor.insert_tag_into_text(text, tag)
-        offset = len(str(tag)) - len(tag.get_text())
 
+        # Insert the new tag into the text
+        updated_text = self._tag_processor.insert_tag_into_text(text, new_tag)
+        offset = len(str(new_tag))-len(str(new_tag.get_text()))
         self._update_positions(
-            start_position=tag.get_position(), offset=offset, target_model=target_model)
-
+            start_position=new_tag.get_position(), offset=offset, target_model=target_model)
+        # Update IDs and adjust text
         updated_text = self._update_ids(
-            new_tag=tag, target_model=target_model, text=updated_text)
+            new_tag=new_tag, target_model=target_model, text=updated_text)
 
+        # Apply final text update after all modifications
         target_model.set_text(updated_text)
-        return tag.get_uuid()
+
+        return tag_data["uuid"]
 
     def edit_tag(self, tag_uuid: str, tag_data: Dict, target_model: IDocumentModel) -> None:
         """
@@ -278,31 +278,46 @@ class TagManager:
                 tag.set_position(tag_position + offset)
         target_model.set_tags(tags)
 
-    def _resolve_references(self, references: Dict[str, str], target_model: IDocumentModel) -> Dict[str, str]:
+    def _resolve_references(self, references: Dict[str, Union[str, ITagModel]], target_model: IDocumentModel) -> Dict[str, ITagModel]:
         """
-        Resolves reference IDs in the provided dictionary by replacing them with the corresponding UUIDs.
+        Resolves reference values in the `references` dictionary by linking them to actual TagModel objects.
 
-        This method iterates over the tags in the given document model and replaces the values in 
-        the `references` dictionary with the corresponding UUIDs of the matching tags.
+        - If the reference values are strings, they are resolved by matching against tag IDs.
+        - If the reference values are TagModel instances, they are assumed to come from another document.
+        In this case, the method searches for a tag in the target model whose UUID is listed among the
+        equivalent UUIDs of the reference tag. If no such tag is found, the reference is considered
+        unresolved and the tag is registered in the ComparisonModel for later resolution.
 
         Args:
-            references (Dict[str, str]): A dictionary where keys are reference names and values are tag IDs.
-            target_model (IDocumentModel): The document model containing the tags.
+            references (Dict[str, Union[str, ITagModel]]): A dictionary mapping attribute names to either tag IDs or TagModel objects.
+            target_model (IDocumentModel): The document model in which references should be resolved.
 
         Returns:
-            Dict[str, str]: The updated dictionary with reference values replaced by the corresponding UUIDs.
+            Dict[str, ITagModel]: A dictionary with resolved references (attribute name to TagModel).
         """
         tags = target_model.get_tags()
-        reference_ids = set(references.values())
+        resolved_references = {}
 
-        for tag in tags:
-            tag_id = tag.get_id()
-            if tag_id in reference_ids:
-                for key, value in references.items():
-                    if value == tag_id:
-                        references[key] = tag
+        for key, ref in references.items():
+            if isinstance(ref, str):
+                for tag in tags:
+                    if tag.get_id() == ref:
+                        resolved_references[key] = tag
                         tag.increment_reference_count()
-        return references
+                        break
+            else:
+                found = False
+                for tag in tags:
+                    if tag.get_uuid() in ref.get_equivalent_uuids():
+                        resolved_references[key] = tag
+                        tag.increment_reference_count()
+                        found = True
+                        break
+                if not found:
+                    self._comparison_model.add_unresolved_reference(ref)
+                    resolved_references[key] = ref
+
+        return resolved_references
 
     def is_deletion_prohibited(self, uuid: str, target_model: IDocumentModel) -> bool:
         """

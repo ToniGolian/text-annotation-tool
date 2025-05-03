@@ -1,5 +1,6 @@
 from pathlib import Path
 from commands.add_tag_command import AddTagCommand
+from commands.adopt_annotation_command import AdoptAnnotationCommand
 from commands.delete_tag_command import DeleteTagCommand
 from commands.edit_tag_command import EditTagCommand
 from controller.interfaces import IController
@@ -410,9 +411,20 @@ class Controller(IController):
         """
         Creates and executes an AddTagCommand to add a new tag to the tag manager.
 
+        This method augments the provided tag data with the appropriate ID attribute name
+        based on the tag type, constructs a command object, and executes it via the 
+        undo/redo mechanism for the active document view.
+
         Args:
-            tag_data (Dict): A dictionary containing the data for the tag to be added.
-            caller_id (str): The unique identifier of the view initiating this action.
+            tag_data (Dict): A dictionary containing the tag attributes. Must include:
+                - "tag_type" (str): The type of the tag.
+                - "attributes" (Dict[str, str]): The tag's attributes.
+                - "position" (int): The position of the tag in the text.
+                - "text" (str): The inner text of the tag.
+                - "references" (Dict[str, str]): Optional reference attributes.
+                - "equivalent_uuids" (List[str]): Optional UUID equivalence list.
+                - "uuid" (str): Optional UUID (generated if missing).
+            caller_id (str): The unique identifier of the view initiating the action.
         """
         target_model = self._document_source_mapping[self._active_view_id]
         tag_data["id_name"] = self._configuration_model.get_id_name(
@@ -651,8 +663,21 @@ class Controller(IController):
         self._comparison_model.next_sentence()
 
     def perform_adopt_annotation(self, adoption_index: int) -> None:
-        self._comparison_model.adopt_sentence(
+        """
+        Performs the adoption of an annotated sentence by creating and executing
+        an AdoptAnnotationCommand using data provided by the comparison model.
+
+        Args:
+            adoption_index (int): Index of the annotator whose sentence is adopted.
+        """
+        adoption_data = self._comparison_model.pop_adoption_data(
             adoption_index)
+        command = AdoptAnnotationCommand(
+            tag_manager=self._tag_manager,
+            tag_models=adoption_data["tag_models"],
+            target_model=adoption_data["target_model"]
+        )
+        self._execute_command(command=command, caller_id="comparison")
 
     # Helpers
 

@@ -40,7 +40,6 @@ class ComparisonManager:
                 - "differing_to_global": A mapping from the index in the differing sentence list
                   to the corresponding index in the full aligned text.
         """
-        # todo change datatypes. unpack from documentmodel
         tagged_texts = self._prepare_tagged_texts(documents)
         raw_texts = self._extract_clean_texts(tagged_texts)
         aligned_tagged, aligned_clean = self._align_similar_texts(

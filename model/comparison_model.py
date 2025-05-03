@@ -3,7 +3,7 @@ from pprint import pprint
 from typing import List, Tuple
 from typing import Dict, List, Tuple, Union
 from model.annotation_document_model import AnnotationDocumentModel
-from model.interfaces import IDocumentModel
+from model.interfaces import IDocumentModel, ITagModel
 from observer.interfaces import IObserver, IPublisher
 
 
@@ -67,10 +67,10 @@ class ComparisonModel(IPublisher):
                 - "differing_to_global" (Dict[int, int]): A mapping from the local index in the differing
                   sentence list to the corresponding index in the global merged text.
         """
-        self._merged_sentences = comparison_data["merged_sentences"]
         self._merged_document = comparison_data["merged_document"]
         self._comparison_sentences = comparison_data["comparison_sentences"]
         self._differing_to_global = comparison_data["differing_to_global"]
+        self._unresolved_references: List[ITagModel] = []
         self._current_index = 0
         self.notify_observers()
         self._update_document_texts()
@@ -173,19 +173,44 @@ class ComparisonModel(IPublisher):
                 "num_sentences": num_sentences,
                 "current_sentence_index": self._current_index}
 
-    def adopt_sentence(self, adoption_index: int) -> None:
+    def pop_adoption_data(self, adoption_index: int) -> Dict[str, Union[List, IDocumentModel]]:
         """
-        Returns the sentence variant at the current index for the given annotator 
-        and leaves the model unchanged.
+        Prepares and removes the current sentence to be adopted into the merged document.
+
+        This method collects the tag models for the selected sentence version and determines
+        the correct target index in the merged document. It returns the data necessary
+        to create an AdoptAnnotationCommand, and removes the adopted sentence from the 
+        internal comparison state.
 
         Args:
-            adoption_index (int): The index of the annotation variant to adopt 
-                                  (0 = raw, >0 = annotated).
+            adoption_index (int): The index of the annotator whose sentence should be adopted.
 
         Returns:
-            str: The selected sentence variant.
+            Dict[str, Union[List, IDocumentModel]]: A dictionary containing:
+                - "tag_models": The list of tag models to adopt.
+                - "target_model": The merged document model to insert the tags into.
         """
-        adoption_sentence = self._comparison_sentences[adoption_index][self._current_index]
-        global_index = self._differing_to_global[self._current_sentence_hash]
-        # self._merged_sentences[global_index] = adoption_sentence
+        current_sentence_hash = self._current_sentence_hash
+        global_index = self._differing_to_global[current_sentence_hash]
+        source_document = self._document_models[adoption_index]
+        tag_models = [
+            tag for tag in source_document.get_tags()
+            if global_index * 2 * "\n" in source_document.get_text()[:tag.get_position()]
+        ]
         self.remove_current_sentence()
+        return {
+            "tag_models": tag_models,
+            "target_model": self._merged_document
+        }
+
+    def add_unresolved_reference(self, tag: ITagModel) -> None:
+        """
+        Adds a tag with unresolved references to the internal tracking list.
+        """
+        self._unresolved_references.append(tag)
+
+    def get_unresolved_references(self) -> List[ITagModel]:
+        """
+        Returns all tags whose references could not yet be resolved.
+        """
+        return self._unresolved_references

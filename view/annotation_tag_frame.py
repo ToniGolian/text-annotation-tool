@@ -176,22 +176,24 @@ class AnnotationTagFrame(tk.Frame):
 
     def _collect_tag_data(self) -> dict:
         """
-        Collects data from the widgets and returns it as a structured dictionary.
+        Collects data from the tag creation widgets and returns it as a structured dictionary.
 
         The resulting dictionary includes:
             - "tag_type" (str): The type of the tag as specified in the template.
             - "attributes" (Dict[str, str]): A dictionary of attribute name-value pairs.
-            - "position" (int): The position of the selected text in the document, retrieved from the controller.
-            - "text" (str): The currently selected text in the document.
-            - "references" (Dict[str, str]): A dictionary mapping reference attributes to their corresponding values.
+            - "position" (int): The position of the selected text in the document.
+            - "text" (str): The selected text in the document.
+            - "references" (Dict[str, str]): A dictionary mapping reference attributes to their target IDs.
+            - "equivalent_uuids" (List[str]): A list of UUIDs that are considered equivalent (initially empty).
+            - "uuid" (str): The tag's UUID (initially None; will be generated during insertion).
 
         Returns:
-            dict: A dictionary containing the collected tag data, including tag attributes, tag type,
-                  position, selected text, ID string, and reference attributes.
+            dict: A dictionary containing all data required to construct a tag.
 
         Raises:
-            ValueError: If no text is currently selected.
+            ValueError: If no text is currently selected in the document.
         """
+
         # Retrieve the selected text and its position
         selected_text_data = self._controller.get_selected_text_data()
         selected_text = selected_text_data["selected_text"]
@@ -219,7 +221,9 @@ class AnnotationTagFrame(tk.Frame):
             "attributes": attributes,
             "position": position,
             "text": selected_text,
-            "references": references
+            "references": references,
+            "equivalent_uuids": [],
+            "uuid:": None
         }
 
         return tag_data

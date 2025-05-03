@@ -8,12 +8,13 @@ class AdoptAnnotationCommand(ICommand):
     """
     Command to adopt a list of tags into a document model using the TagManager.
 
-    Ensures that all tags are inserted, tracked, and can be reverted or reapplied.
+    This command preserves UUIDs and equivalence information from the original tags,
+    ensuring consistency when merging annotations across documents.
 
     Args:
-        tag_manager (TagManager): Responsible for handling tag insertions and deletions.
-        tag_models (List[ITagModel]): The list of tags to insert.
-        target_model (IDocumentModel): The document model where tags are inserted.
+        tag_manager (TagManager): Responsible for tag insertion and deletion.
+        tag_models (List[ITagModel]): List of tags to be adopted into the document.
+        target_model (IDocumentModel): The document model receiving the adopted tags.
     """
 
     def __init__(self, tag_manager: TagManager, tag_models: List[ITagModel], target_model: IDocumentModel):
@@ -26,30 +27,28 @@ class AdoptAnnotationCommand(ICommand):
     def execute(self) -> None:
         """
         Executes the command by inserting all tags into the target model.
-        Prevents double execution to maintain a consistent state.
         """
         if self._executed:
             return
         for tag in self._tag_models:
-            uuid = self._tag_manager.add_tag_from_model(
-                tag, self._target_model)
+            tag_data = tag.get_tag_data()
+            uuid = self._tag_manager.add_tag(tag_data, self._target_model)
             self._inserted_uuids.append(uuid)
         self._executed = True
 
     def undo(self) -> None:
         """
-        Undoes the command by removing all inserted tags from the target model.
+        Removes all previously inserted tags from the target model.
         """
         for uuid in self._inserted_uuids:
             self._tag_manager.delete_tag(uuid, self._target_model)
 
     def redo(self) -> None:
         """
-        Redoes the command by re-inserting the same tags into the target model.
-        Uses the original tag objects, assuming UUIDs and positions are preserved.
+        Re-inserts the original tags into the target model.
         """
         self._inserted_uuids.clear()
         for tag in self._tag_models:
-            uuid = self._tag_manager.add_tag_from_model(
-                tag, self._target_model)
+            tag_data = tag.get_tag_data()
+            uuid = self._tag_manager.add_tag(tag_data, self._target_model)
             self._inserted_uuids.append(uuid)

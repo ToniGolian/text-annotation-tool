@@ -29,7 +29,6 @@ class TagModel(ITagModel):
         """
         super().__init__()
         self._tag_data = tag_data
-        self._tag_data["equivalent_uuids"] = []
         self._incoming_references_count = 0
         self._tag_hash = None
 
@@ -218,17 +217,22 @@ class TagModel(ITagModel):
 
     def get_tag_data(self) -> Dict[str, Any]:
         """
-        Retrieves the tag data as a dictionary.
+        Returns the complete internal tag data as a dictionary.
+
+        This includes all structural and semantic properties of the tag, such as 
+        its type, attributes, position, textual content, ID metadata, UUID, reference
+        mapping, and equivalent UUIDs.
 
         Returns:
             Dict[str, Any]: A dictionary containing:
-                - "tag_type" (str): The type of the tag.
-                - "attributes" (Dict[str, str]): A dictionary of attribute name-value pairs.
-                - "position" (int): The position of the tag in the text.
-                - "text" (str): The content enclosed within the tag.
+                - "tag_type" (str): The tag's type.
+                - "attributes" (Dict[str, str]): Attribute key-value pairs.
+                - "position" (int): Character offset where the tag starts.
+                - "text" (str): The tag's inner text.
                 - "uuid" (str): The unique identifier for the tag.
                 - "id_name" (str): The name of the ID attribute.
-                - "references" (Dict[str, ITagModel]): A dictionary mapping attribute names to referenced tags.
+                - "references" (Dict[str, ITagModel]): Attribute-to-tag reference mapping.
+                - "equivalent_uuids" (List[str]): List of UUIDs this tag is equivalent to.
         """
         return self._tag_data
 

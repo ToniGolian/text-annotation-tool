@@ -67,10 +67,10 @@ class ComparisonModel(IPublisher):
                 - "differing_to_global" (Dict[int, int]): A mapping from the local index in the differing
                   sentence list to the corresponding index in the global merged text.
         """
+        self._merged_sentences = comparison_data["merged_sentences"]
         self._merged_document = comparison_data["merged_document"]
         self._comparison_sentences = comparison_data["comparison_sentences"]
         self._differing_to_global = comparison_data["differing_to_global"]
-        self._global_uuid_mapping = comparison_data["global_uuid_mapping"]
         self._current_index = 0
         self.notify_observers()
         self._update_document_texts()
@@ -187,5 +187,5 @@ class ComparisonModel(IPublisher):
         """
         adoption_sentence = self._comparison_sentences[adoption_index][self._current_index]
         global_index = self._differing_to_global[self._current_sentence_hash]
-        self._merged_document[global_index] = adoption_sentence
+        # self._merged_sentences[global_index] = adoption_sentence
         self.remove_current_sentence()

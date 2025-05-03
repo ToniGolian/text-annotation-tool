@@ -7,7 +7,6 @@ from commands.interfaces import ICommand
 from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
 from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISelectionModel
-from model.merge_document_model import MergeDocumentModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
 from typing import Dict, List, Tuple
@@ -542,7 +541,7 @@ class Controller(IController):
     def _setup_comparison_model(self, documents) -> None:
         self._appearance_model.set_num_comparison_displays(len(documents)+1)
 
-        document_models = [MergeDocumentModel()]+[MergeDocumentModel(
+        document_models = [AnnotationDocumentModel()]+[AnnotationDocumentModel(
             document) for document in documents]
         for document_model in document_models:
             self._tag_manager.extract_tags_from_document(document_model)
@@ -553,7 +552,7 @@ class Controller(IController):
             comparison_displays)
 
         comparison_data = self._comparison_manager.extract_comparison_data(
-            document_models)
+            document_models[1:])
         self._comparison_model.set_comparison_data(
             comparison_data)
 
@@ -590,13 +589,15 @@ class Controller(IController):
         """
         documents_tags = [document.get_tags() for document in documents]
         merged_document_tags = merged_document.get_tags()
-        documents_sentences = [document.get_splitted_text()
+        separator = '\n\n'
+        documents_sentences = [document.get_text().split(separator)
                                for document in documents]
-        merged_sentences = merged_document.get_splitted_text()
+        merged_sentences = merged_document.get_text().split(separator)
+
         for index, merged_sentence in enumerate(merged_sentences):
             sentences = [document_sentences[index]
                          for document_sentences in documents_sentences]
-            self._tag_manager._find_equivalent_tags(
+            self._tag_manager.find_equivalent_tags(
                 sentences=sentences, common_sentence=merged_sentence, documents_tags=documents_tags, merged_tags=merged_document_tags)
 
     def perform_save_as(self, file_path: str):

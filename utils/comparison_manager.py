@@ -4,8 +4,8 @@ from typing import List
 import re
 from typing import Dict, List, Tuple, Union
 from controller.interfaces import IController
+from model.annotation_document_model import AnnotationDocumentModel
 from model.interfaces import IDocumentModel
-from model.merge_document_model import MergeDocumentModel
 from utils.interfaces import ITagProcessor
 
 
@@ -50,7 +50,7 @@ class ComparisonManager:
         raw_text = aligned_clean[0]
 
         self._extract_differing_tagged_sentences(raw_text, aligned_tagged)
-        file_path = documents[0]["file_path"]
+        file_path = documents[0].get_file_path()
 
         merged_document = self._create_merge_document(file_path)
 
@@ -60,7 +60,7 @@ class ComparisonManager:
         return {
             "comparison_sentences": self._comparison_sentences,
             "differing_to_global": self._differing_to_global,
-            "merged_document": merged_document,
+            "merged_document": merged_document
         }
 
     def _align_similar_texts(self, texts: List[List[str]], clean_texts: List[List[str]]) -> Tuple[List[List[str]], List[List[str]]]:
@@ -94,6 +94,7 @@ class ComparisonManager:
 
         """
         # Define helpers
+
         def get_current_elements():
             """Retrieves a list of clean sentences corresponding to the current indices"""
             return [clean_text[index] if index < len(clean_text) else "" for clean_text, index in zip(clean_texts, sentence_indices)]
@@ -205,7 +206,7 @@ class ComparisonManager:
 
         return aligned_texts, aligned_clean_texts
 
-    def _create_merge_document(self, file_path) -> MergeDocumentModel:
+    def _create_merge_document(self, file_path) -> AnnotationDocumentModel:
         file_path = Path(file_path)
         file_name_merged = file_path.stem+"_merged"
         merge_document_data = {
@@ -215,7 +216,7 @@ class ComparisonManager:
             "meta_tags": {},
             "splitted_text": self._common_text,
         }
-        return MergeDocumentModel(
+        return AnnotationDocumentModel(
             merge_document_data)
 
     def _prepare_text_for_comparison(self, text: str) -> List[str]:

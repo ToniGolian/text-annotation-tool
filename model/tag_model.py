@@ -31,6 +31,7 @@ class TagModel(ITagModel):
         self._tag_data = tag_data
         self._tag_data["equivalent_uuids"] = []
         self._incoming_references_count = 0
+        self._tag_hash = None
 
     def increment_reference_count(self) -> None:
         """

@@ -678,7 +678,7 @@ class Controller(IController):
             target_model=adoption_data["target_model"]
         )
         self._execute_command(command=command, caller_id="comparison")
-
+        print(f"DEBUG {self._comparison_model._merged_document.get_text()=}")
     # Helpers
 
     def _notify_deletion_prohibited(self, tag_id: str, caller_id: str) -> None:

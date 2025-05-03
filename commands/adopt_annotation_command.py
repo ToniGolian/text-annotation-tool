@@ -30,6 +30,7 @@ class AdoptAnnotationCommand(ICommand):
         """
         if self._executed:
             return
+        print(f"DEBUG {len(self._tag_models)=}")
         for tag in self._tag_models:
             tag_data = tag.get_tag_data()
             uuid = self._tag_manager.add_tag(tag_data, self._target_model)

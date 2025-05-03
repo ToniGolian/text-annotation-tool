@@ -5,7 +5,7 @@ import re
 from typing import Dict, List, Tuple, Union
 from controller.interfaces import IController
 from model.annotation_document_model import AnnotationDocumentModel
-from model.interfaces import IDocumentModel
+from model.interfaces import IDocumentModel, ITagModel
 from utils.interfaces import ITagProcessor
 
 
@@ -15,7 +15,7 @@ class ComparisonManager:
         self._tag_processor = tag_processor
         self._similarity_threshold = 0.90
         self._max_lookahead = 10
-        self._comparison_sentences = []
+        self._comparison_sentences_tags: List[List[ITagModel]] = []
         self._common_text: List[str] = []
         self._differing_to_global: Dict[str:int] = {}
 
@@ -48,7 +48,8 @@ class ComparisonManager:
         self._common_text = aligned_tagged[0]
         raw_text = aligned_clean[0]
 
-        self._extract_differing_tagged_sentences(raw_text, aligned_tagged)
+        self._extract_differing_tagged_sentences(
+            raw_text, aligned_tagged, documents)
         file_path = documents[0].get_file_path()
 
         merged_document = self._create_merge_document(file_path)
@@ -58,6 +59,7 @@ class ComparisonManager:
 
         return {
             "comparison_sentences": self._comparison_sentences,
+            "comparison_sentences_tags": self._comparison_sentences_tags,
             "differing_to_global": self._differing_to_global,
             "merged_document": merged_document
         }
@@ -267,7 +269,7 @@ class ComparisonManager:
         return [[self._tag_processor.delete_all_tags_from_text(sentence) for sentence in text]
                 for text in tagged_texts]
 
-    def _extract_differing_tagged_sentences(self, raw_text: List[str], tagged_texts: List[List[str]]) -> None:
+    def _extract_differing_tagged_sentences(self, raw_text: List[str], tagged_texts: List[List[str]], documents: List[IDocumentModel]) -> None:
         """
         Extracts differing sentences across multiple tagged versions of a text
         and stores them in internal instance variables.
@@ -279,13 +281,17 @@ class ComparisonManager:
 
         Side effects:
             - Updates `self._comparison_sentences`: A list of lists where the first
-              list contains the untagged raw sentences and the remaining lists contain
-              differing tagged sentences per annotator.
+            list contains the untagged raw sentences and the remaining lists contain
+            differing tagged sentences per annotator.
             - Updates `self._common_text`: A dictionary mapping sentence indices to
-              the corresponding raw sentence, used as shared reference text.
+            the corresponding raw sentence, used as shared reference text.
+            - Updates `self._differing_to_global`: Maps sentence hash to its index in the common text.
+            - Updates `self._comparison_sentences_tags`: Contains the tag models per differing sentence and annotator.
         """
         # Ensure independent lists, not references to the same list
         self._comparison_sentences = [[] for _ in range(len(tagged_texts) + 1)]
+        self._comparison_sentences_tags = [[]
+                                           for _ in range(len(tagged_texts) + 1)]
 
         # Iterate over the sentences from all tagged texts simultaneously
         for index, sentences in enumerate(zip(*tagged_texts)):
@@ -309,3 +315,18 @@ class ComparisonManager:
                 sentence_hash = hashlib.md5(
                     raw_sentence.encode("utf-8")).hexdigest()
                 self._differing_to_global[sentence_hash] = index
+
+                # Determine the character offset range of this sentence
+                start_offset = sum(
+                    len(s) + 2 for s in raw_text[:index])  # +2 for \n\n
+                end_offset = start_offset + len(raw_text[index])
+
+                # Collect matching tags from each annotator document
+                for annotator_index, document in enumerate(documents):
+                    matching_tags = [
+                        tag for tag in document.get_tags()
+                        if start_offset <= tag.get_position() < end_offset
+                    ]
+                    # todo wrong assignment. see output
+                    self._comparison_sentences_tags[annotator_index].append(
+                        matching_tags)

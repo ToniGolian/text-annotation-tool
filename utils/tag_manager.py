@@ -122,6 +122,7 @@ class TagManager:
 
         # Apply final text update after all modifications
         target_model.set_text(updated_text)
+        print(f"DEBUG {updated_text=}")
 
         return tag_data["uuid"]
 

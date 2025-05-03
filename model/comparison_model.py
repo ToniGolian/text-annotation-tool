@@ -18,6 +18,7 @@ class ComparisonModel(IPublisher):
         self._file_names: List[str] = []
         self._merged_document: IDocumentModel = None
         self._comparison_sentences: List[str] = []
+        self._comparison_sentences_tags: List[List[ITagModel]] = []
         self._differing_to_global: Dict[int:int] = {}
         self._current_sentence_hash: str = ""
         self._current_index: int = 0
@@ -69,6 +70,7 @@ class ComparisonModel(IPublisher):
         """
         self._merged_document = comparison_data["merged_document"]
         self._comparison_sentences = comparison_data["comparison_sentences"]
+        self._comparison_sentences_tags = comparison_data["comparison_sentences_tags"]
         self._differing_to_global = comparison_data["differing_to_global"]
         self._unresolved_references: List[ITagModel] = []
         self._current_index = 0
@@ -177,10 +179,9 @@ class ComparisonModel(IPublisher):
         """
         Prepares and removes the current sentence to be adopted into the merged document.
 
-        This method collects the tag models for the selected sentence version and determines
-        the correct target index in the merged document. It returns the data necessary
-        to create an AdoptAnnotationCommand, and removes the adopted sentence from the 
-        internal comparison state.
+        This method retrieves the tag models for the selected annotator's version of the current
+        sentence from the precomputed comparison_sentences_tags. It also determines the correct
+        global index for positioning and removes the adopted sentence from the internal state.
 
         Args:
             adoption_index (int): The index of the annotator whose sentence should be adopted.
@@ -192,12 +193,12 @@ class ComparisonModel(IPublisher):
         """
         current_sentence_hash = self._current_sentence_hash
         global_index = self._differing_to_global[current_sentence_hash]
-        source_document = self._document_models[adoption_index]
-        tag_models = [
-            tag for tag in source_document.get_tags()
-            if global_index * 2 * "\n" in source_document.get_text()[:tag.get_position()]
-        ]
+        print(f"DEBUG {self._comparison_sentences=}")
+        print(f"DEBUG {self._comparison_sentences_tags=}")
+        tag_models = self._comparison_sentences_tags[adoption_index][self._current_index]
+
         self.remove_current_sentence()
+
         return {
             "tag_models": tag_models,
             "target_model": self._merged_document

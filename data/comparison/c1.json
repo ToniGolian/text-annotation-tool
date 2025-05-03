@@ -1,0 +1,7 @@
+{
+    "document_type": "annotation",
+    "file_path": "C:/Users/tonig/PythonProjects/text-annotation-tool/data/annotation/c1.json",
+    "file_name": "c1",
+    "meta_tags": {},
+    "text": "Die Mondmission startete früh am <TIMEX3 tid=\"t1\" type=\"TIME\" value=\"06:00:00\">Morgen</TIMEX3>.\n\nDer Countdown begann pünktlich.\n\nDie Rakete hob schließlich am <TIMEX3 tid=\"t2\" type=\"DATE\" value=\"1969-07-20\">20. Juli 1969</TIMEX3> vom Boden ab.\n\n03:00 Uhr erreichte die Crew den Orbit.\n\n03:01 Uhr wurde das Andockmanöver gestartet.\n\nDie Zukunft der Raumfahrt ist vielversprechend."
+}

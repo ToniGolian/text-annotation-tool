@@ -30,6 +30,10 @@ class ITextDisplayFrame(IObserver):
     pass
 
 
+class IDBWidgetFrame(IObserver):
+    pass
+
+
 # class IComparisonTextDisplayFrame(ITextDisplayFrame):
 #     pass
 

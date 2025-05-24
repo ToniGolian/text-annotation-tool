@@ -3,6 +3,8 @@ from commands.add_tag_command import AddTagCommand
 from commands.adopt_annotation_command import AdoptAnnotationCommand
 from commands.delete_tag_command import DeleteTagCommand
 from commands.edit_tag_command import EditTagCommand
+from controller.action_result import ActionResult
+from controller.failure_reasons import FailureReason
 from controller.interfaces import IController
 from commands.interfaces import ICommand
 from input_output.file_handler import FileHandler
@@ -20,6 +22,7 @@ from utils.suggestion_manager import SuggestionManager
 from utils.tag_manager import TagManager
 from utils.tag_processor import TagProcessor
 from view.interfaces import IComparisonView, IView
+import tkinter.messagebox as mbox
 
 
 class Controller(IController):
@@ -463,9 +466,8 @@ class Controller(IController):
 
         # Check if the tag can be deleted before creating the command
         if self._tag_manager.is_deletion_prohibited(tag_uuid, target_model):
-            self._notify_deletion_prohibited(
-                tag_id, caller_id)  # Notify the UI / View
-            return  # Do not proceed with command creation
+            self._handle_failure(FailureReason.TAG_IS_REFERENCED)
+            return
 
         # Create and execute the delete command since deletion is allowed
         command = DeleteTagCommand(self._tag_manager, tag_uuid, target_model)
@@ -671,10 +673,19 @@ class Controller(IController):
         Args:
             adoption_index (int): Index of the annotator whose sentence is adopted.
         """
-        adoption_data = self._comparison_model.pop_adoption_data(
+        adoption_data = self._comparison_model.get_adoption_data(
             adoption_index)
+        adoption_sentence = adoption_data["sentence"]
+
+        if self._tag_processor.is_sentence_unmergable(
+                adoption_sentence):
+            self._handle_failure(FailureReason.COMPARISON_MODE_REF_NOT_ALLOWED)
+            return
+
+        self._comparison_model.remove_current_sentence()
+
         tag_data_from_sentence = self._tag_processor.extract_tags_from_text(
-            adoption_data["sentence"])
+            adoption_sentence)
         sentence_tags = [TagModel(tag_data)
                          for tag_data in tag_data_from_sentence]
         original_tag_models = []
@@ -693,17 +704,26 @@ class Controller(IController):
             f"\n\nDEBUG {self._comparison_model._merged_document.get_text()=}")
     # Helpers
 
-    def _notify_deletion_prohibited(self, tag_id: str, caller_id: str) -> None:
+    def _handle_failure(self, reason: FailureReason) -> None:
         """
-        Notifies the user that the deletion of the specified tag is prohibited due to existing references.
+        Handles a failed user action by showing an appropriate message box 
+        based on the provided FailureReason.
 
         Args:
-            tag_id (str): The ID of the tag that cannot be deleted.
-            caller_id (str): The identifier of the view initiating the deletion attempt.
+            reason (FailureReason): The specific reason why the action failed.
+                                    Determines the message shown to the user.
+
+        Side Effects:
+            Displays a warning or error dialog using tkinter.messagebox.
+
         """
-        message = f"Tag '{tag_id}' cannot be deleted because it is referenced by another tag."
-        # todo implement
-        # self._view.notify_user(message, caller_id)
+        if reason == FailureReason.TAG_IS_REFERENCED:
+            mbox.showerror("Action not allowed",
+                           "This tag is still referenced and cannot be deleted.")
+        elif reason == FailureReason.COMPARISON_MODE_REF_NOT_ALLOWED:
+            mbox.showwarning("Comparison mode active",
+                             "Tags with references cannot be inserted in comparison mode.")
+        # add more cases as needed
 
     def _reset_undo_redo(self) -> None:
         """

@@ -236,3 +236,27 @@ class TagProcessor(ITagProcessor):
         cleaned_text = tag_pattern.sub(clean_tag, text)
 
         return cleaned_text
+
+    def is_sentence_unmergable(self, sentence: str) -> bool:
+        """
+        Checks whether the given sentence contains any tags that reference other tags.
+
+        A sentence is considered "unmergable" if at least one tag within it has reference attributes
+        (as defined by the controller's get_id_refs method).
+
+        Args:
+            sentence (str): The sentence to be analyzed.
+
+        Returns:
+            bool: True if the sentence contains referencing tags; False otherwise.
+        """
+        # Extract all tags from the sentence
+        tags = self.extract_tags_from_text(sentence)
+
+        # Check if any tag contains references
+        for tag_data in tags:
+            references = tag_data.get("references", {})
+            if references:
+                return True
+
+        return False

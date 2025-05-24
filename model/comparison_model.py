@@ -172,13 +172,12 @@ class ComparisonModel(IPublisher):
                 "num_sentences": num_sentences,
                 "current_sentence_index": self._current_index}
 
-    def pop_adoption_data(self, adoption_index: int) -> Dict[str, Union[List, IDocumentModel]]:
+    def get_adoption_data(self, adoption_index: int) -> Dict[str, Union[List, IDocumentModel]]:
         """
         Prepares and removes the current sentence to be adopted into the merged document.
 
         This method retrieves the tag models for the selected annotator's version of the current
-        sentence from the precomputed comparison_sentences_tags. It also determines the correct
-        global index for positioning and removes the adopted sentence from the internal state.
+        sentence from the precomputed comparison_sentences_tags. 
 
         Args:
             adoption_index (int): The index of the annotator whose sentence should be adopted.
@@ -190,22 +189,9 @@ class ComparisonModel(IPublisher):
         """
         document_tags = self._document_models[adoption_index].get_tags()
         sentence = self._comparison_sentences[adoption_index][self._current_index]
-        self.remove_current_sentence()
 
         return {
             "document_tags": document_tags,
             "sentence": sentence,
             "target_model": self._merged_document
         }
-
-    def add_unresolved_reference(self, tag: ITagModel) -> None:
-        """
-        Adds a tag with unresolved references to the internal tracking list.
-        """
-        self._unresolved_references.append(tag)
-
-    def get_unresolved_references(self) -> List[ITagModel]:
-        """
-        Returns all tags whose references could not yet be resolved.
-        """
-        return self._unresolved_references

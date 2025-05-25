@@ -227,11 +227,13 @@ class ComparisonModel(IPublisher):
         """
         document_tags = self._document_models[adoption_index].get_tags()
         sentence = self._comparison_sentences[adoption_index][self._current_index]
+        is_adopted = self._adopted_flags[self._current_index]
 
         return {
             "document_tags": document_tags,
             "sentence": sentence,
-            "target_model": self._merged_document
+            "target_model": self._merged_document,
+            "is_adopted": is_adopted
         }
 
     def get_sentence_offset(self) -> int:

@@ -674,8 +674,13 @@ class Controller(IController):
         """
         adoption_data = self._comparison_model.get_adoption_data(
             adoption_index)
-        adoption_sentence = adoption_data["sentence"]
 
+        # check if sentences is already adopted
+        if adoption_data["is_adopted"]:
+            self._handle_failure(FailureReason.IS_ALREADY_ADOPTED)
+
+        # check if sentence contains references, since it is not possible to resolve references yet.
+        adoption_sentence = adoption_data["sentence"]
         if self._tag_processor.is_sentence_unmergable(
                 adoption_sentence):
             self._handle_failure(FailureReason.COMPARISON_MODE_REF_NOT_ALLOWED)
@@ -686,13 +691,6 @@ class Controller(IController):
         sentence_tags = [TagModel(tag_data)
                          for tag_data in tag_data_from_sentence]
 
-        # For reference resolving
-        # original_tag_models = []
-        # for sentence_tag in sentence_tags:
-        #     for tag in adoption_data["document_tags"]:
-        #         if sentence_tag.get_tag_hash() == tag.get_tag_hash():
-        #             original_tag_models.append(tag)
-        #             break
         command = AdoptAnnotationCommand(
             tag_manager=self._tag_manager,
             tag_models=sentence_tags,
@@ -725,6 +723,9 @@ class Controller(IController):
         elif reason == FailureReason.NESTED_TAGS:
             mbox.showwarning("Action not allowed",
                              "Tags can't be nested.")
+        elif reason == FailureReason.IS_ALREADY_ADOPTED:
+            mbox.showwarning("Action not allowed",
+                             "These Sentence is already adopted.")
         # add more cases as needed
 
     def _reset_undo_redo(self) -> None:

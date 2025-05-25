@@ -3,7 +3,6 @@ from commands.add_tag_command import AddTagCommand
 from commands.adopt_annotation_command import AdoptAnnotationCommand
 from commands.delete_tag_command import DeleteTagCommand
 from commands.edit_tag_command import EditTagCommand
-from controller.action_result import ActionResult
 from controller.failure_reasons import FailureReason
 from controller.interfaces import IController
 from commands.interfaces import ICommand
@@ -682,26 +681,26 @@ class Controller(IController):
             self._handle_failure(FailureReason.COMPARISON_MODE_REF_NOT_ALLOWED)
             return
 
-        self._comparison_model.remove_current_sentence()
-
         tag_data_from_sentence = self._tag_processor.extract_tags_from_text(
             adoption_sentence)
         sentence_tags = [TagModel(tag_data)
                          for tag_data in tag_data_from_sentence]
-        original_tag_models = []
-        for sentence_tag in sentence_tags:
-            for tag in adoption_data["document_tags"]:
-                if sentence_tag.get_tag_hash() == tag.get_tag_hash():
-                    original_tag_models.append(tag)
-                    break
+
+        # For reference resolving
+        # original_tag_models = []
+        # for sentence_tag in sentence_tags:
+        #     for tag in adoption_data["document_tags"]:
+        #         if sentence_tag.get_tag_hash() == tag.get_tag_hash():
+        #             original_tag_models.append(tag)
+        #             break
         command = AdoptAnnotationCommand(
             tag_manager=self._tag_manager,
-            tag_models=original_tag_models,
-            target_model=adoption_data["target_model"]
+            tag_models=sentence_tags,
+            target_model=adoption_data["target_model"],
+            comparison_model=self._comparison_model
         )
         self._execute_command(command=command, caller_id="comparison")
-        print(
-            f"\n\nDEBUG {self._comparison_model._merged_document.get_text()=}")
+
     # Helpers
 
     def _handle_failure(self, reason: FailureReason) -> None:
@@ -721,8 +720,11 @@ class Controller(IController):
             mbox.showerror("Action not allowed",
                            "This tag is still referenced and cannot be deleted.")
         elif reason == FailureReason.COMPARISON_MODE_REF_NOT_ALLOWED:
-            mbox.showwarning("Comparison mode active",
+            mbox.showwarning("Action not allowed",
                              "Tags with references cannot be inserted in comparison mode.")
+        elif reason == FailureReason.NESTED_TAGS:
+            mbox.showwarning("Action not allowed",
+                             "Tags can't be nested.")
         # add more cases as needed
 
     def _reset_undo_redo(self) -> None:

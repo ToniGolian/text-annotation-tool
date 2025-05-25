@@ -17,8 +17,9 @@ class ComparisonModel(IPublisher):
         self._file_names: List[str] = []
         self._merged_document: IDocumentModel = None
         self._comparison_sentences: List[List[str]] = []
-        self._differing_to_global: Dict[int:int] = {}
-        self._current_sentence_hash: str = ""
+        self._adopted_flags: List[int] = []
+        self._differing_to_global: List[int] = []
+        # self._current_sentence_hash: str = ""
         self._current_index: int = 0
 
     def set_documents(self, documents: List[IDocumentModel]) -> None:
@@ -68,6 +69,8 @@ class ComparisonModel(IPublisher):
         """
         self._merged_document = comparison_data["merged_document"]
         self._comparison_sentences = comparison_data["comparison_sentences"]
+        self._adopted_flags: List[int] = [
+            False for _ in self._comparison_sentences]
         self._differing_to_global = comparison_data["differing_to_global"]
         self._unresolved_references: List[ITagModel] = []
         self._current_index = 0
@@ -104,28 +107,63 @@ class ComparisonModel(IPublisher):
 
         self._update_document_texts()
 
-    def remove_current_sentence(self) -> None:
+    # def remove_current_sentence(self) -> None:
+    #     """
+    #     Removes the currently selected sentence across all lists in the comparison sentences.
+    #     After removal, it moves to the next available sentence.
+    #     If the last element is removed, it wraps around to the first element.
+    #     If the list becomes empty, no further action is taken.
+    #     """
+    #     if not self._comparison_sentences or not self._comparison_sentences[0]:
+    #         return  # No sentences available
+
+    #     # Remove the current sentence from all sublists
+    #     for sentence_list in self._comparison_sentences:
+    #         del sentence_list[self._current_index]
+
+    #     # Handle case where sentences become empty after removal
+    #     if not self._comparison_sentences[0]:
+    #         self._current_index = 0  # Reset index, but nothing to navigate
+    #         self._update_document_texts()
+    #     else:
+    #         # Ensure index remains valid after removal
+    #         self._current_index %= len(self._comparison_sentences[0])
+    #     self._update_document_texts()
+    #     return
+
+    def mark_current_sentence_as_adopted(self) -> int:
         """
-        Removes the currently selected sentence across all lists in the comparison sentences.
-        After removal, it moves to the next available sentence.
-        If the last element is removed, it wraps around to the first element.
-        If the list becomes empty, no further action is taken.
+        Marks the currently selected sentence as adopted (processed) without removing it,
+        and advances to the next unadopted sentence.
+
+        If all sentences are adopted, the document views are updated with a final message.
+
+        Returns:
+            int: The index of the sentence that was just marked as adopted.
         """
         if not self._comparison_sentences or not self._comparison_sentences[0]:
-            return  # No sentences available
+            return -1  # No valid sentence to mark
 
-        # Remove the current sentence from all sublists
-        for sentence_list in self._comparison_sentences:
-            del sentence_list[self._current_index]
+        adopted_index = self._current_index
+        self._adopted_flags[adopted_index] = True
 
-        # Handle case where sentences become empty after removal
-        if not self._comparison_sentences[0]:
-            self._current_index = 0  # Reset index, but nothing to navigate
-            self._update_document_texts()
+        # Find the next unadopted sentence
+        total = len(self._adopted_flags)
+        next_index = (adopted_index + 1) % total
+
+        while next_index != adopted_index and self._adopted_flags[next_index]:
+            next_index = (next_index + 1) % total
+
+        if self._adopted_flags[next_index]:
+            # All sentences adopted
+            for i, doc in enumerate(self._document_models):
+                doc.set_text("NO MORE DIFFERING SENTENCES." if i == 0 else "")
+            self.notify_observers()
         else:
-            # Ensure index remains valid after removal
-            self._current_index %= len(self._comparison_sentences[0])
-        self._update_document_texts()
+            self._current_index = next_index
+            self._update_document_texts()
+
+        return adopted_index
 
     def _update_document_texts(self) -> None:
         """
@@ -195,3 +233,32 @@ class ComparisonModel(IPublisher):
             "sentence": sentence,
             "target_model": self._merged_document
         }
+
+    def get_sentence_offset(self) -> int:
+        """
+        Returns the character offset of the current raw sentence in the merged document text.
+
+        The method uses the current index to retrieve the global sentence index from
+        `self._differing_to_global`, then computes the total character offset by summing
+        the lengths of all preceding sentences (including separators) in the merged text.
+
+        Returns:
+            int: Character offset of the sentence's start position in the merged document text.
+
+        Raises:
+            IndexError: If the current index is out of bounds for the offset list.
+        """
+        if self._current_index >= len(self._differing_to_global):
+            raise IndexError(
+                f"No global index available for current index {self._current_index}"
+            )
+
+        global_index = self._differing_to_global[self._current_index]
+
+        merged_text = self._merged_document.get_text()
+        sentences = merged_text.split("\n\n")
+        separator_length = len("\n\n")
+
+        offset = sum(len(sentences[i]) +
+                     separator_length for i in range(global_index))
+        return offset

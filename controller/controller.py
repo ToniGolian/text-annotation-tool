@@ -13,7 +13,7 @@ from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentMod
 from model.tag_model import TagModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 from utils.comparison_manager import ComparisonManager
 from utils.list_manager import ListManager
 from utils.pdf_extraction_manager import PDFExtractionManager
@@ -539,9 +539,11 @@ class Controller(IController):
         # Reset old state
         self._reset_undo_redo()
 
+        print(f"DEBUG {self._active_view_id=}")
         # load document
         file_path = file_paths[0]
         if self._active_view_id == "extraction":
+            print(f"DEBUG extraction reached")
             self._extraction_document_model.set_file_path(file_path=file_path)
             return
 
@@ -630,7 +632,7 @@ class Controller(IController):
             self._tag_manager.find_equivalent_tags(
                 sentences=sentences, common_sentence=merged_sentence, documents_tags=documents_tags, merged_tags=merged_document_tags)
 
-    def perform_save_as(self, file_path: str):
+    def perform_save_as(self, file_path: Optional[str] = None):
         """
         Saves the current document to the specified file path.
 

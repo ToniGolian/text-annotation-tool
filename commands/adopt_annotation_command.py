@@ -32,9 +32,11 @@ class AdoptAnnotationCommand(ICommand):
         self._comparison_model = comparison_model
 
         self._inserted_uuids: List[str] = []
-        self._applied_offset: int = 0
+        self._sentence_offset: int = 0
         self._marked_sentence_index = 0
         self._executed = False
+        self._undone = True
+        self._redone = True
 
     def execute(self) -> None:
         """
@@ -44,54 +46,54 @@ class AdoptAnnotationCommand(ICommand):
         if self._executed:
             return
 
-        sentence_offset = self._comparison_model.get_sentence_offset()
-        # old_length = len(self._target_model.get_text())
+        self._sentence_offset = self._comparison_model.get_sentence_offset()
 
         for tag in self._tag_models:
             tag_data = tag.get_tag_data()
-            tag_data["position"] += sentence_offset
+            tag_data["position"] += self._sentence_offset
             uuid = self._tag_manager.add_tag(tag_data, self._target_model)
             self._inserted_uuids.append(uuid)
 
-        self._marked_sentence_index = self._comparison_model.mark_current_sentence_as_adopted()
+        self._marked_sentence_index = self._comparison_model.mark_sentence_as_adopted()
         self._executed = True
+        self._undone = False
 
     def undo(self) -> None:
         """
         Removes the previously inserted tags and restores the original offset mapping.
         """
+        if self._undone:
+            return
+
         for uuid in self._inserted_uuids:
             self._tag_manager.delete_tag(uuid, self._target_model)
 
-        if self._applied_offset != 0:
-            self._comparison_model._current_index = self._sentence_index
-            self._comparison_model.adjust_differing_offsets(
-                -self._applied_offset)
+        for tag in self._tag_models:
+            tag_data = tag.get_tag_data()
+            tag.set_position(tag_data["position"] - self._sentence_offset)
 
-        self._executed = False
+        self._comparison_model.unmark_sentence_as_adopted(
+            self._marked_sentence_index)
+
         self._inserted_uuids.clear()
+        self._undone = True
+        self._redone = False
 
     def redo(self) -> None:
         """
         Re-inserts the tags with correct positions and re-applies the offset mapping.
         """
-        sentence_offset = self._comparison_model._differing_to_global[self._sentence_index]
-        old_length = len(self._target_model.get_text())
+        if self._redone:
+            return
 
         for tag in self._tag_models:
             tag_data = tag.get_tag_data()
-            tag_data["position"] += sentence_offset
+            tag_data["position"] += self._sentence_offset
             uuid = self._tag_manager.add_tag(tag_data, self._target_model)
             self._inserted_uuids.append(uuid)
 
-        new_length = len(self._target_model.get_text())
-        offset = new_length - old_length
+        self._marked_sentence_index = self._comparison_model.mark_sentence_as_adopted(
+            self._marked_sentence_index)
 
-        # Redo must restore the same offset as originally applied
-        assert offset == self._applied_offset, "Redo offset does not match original execution"
-
-        if offset != 0:
-            self._comparison_model._current_index = self._sentence_index
-            self._comparison_model.adjust_differing_offsets(offset)
-
-        self._executed = True
+        self._redone = True
+        self._undone = False

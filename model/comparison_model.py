@@ -131,20 +131,25 @@ class ComparisonModel(IComparisonModel):
     #     self._update_document_texts()
     #     return
 
-    def mark_current_sentence_as_adopted(self) -> int:
+    def mark_sentence_as_adopted(self, adopted_index: int = None) -> int:
         """
-        Marks the currently selected sentence as adopted (processed) without removing it,
-        and advances to the next unadopted sentence.
+        Marks the specified sentence as adopted (processed), or the current one if no index is given.
 
-        If all sentences are adopted, the document views are updated with a final message.
+        If all sentences are adopted after this operation, the views are updated with a final message.
+        Otherwise, the next unadopted sentence is selected.
+
+        Args:
+            adopted_index (int, optional): The index of the sentence to mark as adopted.
+                                        Defaults to the currently active sentence.
 
         Returns:
-            int: The index of the sentence that was just marked as adopted.
+            int: The index of the sentence that was marked as adopted.
         """
         if not self._comparison_sentences or not self._comparison_sentences[0]:
             return -1  # No valid sentence to mark
 
-        adopted_index = self._current_index
+        if not adopted_index:
+            adopted_index = self._current_index
         self._adopted_flags[adopted_index] = True
 
         # Find the next unadopted sentence
@@ -164,6 +169,24 @@ class ComparisonModel(IComparisonModel):
             self._update_document_texts()
 
         return adopted_index
+
+    def unmark_sentence_as_adopted(self, index: int) -> None:
+        """
+        Reverts the adoption state of the sentence at the given index.
+
+        This method clears the adopted flag for the specified sentence, marking it
+        as not yet processed.
+
+        Args:
+            index (int): The index of the sentence to unmark.
+
+        Raises:
+            IndexError: If the index is out of bounds.
+        """
+        if index < 0 or index >= len(self._adopted_flags):
+            raise IndexError(f"Invalid sentence index {index} for unmarking.")
+
+        self._adopted_flags[index] = False
 
     def _update_document_texts(self) -> None:
         """

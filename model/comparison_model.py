@@ -2,11 +2,11 @@ import hashlib
 from pprint import pprint
 from typing import List, Tuple
 from typing import Dict, List, Tuple, Union
-from model.interfaces import IDocumentModel, ITagModel
+from model.interfaces import IComparisonModel, IDocumentModel, ITagModel
 from observer.interfaces import IObserver, IPublisher
 
 
-class ComparisonModel(IPublisher):
+class ComparisonModel(IComparisonModel):
     """
     A specialized DocumentModel for managing comparison text.
     """
@@ -192,6 +192,17 @@ class ComparisonModel(IPublisher):
         self._current_sentence_hash = hashlib.md5(
             sentence_list[0].encode("utf-8")).hexdigest()
 
+    def update_comparison_sentences(self) -> None:
+        """
+        Synchronizes the raw comparison sentence with the current content of the raw document model.
+
+        It uses the global sentence index to identify the sentence from the merged text,
+        and replaces the corresponding entry in self._comparison_sentences[0]
+        if the sentence has been modified.
+        """
+        self._comparison_sentences[0][self._current_index] = self._document_models[0].get_text(
+        )
+
     def get_state(self) -> Dict[str, int]:
         """
         Returns the current state of the comparison model.
@@ -264,3 +275,83 @@ class ComparisonModel(IPublisher):
         offset = sum(len(sentences[i]) +
                      separator_length for i in range(global_index))
         return offset
+
+    def get_raw_text_model(self) -> IDocumentModel:
+        """
+        Returns the document model containing the current raw (unannotated) sentence.
+
+        This is the document model that holds the base sentence displayed in the comparison
+        interface, typically shown in the first (leftmost) column.
+
+        Returns:
+            IDocumentModel: The document model holding the raw sentence.
+        """
+        return self._document_models[0]
+
+    def get_text(self) -> str:
+        """
+        Returns the current text from the base document model.
+
+        This method delegates to the first document in the list, which represents
+        the raw unannotated version of the current sentence.
+
+        Returns:
+            str: The text of the document.
+        """
+        return self._document_models[0].get_text()
+
+    def set_text(self, text: str) -> None:
+        """
+        Sets the text of the base document model.
+
+        This method delegates the update to the first document in the list, which
+        holds the raw unannotated sentence.
+
+        Args:
+            text (str): The new text to set.
+        """
+        self._document_models[0].set_text(text)
+
+    def get_tags(self) -> List[ITagModel]:
+        """
+        Returns the list of tag models from the base document model.
+
+        This method retrieves all tags associated with the raw sentence document.
+
+        Returns:
+            List[ITagModel]: A list of tag model instances.
+        """
+        return self._document_models[0].get_tags()
+
+    def set_tags(self, tags: List[ITagModel]) -> None:
+        """
+        Sets the tag list for the base document model.
+
+        This method delegates the tag update to the first document in the list.
+
+        Args:
+            tags (List[ITagModel]): The updated list of tag models.
+        """
+        self._document_models[0].set_tags(tags)
+
+    def get_common_text(self) -> List[str]:
+        """
+        Returns the full list of raw sentences from the merged document.
+
+        This is used to calculate global offsets and context for tag insertion.
+
+        Returns:
+            List[str]: A list of sentences from the merged document.
+        """
+        return self._merged_document.get_common_text()
+
+    def set_meta_tags(self, meta_tags: Dict[str, List[ITagModel]]) -> None:
+        """
+        Sets meta tags for the base document model.
+
+        This is typically used for metadata tags like document-level annotations.
+
+        Args:
+            meta_tags (Dict[str, List[ITagModel]]): A dictionary mapping tag types to tag model lists.
+        """
+        self._document_models[0].set_meta_tags(meta_tags)

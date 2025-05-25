@@ -429,10 +429,12 @@ class Controller(IController):
                 - "uuid" (str): Optional UUID (generated if missing).
             caller_id (str): The unique identifier of the view initiating the action.
         """
+
         target_model = self._document_source_mapping[self._active_view_id]
         tag_data["id_name"] = self._configuration_model.get_id_name(
             tag_data.get("tag_type"))
-        command = AddTagCommand(self._tag_manager, tag_data, target_model)
+        command = AddTagCommand(
+            self._tag_manager, tag_data, target_model=target_model, caller_id=caller_id)
         self._execute_command(command=command, caller_id=caller_id)
 
     def perform_edit_tag(self, tag_id: str, tag_data: Dict, caller_id: str) -> None:

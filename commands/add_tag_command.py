@@ -4,7 +4,7 @@ from utils.interfaces import ITagManager
 
 
 class AddTagCommand(ICommand):
-    def __init__(self, tag_manager: ITagManager, tag_data: dict, target_model: IDocumentModel) -> None:
+    def __init__(self, tag_manager: ITagManager, tag_data: dict, target_model: IDocumentModel, caller_id: str = None) -> None:
         """
         Initializes the AddTagCommand with necessary dependencies.
 
@@ -17,6 +17,7 @@ class AddTagCommand(ICommand):
         self._target_model = target_model
         self._tag_data = tag_data
         self._tag_uuid = None  # ID assigned by the TagManager
+        self._caller_id = caller_id
 
     def execute(self) -> None:
         """
@@ -27,6 +28,8 @@ class AddTagCommand(ICommand):
         """
         self._tag_uuid = self._tag_manager.add_tag(
             self._tag_data, self._target_model)
+        if self._caller_id == "comparison":
+            self._target_model.update_comparison_sentences()
 
     def undo(self) -> None:
         """
@@ -36,6 +39,8 @@ class AddTagCommand(ICommand):
         """
         if self._tag_uuid is not None:
             self._tag_manager.delete_tag(self._tag_uuid, self._target_model)
+        if self._caller_id == "comparison":
+            self._target_model.update_comparison_sentences()
 
     def redo(self) -> None:
         """
@@ -46,3 +51,5 @@ class AddTagCommand(ICommand):
         if self._tag_data is not None:
             self._tag_uuid = self._tag_manager.add_tag(
                 self._tag_data, self._target_model)
+        if self._caller_id == "comparison":
+            self._target_model.update_comparison_sentences()

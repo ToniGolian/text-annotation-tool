@@ -4,5 +4,39 @@
         "C:/Users/tonig/PythonProjects/text-annotation-tool/data/comparison/comp1.json",
         "C:/Users/tonig/PythonProjects/text-annotation-tool/data/comparison/comp2.json"
     ],
-    "document_path": "data\\annotation\\comp1_merged.json"
+    "document_path": "data\\annotation\\comp1_merged.json",
+    "file_names": [
+        "",
+        "comp1",
+        "comp2"
+    ],
+    "num_sentences": 3,
+    "current_sentence_index": 1,
+    "comparison_sentences": [
+        [
+            "Die Geschichte der Raumfahrt begann offiziell am 4. Oktober 1957, als die Sowjetunion den Satelliten Sputnik 1 um 19:28 Uhr Moskauer Zeit ins All schoss.",
+            "Ein weiterer Meilenstein war der erste bemannte Raumflug, durchgeführt von Juri Gagarin am 12. April 1961, der um 09:07 Uhr Moskauer Zeit begann.",
+            "Die internationale Zusammenarbeit begann ernsthaft am 20. November 1998 mit dem Start des ersten Moduls der Internationalen Raumstation (ISS), das um 06:40 Uhr UTC ins All gebracht wurde."
+        ],
+        [
+            "Die Geschichte der Raumfahrt begann offiziell am <TIMEX3 tid=\"t1\"type=\"DATE\" value=\"1957-10-04\">4. Oktober 1957</TIMEX3>, als die Sowjetunion den Satelliten Sputnik 1 um <TIMEX3 tid=\"t2\"type=\"TIME\" value=\"19:28:00\" comment=\"Moskauer Zeit\">19:28 Uhr Moskauer Zeit</TIMEX3> ins All schoss.",
+            "Ein weiterer Meilenstein war der erste bemannte Raumflug, durchgeführt von Juri Gagarin am <TIMEX3 tid=\"t3\"type=\"DATE\" value=\"1961-04-12\">12. April 1961</TIMEX3>, der um 09:07 Uhr Moskauer Zeit begann.",
+            "Die internationale Zusammenarbeit begann ernsthaft am 20. November 1998 mit dem Start des ersten Moduls der Internationalen Raumstation (ISS), das um 06:40 Uhr UTC ins All gebracht wurde."
+        ],
+        [
+            "Die Geschichte der Raumfahrt begann offiziell am 4. Oktober 1957, als die Sowjetunion den Satelliten Sputnik 1 um 19:28 Uhr Moskauer Zeit ins All schoss.",
+            "Ein weiterer Meilenstein war der erste bemannte Raumflug, durchgeführt von Juri Gagarin am 12. April 1961, der um 09:07 Uhr Moskauer Zeit begann.",
+            "Die internationale Zusammenarbeit begann ernsthaft am <TIMEX3 tid=\"t2\"type=\"DATE\" value=\"1998-11-20\">20. November 1998</TIMEX3> mit dem Start des ersten Moduls der Internationalen Raumstation (ISS), das um 06:40 Uhr UTC ins All gebracht wurde."
+        ]
+    ],
+    "adopted_flags": [
+        true,
+        false,
+        false
+    ],
+    "differing_to_global": [
+        0,
+        5,
+        12
+    ]
 }

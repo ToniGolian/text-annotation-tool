@@ -51,6 +51,15 @@ class IPublisher(ABC):
         for observer in self._observers:
             observer.update(self)
 
+    def clear_observers(self) -> None:
+        """
+        Removes all observers currently registered with this publisher.
+
+        This is useful when resetting or reinitializing the publisher's state,
+        especially in dynamic UI environments where outdated observers could cause errors.
+        """
+        self._observers.clear()
+
     @abstractmethod
     def get_state(self) -> Dict[str, Union[str, int]]:
         """

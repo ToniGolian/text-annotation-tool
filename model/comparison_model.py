@@ -4,6 +4,7 @@ from typing import List, Tuple
 from typing import Dict, List, Tuple, Union
 from model.interfaces import IComparisonModel, IDocumentModel, ITagModel
 from observer.interfaces import IObserver, IPublisher
+from view.comparison_text_displays import ComparisonTextDisplays
 
 
 class ComparisonModel(IComparisonModel):
@@ -225,6 +226,26 @@ class ComparisonModel(IComparisonModel):
         self._comparison_sentences[0][self._current_index] = self._document_models[0].get_text(
         )
 
+    def clear_all_observers(self) -> None:
+        """
+        Removes all ComparisonTextDisplays observers from this model and its associated document models.
+
+        This is necessary to avoid dangling references to outdated GUI widgets after reloading the comparison.
+        Other observers like ComparisonHeaderFrame are preserved.
+        """
+
+        # Remove ComparisonTextDisplays from this model's observers
+        self._observers = [obs for obs in self._observers if not isinstance(
+            obs, ComparisonTextDisplays)]
+
+        # Remove ComparisonTextDisplays from each document model
+        for model in self._document_models:
+            model._observers = [
+                obs for obs in model._observers if not isinstance(obs, ComparisonTextDisplays)
+            ]
+
+    # getters/setters
+
     def get_state(self) -> dict:
         """
         Returns the serialized state of the comparison model for saving.
@@ -240,21 +261,35 @@ class ComparisonModel(IComparisonModel):
                 - "meta_tags": Meta tags from the merged document
                 - "text": The merged full text
                 - "source_file_paths": Full paths to the source documents
+                - "file_names": The base file names of all source documents
+                - "num_sentences": Number of sentences in the comparison
+                - "current_sentence_index": The currently active sentence
+                - "comparison_sentences": List of sentence lists (one per document)
+                - "adopted_flags": List of sentence adoption status flags
+                - "differing_to_global": List of binary flags indicating structural differences
         """
         num_sentences = len(
             self._comparison_sentences[0]) if self._comparison_sentences else 0
-        state = {"file_names": self._file_names,
-                 "num_sentences": num_sentences,
-                 "current_sentence_index": self._current_index,
-                 "document_type": "comparison",
-                 }
+
+        state = {
+            "file_names": self._file_names,
+            "num_sentences": num_sentences,
+            "current_sentence_index": self._current_index,
+            "document_type": "comparison",
+            "comparison_sentences": self._comparison_sentences,
+            "adopted_flags": self._adopted_flags,
+            "differing_to_global": self._differing_to_global,
+        }
+
         if self._merged_document:
             state["file_path"] = self._merged_document.get_file_path()
             state["meta_tags"] = self._merged_document.get_meta_tags()
             state["text"] = self._merged_document.get_text()
+
         if self._document_models:
             state["source_file_paths"] = [doc.get_file_path()
                                           for doc in self._document_models[1:]]
+
         return state
 
     def get_adoption_data(self, adoption_index: int) -> Dict[str, Union[List, IDocumentModel]]:

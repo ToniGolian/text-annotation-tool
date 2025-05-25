@@ -71,7 +71,6 @@ class View(tk.Frame, IView):
             event (tk.Event): The event triggered when this view gains focus.
         """
         self.focus_set()  # Set keyboard focus to this widget
-        print(f"DEBUG {self._view_id=}")
         self._controller.set_active_view(self._view_id)
 
     def get_view_id(self) -> str:

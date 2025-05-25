@@ -539,11 +539,9 @@ class Controller(IController):
         # Reset old state
         self._reset_undo_redo()
 
-        print(f"DEBUG {self._active_view_id=}")
         # load document
         file_path = file_paths[0]
         if self._active_view_id == "extraction":
-            print(f"DEBUG extraction reached")
             self._extraction_document_model.set_file_path(file_path=file_path)
             return
 
@@ -588,9 +586,57 @@ class Controller(IController):
         self._comparison_model.set_comparison_data(
             comparison_data)
 
-    def _load_comparison_model() -> None:
-        # todo implement
-        pass
+    def _load_comparison_model(self, document: dict) -> None:
+        """
+        Reconstructs the comparison model from a previously saved comparison metadata file.
+
+        This matches exactly the structure used in `perform_save_as` for comparison view.
+        """
+        # Step 0: Deregister old display observers
+        self._comparison_model.clear_all_observers()
+
+        # Step 1: Load merged and source documents
+        merged_document_data = self._file_handler.read_file(
+            document["document_path"])
+        source_documents_data = [self._file_handler.read_file(
+            path) for path in document["source_paths"]]
+
+        # Step 2: Build document models
+        raw_model = AnnotationDocumentModel()
+        annotator_models = [AnnotationDocumentModel(
+            data) for data in source_documents_data]
+        document_models = [raw_model] + annotator_models
+
+        # Step 3: Extract tags from all source models (not raw)
+        for model in document_models:
+            self._tag_manager.extract_tags_from_document(model)
+
+        # Step 4: Register documents in the comparison model
+        self._comparison_model.set_documents(document_models)
+
+        # Step 5: Register displays
+        self._appearance_model.set_num_comparison_displays(
+            len(document_models))
+        displays = self._comparison_view.get_comparison_displays()
+        self._comparison_model.register_comparison_displays(displays)
+
+        # Step 6: Construct merged model from saved merged document file
+        merged_model = AnnotationDocumentModel(merged_document_data)
+
+        # Step 7: Prepare and set comparison data
+        comparison_data = {
+            "merged_document": merged_model,
+            "comparison_sentences": document["comparison_sentences"],
+            "differing_to_global": document["differing_to_global"]
+        }
+        self._comparison_model.set_comparison_data(comparison_data)
+
+        # Step 8: Restore internal state
+        self._comparison_model._current_index = document.get(
+            "current_sentence_index", 0)
+        self._comparison_model._adopted_flags = document.get(
+            "adopted_flags", [False] * len(document["comparison_sentences"])
+        )
 
     def extract_tags_from_document(self, documents) -> None:
         """
@@ -659,27 +705,31 @@ class Controller(IController):
                 comparison_folder, f"{base_name}_comparison.json")
 
             # Prepare document for saving
-            document["file_path"] = file_path
-            document["file_name"] = base_name + "_merged"
-            document["document_type"] = "annotation"
-            meta_tag_strings = {
-                tag_type: [", ".join(str(tag) for tag in tags)]
-                for tag_type, tags in document.get("meta_tags", {}).items()
+            clean_document = {
+                "file_path": file_path,
+                "file_name": base_name + "_merged",
+                "document_type": "annotation",
+                "meta_tags": {
+                    tag_type: [", ".join(str(tag) for tag in tags)]
+                    for tag_type, tags in document.get("meta_tags", {}).items()
+                },
+                "text": document["text"]
             }
-            document["meta_tags"] = meta_tag_strings
-            document.pop("file_names", None)
-            document.pop("tags", None)
-            document.pop("num_sentences", None)
-            document.pop("current_sentence_index", None)
 
-            # Save merged document
-            self._file_handler.write_file(file_path, document)
+            # Save merged annotation document
+            self._file_handler.write_file(file_path, clean_document)
 
             # Save comparison metadata
             comparison_info = {
                 "document_type": "comparison",
                 "source_paths": document["source_file_paths"],
-                "document_path": file_path
+                "document_path": file_path,
+                "file_names": document.get("file_names", []),
+                "num_sentences": document.get("num_sentences", 0),
+                "current_sentence_index": document.get("current_sentence_index", 0),
+                "comparison_sentences": document.get("comparison_sentences", []),
+                "adopted_flags": document.get("adopted_flags", []),
+                "differing_to_global": document.get("differing_to_global", []),
             }
             self._file_handler.write_file(
                 comparison_info_path, comparison_info)

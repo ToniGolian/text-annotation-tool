@@ -105,5 +105,15 @@
                 ]
             }
         }
+    },
+    "MainWindow": {
+        "AppearanceModel": {
+            "finalize": false,
+            "source_keys": {
+                "appearance_model": [
+                    "active_notebook_index"
+                ]
+            }
+        }
     }
 }

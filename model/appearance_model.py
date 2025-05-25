@@ -15,10 +15,11 @@ class AppearanceModel(IPublisher):
         """
         super().__init__()
         self._num_comparison_displays = 0
+        self._active_notebook_index = 0
 
     def get_num_comparison_displays(self) -> int:
         """
-        Retrieves the number comparison displays.
+        Retrieves the number of comparison displays.
 
         Returns:
             int: The number of comparison displays.
@@ -27,12 +28,32 @@ class AppearanceModel(IPublisher):
 
     def set_num_comparison_displays(self, num_comparison_displays: int) -> None:
         """
-        Sets the number of dynamically comparison displays.
+        Sets the number of dynamically created comparison displays.
 
         Args:
             num_comparison_displays (int): The number of comparison displays.
         """
         self._num_comparison_displays = num_comparison_displays
+        print(f"DEBUG {self.get_state()=}")
+        self.notify_observers()
+
+    def get_active_notebook_index(self) -> int:
+        """
+        Retrieves the index of the currently active notebook tab.
+
+        Returns:
+            int: The index of the active notebook tab.
+        """
+        return self._active_notebook_index
+
+    def set_active_notebook_index(self, index: int) -> None:
+        """
+        Sets the index of the currently active notebook tab.
+
+        Args:
+            index (int): The index to set as active.
+        """
+        self._active_notebook_index = index
         self.notify_observers()
 
     def get_state(self) -> dict:
@@ -42,5 +63,9 @@ class AppearanceModel(IPublisher):
         Returns:
             dict: A dictionary containing:
                 - "num_comparison_displays" (int): The number of dynamically created comparison displays.
+                - "active_notebook_index" (int): The index of the currently active notebook tab.
         """
-        return {"num_comparison_displays": self._num_comparison_displays}
+        return {
+            "num_comparison_displays": self._num_comparison_displays,
+            "active_notebook_index": self._active_notebook_index
+        }

@@ -19,7 +19,6 @@ class ComparisonModel(IComparisonModel):
         self._comparison_sentences: List[List[str]] = []
         self._adopted_flags: List[int] = []
         self._differing_to_global: List[int] = []
-        # self._current_sentence_hash: str = ""
         self._current_index: int = 0
 
     def set_documents(self, documents: List[IDocumentModel]) -> None:
@@ -226,23 +225,37 @@ class ComparisonModel(IComparisonModel):
         self._comparison_sentences[0][self._current_index] = self._document_models[0].get_text(
         )
 
-    def get_state(self) -> Dict[str, int]:
+    def get_state(self) -> dict:
         """
-        Returns the current state of the comparison model.
+        Returns the serialized state of the comparison model for saving.
 
-        This method provides metadata about the comparison process, including 
-        the total number of sentence tuples and the current index of the active sentence.
+        The returned dictionary is compatible with perform_save_as() and includes
+        the merged document's content as well as information needed to reconstruct
+        the comparison later.
 
         Returns:
-            Dict[str, int]: A dictionary containing:
-                - "num_sentences" (int): The total number of sentence tuples available.
-                - "current_sentence_index" (int): The index of the currently selected sentence tuple.
+            dict: A dictionary containing:
+                - "document_type": Set to "comparison"
+                - "file_path": Full path to the merged document
+                - "meta_tags": Meta tags from the merged document
+                - "text": The merged full text
+                - "source_file_paths": Full paths to the source documents
         """
         num_sentences = len(
             self._comparison_sentences[0]) if self._comparison_sentences else 0
-        return {"file_names": self._file_names,
-                "num_sentences": num_sentences,
-                "current_sentence_index": self._current_index}
+        state = {"file_names": self._file_names,
+                 "num_sentences": num_sentences,
+                 "current_sentence_index": self._current_index,
+                 "document_type": "comparison",
+                 }
+        if self._merged_document:
+            state["file"] = self._merged_document.get_file_path(),
+            state["meta_tags"] = self._merged_document.get_meta_tags()
+            state["text"] = self._merged_document.get_text()
+        if self._document_models:
+            state["source_file_paths"] = [doc.get_file_path()
+                                          for doc in self._document_models[1:]],
+        return state
 
     def get_adoption_data(self, adoption_index: int) -> Dict[str, Union[List, IDocumentModel]]:
         """
@@ -378,3 +391,27 @@ class ComparisonModel(IComparisonModel):
             meta_tags (Dict[str, List[ITagModel]]): A dictionary mapping tag types to tag model lists.
         """
         self._document_models[0].set_meta_tags(meta_tags)
+
+    def get_file_path(self) -> str:
+        """
+        Returns the file path of the base document model.
+
+        This method delegates to the first document in the list, which represents
+        the raw unannotated version of the current sentence.
+
+        Returns:
+            str: The file path of the document.
+        """
+        return self._document_models[0].get_file_path()
+
+    def set_file_path(self, file_path: str) -> None:
+        """
+        Sets the file path of the base document model.
+
+        This method updates the file path in the first document of the list, which 
+        represents the raw unannotated version of the current sentence.
+
+        Args:
+            file_path (str): The file path to assign to the document.
+        """
+        self._document_models[0].set_file_path(file_path)

@@ -1,13 +1,14 @@
 import platform
 import tkinter as tk
 from tkinter import ttk
+from observer.interfaces import IObserver, IPublisher
 from view.extraction_view import ExtractionView
 from view.annotation_view import AnnotationView
 from view.comparison_view import ComparisonView
 from controller.interfaces import IController
 
 
-class MainWindow(tk.Tk):
+class MainWindow(tk.Tk, IObserver):
     def __init__(self, controller: IController) -> None:
         """
         Initializes the MainFrame window, sets its size, and immediately renders
@@ -17,6 +18,8 @@ class MainWindow(tk.Tk):
             controller (IController): The controller managing actions for the main application.
         """
         super().__init__()
+
+        self.DEFAULT_NOTEBOOK_INDEX = 2
         self._controller = controller
         # Set window size
         if platform.system() == "Windows":
@@ -25,9 +28,6 @@ class MainWindow(tk.Tk):
             self.attributes('-zoomed', True)
 
         self.title("Text Annotation Tool")
-
-        # Store controller reference
-        self.controller = controller
 
         # Render the menu bar
         self._create_menu()
@@ -38,11 +38,14 @@ class MainWindow(tk.Tk):
         # Set the protocol for handling window close event
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
 
+        self._controller.add_observer(self)
+
     def _create_menu(self) -> None:
         """
         Creates a menu bar with dropdown menus for "File" and "Settings".
         """
         menu_bar = tk.Menu(self)
+        self._notebook = ttk.Notebook(self)
 
         # File menu
         file_menu = tk.Menu(menu_bar, tearoff=0)
@@ -68,31 +71,29 @@ class MainWindow(tk.Tk):
         the PDF extraction, text annotation, and text comparison views as separate tabs.
         """
         # Create a notebook widget within the main window
-        notebook = ttk.Notebook(self)
-        notebook.pack(fill="both", expand=True)
+        self._notebook.pack(fill="both", expand=True)
 
         # Add the PDF Extraction tab
         pdf_view = ExtractionView(
-            parent=notebook, controller=self.controller)
-        notebook.add(pdf_view, text="PDF Extraction")
+            parent=self._notebook, controller=self._controller)
+        self._notebook.add(pdf_view, text="PDF Extraction")
 
         # Add the Text Annotation tab
         text_annotation_view = AnnotationView(
-            parent=notebook, controller=self.controller)  # Instantiate text annotation view
-        notebook.add(text_annotation_view, text="Text Annotation")
+            parent=self._notebook, controller=self._controller)  # Instantiate text annotation view
+        self._notebook.add(text_annotation_view, text="Text Annotation")
 
         # Add the Text Comparison tab
         comparison_view = ComparisonView(
-            parent=notebook, controller=self.controller)  # Instantiate text comparison view
-        notebook.add(comparison_view, text="Text Comparison")
+            parent=self._notebook, controller=self._controller)  # Instantiate text comparison view
+        self._notebook.add(comparison_view, text="Text Comparison")
 
         # Choose the second page as default
-        #!DEBUG change to 0
-        NUM = 2
         active_views = ["extraction", "annotation", "comparison"]
-        notebook.select(NUM)
-        self._controller.set_active_view(active_views[NUM])
-        #!END DEBUG
+        self._notebook.select(self.DEFAULT_NOTEBOOK_INDEX)
+        print(f"DEBUG view Render")
+        self._controller.set_active_view(
+            active_views[self.DEFAULT_NOTEBOOK_INDEX])
 
     def _on_open(self):
         """
@@ -187,7 +188,24 @@ class MainWindow(tk.Tk):
         Handles the window close event.
         """
         # TODO ask for save changes
-        # if self.controller and self.controller.document_is_modified():
+        # if self._controller and self._controller.document_is_modified():
         #     if self.ask_for_end_program_without_save():
-        #         self.controller.perform_save_document()
+        #         self._controller.perform_save_document()
         self.destroy()
+
+    def update(self, publisher: IPublisher) -> None:
+        """
+        Updates the observer based on the state changes from the given publisher.
+
+        This method retrieves the updated state from the controller and processes both 
+        data-related and layout-related changes in a unified way.
+
+        Args:
+            publisher (IPublisher): The publisher that triggered the update.
+        """
+        state = self._controller.get_observer_state(self, publisher)
+        # Handle selected text updates if available
+        print(f"DEBUG {state=}")
+        if "active_notebook_index" in state:
+            self._notebook.select(state["active_notebook_index"])
+            # self._render()

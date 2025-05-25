@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from commands.add_tag_command import AddTagCommand
 from commands.adopt_annotation_command import AdoptAnnotationCommand
@@ -373,13 +374,22 @@ class Controller(IController):
 
         Updates:
             - The annotation document model is updated with data from the preview document model.
-            - The adopted document is saved.
+            - The adopted document is saved in the extraction save folder.
         """
         document = self._extraction_document_model.get_state()
         document["document_type"] = "annotation"
-        self._annotation_document_model.set_document(document)
-        self._tag_manager.set_document(document)
-        self.perform_save_document(document)
+        # self._annotation_document_model.set_document(document)
+
+        # Construct target path in extraction save folder
+        save_dir = self._file_handler.get_default_path(
+            "default_extraction_save_folder")
+        file_name = document.get("file_name") or self._file_handler.derive_file_name(
+            document.get("file_path", "unnamed"))
+        save_path = os.path.join(save_dir, f"{file_name}.json")
+        self.perform_save_as(save_path)
+        self.set_active_view("annotation")
+        self.perform_open_file([save_path])
+        self._appearance_model.set_active_notebook_index(1)
 
     def perform_update_preview_text(self, text: str) -> None:
         """
@@ -548,8 +558,12 @@ class Controller(IController):
             self._tag_manager.extract_tags_from_document(
                 self._annotation_document_model)
 
+        # Load stored comparison_model or set up a new one from multiple documents
         if self._active_view_id == "comparison":
             if documents[0]["document_type"] == "comparison":
+                if len(documents) > 1:
+                    raise ValueError(
+                        "Too many files selected: Only one file path is allowed when loading a predefined comparison model.")
                 self._load_comparison_model(document)
             else:
                 self._setup_comparison_model(documents)
@@ -621,32 +635,59 @@ class Controller(IController):
         Saves the current document to the specified file path.
 
         This method retrieves the document data from the configured data source,
-        updates the file_name and document type, and writes the updated data to the
-        specified file path using the file handler.
+        updates the file name and document type, and writes the updated data to
+        the specified file path using the file handler.
+
+        For comparison views, it also saves a separate metadata file for reconstruction,
+        storing it in the comparison save folder.
 
         Args:
-            file_path (str): The file path where the document should be saved.
+            file_path (str): The path where the main document should be saved.
 
         Behavior:
-            - Retrieves the document data from the configured data source.
-            - Updates the "file_name" field with the derived file name from the file path.
-            - Updates the "file_path" field the chosen file path.
-            - Updates the "document_type" field with the current active view ID.
-            - Writes the updated document to the specified file path using the file handler.
+            - Retrieves the document from the current data source.
+            - Sets file path and file name.
+            - Converts meta tags to string format.
+            - Saves the main document to the given file path.
+            - If in comparison mode, saves additional metadata (source paths + merged path)
+            into a separate file in the comparison folder.
         """
         data_source = self.get_save_as_config()["data_source"]
         document = data_source.get_state()
+
         document["file_path"] = file_path
         document["file_name"] = self._file_handler.derive_file_name(file_path)
-        document["document_type"] = self._active_view_id
-        meta_tag_strings = {tag_type: [", ".join(str(
-            tag) for tag in tags)] for tag_type, tags in document.get("meta_tags", {}).items()}
+        document["document_type"] = "annotation" if self._active_view_id == "comparison" else self._active_view_id
+        metatags = document.get("meta_tags", {})
+        print(f"DEBUG {metatags=}")
+        # Convert meta tags to exportable string format
+        meta_tag_strings = {
+            tag_type: [", ".join(str(tag) for tag in tags)]
+            for tag_type, tags in document.get("meta_tags", {}).items()
+        }
         document["meta_tags"] = meta_tag_strings
-        document.pop("tags")
+        document.pop("tags", None)
 
+        # Save main document
+        print(f"DEBUG {file_path=}")
         self._file_handler.write_file(file_path, document)
 
-        # todo implement
+        if self._active_view_id == "comparison":
+            # Save comparison metadata separately
+            comparison_info = {
+                "document_type": "comparison",
+                "source_paths": document["source_file_paths"],
+                "document_path": file_path
+            }
+
+            comparison_save_folder = self._file_handler.get_default_path(
+                "default_comparison_save_folder")
+            comparison_file_name = f"{document['file_name']}_comparison.json"
+            comparison_info_path = os.path.join(
+                comparison_save_folder, comparison_file_name)
+
+            self._file_handler.write_file(
+                comparison_info_path, comparison_info)
 
     def perform_prev_sentence(self) -> None:
         """
@@ -777,6 +818,16 @@ class Controller(IController):
         """
         self._active_view_id = view_id
 
+        index_mapping = {
+            "extraction": 0,
+            "annotation": 1,
+            "comparison": 2
+        }
+
+        index = index_mapping.get(view_id)
+        if index is not None:
+            self._appearance_model.set_active_notebook_index(index)
+
     def get_open_file_config(self) -> dict:
         """
         Returns the configuration for the open file dialog.
@@ -813,17 +864,18 @@ class Controller(IController):
 
     def get_save_as_config(self) -> dict:
         """
-        Returns the configuration for the save-as file dialog.
+        Returns configuration for the save-as dialog and the associated data source.
 
-        This method constructs the configuration based on the active view and
-        determines the initial directory, file types, default file extension, and dialog title.
+        Includes dialog metadata used in the view and the current document model
+        used by the controller to save the file content.
 
         Returns:
-            dict: A dictionary containing the configuration for the save-as file dialog.
-                - "initial_dir" (str): The initial directory for the file dialog.
-                - "filetypes" (list of tuples): The allowed file types.
-                - "defaultextension" (str): The default file extension.
-                - "title" (str): The title of the dialog.
+            dict: A dictionary with:
+                - "initial_dir" (str): Start directory for the dialog.
+                - "filetypes" (list of tuples): Allowed file types.
+                - "defaultextension" (str): Default file extension.
+                - "title" (str): Dialog window title.
+                - "data_source" (IDocumentModel): The current model to be saved.
         """
 
         # Determine the file extension and default path based on the active view

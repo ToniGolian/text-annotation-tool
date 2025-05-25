@@ -19,8 +19,10 @@ class MainWindow(tk.Tk, IObserver):
         """
         super().__init__()
 
-        self.DEFAULT_NOTEBOOK_INDEX = 2
+        self.DEFAULT_NOTEBOOK_INDEX = 0
+
         self._controller = controller
+
         # Set window size
         if platform.system() == "Windows":
             self.state('zoomed')
@@ -91,7 +93,6 @@ class MainWindow(tk.Tk, IObserver):
         # Choose the second page as default
         active_views = ["extraction", "annotation", "comparison"]
         self._notebook.select(self.DEFAULT_NOTEBOOK_INDEX)
-        print(f"DEBUG view Render")
         self._controller.set_active_view(
             active_views[self.DEFAULT_NOTEBOOK_INDEX])
 
@@ -176,8 +177,11 @@ class MainWindow(tk.Tk, IObserver):
 
         If a file path is available, it performs a save operation; otherwise, it prompts the user to specify a path.
         """
-        self._controller.perform_save_as(
-            self._controller.get_file_path() or self._on_save_as())
+        file_path = self._controller.get_file_path()
+        if file_path:
+            self._controller.perform_save_as(file_path)
+        else:
+            self._on_save_as()
 
     def _on_preferences(self):
         """Handles the 'Preferences' action from the Settings menu."""
@@ -205,7 +209,6 @@ class MainWindow(tk.Tk, IObserver):
         """
         state = self._controller.get_observer_state(self, publisher)
         # Handle selected text updates if available
-        print(f"DEBUG {state=}")
         if "active_notebook_index" in state:
             self._notebook.select(state["active_notebook_index"])
             # self._render()

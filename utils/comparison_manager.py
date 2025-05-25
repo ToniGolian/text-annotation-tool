@@ -1,4 +1,5 @@
 import hashlib
+import os
 from pathlib import Path
 from typing import List
 import re
@@ -207,18 +208,20 @@ class ComparisonManager:
         return aligned_texts, aligned_clean_texts
 
     def _create_merge_document(self, file_path) -> AnnotationDocumentModel:
-        file_path = Path(file_path)
-        file_name_merged = file_path.stem+"_merged"
+        file_name_merged = os.path.splitext(
+            os.path.basename(file_path))[0] + "_merged"
+        merged_path = os.path.join(
+            os.path.dirname(file_path), file_name_merged)
+
         text = "\n\n".join(self._common_text)
         merge_document_data = {
             "document_type": "comparison",
-            "file_path": file_path.parent/file_name_merged,
+            "file_path": merged_path,  # plain string path
             "file_name": file_name_merged,
             "meta_tags": {},
             "text": text,
         }
-        return AnnotationDocumentModel(
-            merge_document_data)
+        return AnnotationDocumentModel(merge_document_data)
 
     def _prepare_text_for_comparison(self, text: str) -> List[str]:
         """

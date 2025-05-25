@@ -249,12 +249,12 @@ class ComparisonModel(IComparisonModel):
                  "document_type": "comparison",
                  }
         if self._merged_document:
-            state["file"] = self._merged_document.get_file_path(),
+            state["file_path"] = self._merged_document.get_file_path()
             state["meta_tags"] = self._merged_document.get_meta_tags()
             state["text"] = self._merged_document.get_text()
         if self._document_models:
             state["source_file_paths"] = [doc.get_file_path()
-                                          for doc in self._document_models[1:]],
+                                          for doc in self._document_models[1:]]
         return state
 
     def get_adoption_data(self, adoption_index: int) -> Dict[str, Union[List, IDocumentModel]]:

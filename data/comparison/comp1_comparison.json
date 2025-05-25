@@ -1,0 +1,8 @@
+{
+    "document_type": "comparison",
+    "source_paths": [
+        "C:/Users/tonig/PythonProjects/text-annotation-tool/data/comparison/comp1.json",
+        "C:/Users/tonig/PythonProjects/text-annotation-tool/data/comparison/comp2.json"
+    ],
+    "document_path": "data\\annotation\\comp1_merged.json"
+}

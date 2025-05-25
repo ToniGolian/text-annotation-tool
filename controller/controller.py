@@ -547,8 +547,8 @@ class Controller(IController):
 
         documents = [self._file_handler.read_file(
             file_path=file_path) for file_path in file_paths]
-        for document in documents:
-            document["file_path"] = file_path
+        for document, path in zip(documents, file_paths):
+            document["file_path"] = path
 
         if len(documents) == 1:
             document = documents[0]
@@ -634,60 +634,68 @@ class Controller(IController):
         """
         Saves the current document to the specified file path.
 
-        This method retrieves the document data from the configured data source,
-        updates the file name and document type, and writes the updated data to
-        the specified file path using the file handler.
-
-        For comparison views, it also saves a separate metadata file for reconstruction,
-        storing it in the comparison save folder.
-
-        Args:
-            file_path (str): The path where the main document should be saved.
-
-        Behavior:
-            - Retrieves the document from the current data source.
-            - Sets file path and file name.
-            - Converts meta tags to string format.
-            - Saves the main document to the given file path.
-            - If in comparison mode, saves additional metadata (source paths + merged path)
-            into a separate file in the comparison folder.
+        For comparison views, saves the merged document into the annotation folder
+        and the comparison metadata into the comparison folder.
         """
         data_source = self.get_save_as_config()["data_source"]
         document = data_source.get_state()
 
-        document["file_path"] = file_path
-        document["file_name"] = self._file_handler.derive_file_name(file_path)
-        document["document_type"] = "annotation" if self._active_view_id == "comparison" else self._active_view_id
-        metatags = document.get("meta_tags", {})
-        print(f"DEBUG {metatags=}")
-        # Convert meta tags to exportable string format
-        meta_tag_strings = {
-            tag_type: [", ".join(str(tag) for tag in tags)]
-            for tag_type, tags in document.get("meta_tags", {}).items()
-        }
-        document["meta_tags"] = meta_tag_strings
-        document.pop("tags", None)
-
-        # Save main document
-        print(f"DEBUG {file_path=}")
-        self._file_handler.write_file(file_path, document)
-
         if self._active_view_id == "comparison":
-            # Save comparison metadata separately
+            # Construct merged file name and paths
+            base_name = self._file_handler.derive_file_name(
+                document["source_file_paths"][0])
+            merged_file_name = f"{base_name}_merged.json"
+
+            annotation_folder = self._file_handler.get_default_path(
+                "default_annotation_save_folder")
+            comparison_folder = self._file_handler.get_default_path(
+                "default_comparison_save_folder")
+
+            # Final full paths
+            file_path = os.path.join(annotation_folder, merged_file_name)
+            comparison_info_path = os.path.join(
+                comparison_folder, f"{base_name}_comparison.json")
+
+            # Prepare document for saving
+            document["file_path"] = file_path
+            document["file_name"] = base_name + "_merged"
+            document["document_type"] = "annotation"
+            meta_tag_strings = {
+                tag_type: [", ".join(str(tag) for tag in tags)]
+                for tag_type, tags in document.get("meta_tags", {}).items()
+            }
+            document["meta_tags"] = meta_tag_strings
+            document.pop("file_names", None)
+            document.pop("tags", None)
+            document.pop("num_sentences", None)
+            document.pop("current_sentence_index", None)
+
+            # Save merged document
+            self._file_handler.write_file(file_path, document)
+
+            # Save comparison metadata
             comparison_info = {
                 "document_type": "comparison",
                 "source_paths": document["source_file_paths"],
                 "document_path": file_path
             }
-
-            comparison_save_folder = self._file_handler.get_default_path(
-                "default_comparison_save_folder")
-            comparison_file_name = f"{document['file_name']}_comparison.json"
-            comparison_info_path = os.path.join(
-                comparison_save_folder, comparison_file_name)
-
             self._file_handler.write_file(
                 comparison_info_path, comparison_info)
+
+        else:
+            # Normal annotation/extraction mode
+            document["file_path"] = file_path
+            document["file_name"] = self._file_handler.derive_file_name(
+                file_path)
+            document["document_type"] = self._active_view_id
+            meta_tag_strings = {
+                tag_type: [", ".join(str(tag) for tag in tags)]
+                for tag_type, tags in document.get("meta_tags", {}).items()
+            }
+            document["meta_tags"] = meta_tag_strings
+            document.pop("tags", None)
+
+            self._file_handler.write_file(file_path, document)
 
     def perform_prev_sentence(self) -> None:
         """

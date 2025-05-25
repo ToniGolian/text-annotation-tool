@@ -34,7 +34,6 @@ class AppearanceModel(IPublisher):
             num_comparison_displays (int): The number of comparison displays.
         """
         self._num_comparison_displays = num_comparison_displays
-        print(f"DEBUG {self.get_state()=}")
         self.notify_observers()
 
     def get_active_notebook_index(self) -> int:

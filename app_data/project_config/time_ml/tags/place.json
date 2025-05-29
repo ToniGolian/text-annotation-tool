@@ -1,12 +1,13 @@
 {
     "type": "PLACE",
+    "db": true,
     "id_prefix": "p",
     "attributes": {
         "pid": {
             "type": "ID"
         },
-        "place_data": {
-            "type": "DB"
+        "nnid": {
+            "type": "string"
         }
     }
 }

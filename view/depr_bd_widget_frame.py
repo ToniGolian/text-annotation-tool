@@ -6,39 +6,41 @@ from view.tooltip import ToolTip
 
 
 class DBWidgetFrame(tk.Frame, IDBWidgetFrame):
-    def __init__(self, tag_type: str, id_prefix: str) -> None:
+    def __init__(self, parent: tk.Widget,  tag_type: str, id_prefix: str) -> None:
+        super().__init__(parent)
         self._tag_type = tag_type
         self._id_prefix = id_prefix
+        self._tooltips = []
         self._render()
 
     def _render(self):
         start_annotation_button = ttk.Button(
-            self, text=f"Start {self._tag_type} annotation", command=self.on_button_pressed_start_annotation)
+            self, text=f"Start {self._tag_type} annotation", command=self._on_button_pressed_start_annotation)
         start_annotation_button.grid(
             row=1, column=1, columnspan=1, pady=5, sticky="ew")
-        self.tooltips.append(ToolTip(start_annotation_button,
-                                     f"The {self._tag_type} annotation mode sequentially suggests all {self._tag_type} expressions identified within the text."))
+        self._tooltips.append(ToolTip(start_annotation_button,
+                                      f"The {self._tag_type} annotation mode sequentially suggests all {self._tag_type} expressions identified within the text."))
 
         end_annotation_button = ttk.Button(
-            self, text="End {self._tag_type} annotation", command=self.on_button_pressed_end_annotation)
+            self, text=f"End {self._tag_type} annotation", command=self._on_button_pressed_end_annotation)
         end_annotation_button.grid(
             row=1, column=2, columnspan=1, pady=5, sticky="ew")
-        self.tooltips.append(ToolTip(end_annotation_button,
-                                     f"Ends the {self._tag_type} annotation mode. After ending, it's still possible to add {self._tag_type} tags manually."))
+        self._tooltips.append(ToolTip(end_annotation_button,
+                                      f"Ends the {self._tag_type} annotation mode. After ending, it's still possible to add {self._tag_type} tags manually."))
 
         previous_suggestion_button = ttk.Button(
-            self, text="Previous", command=self.on_button_pressed_previous_suggestion_button)
+            self, text="Previous", command=self._on_button_pressed_previous_suggestion_button)
         previous_suggestion_button.grid(
             row=2, column=1, columnspan=1, pady=5, sticky="ew")
-        self.tooltips.append(ToolTip(previous_suggestion_button,
-                                     f"Previous {self._tag_type} suggestion."))
+        self._tooltips.append(ToolTip(previous_suggestion_button,
+                                      f"Previous {self._tag_type} suggestion."))
 
         next_suggestion_button = ttk.Button(
-            self, text="Next", command=self.on_button_pressed_next_suggestion_button)
+            self, text="Next", command=self._on_button_pressed_next_suggestion_button)
         next_suggestion_button.grid(
             row=2, column=2, columnspan=1, pady=5, sticky="ew")
-        self.tooltips.append(ToolTip(next_suggestion_button,
-                                     f"Next {self._tag_type} suggestion."))
+        self._tooltips.append(ToolTip(next_suggestion_button,
+                                      f"Next {self._tag_type} suggestion."))
 
         tk.Label(self, text="Selected Text").grid(
             row=3, column=0, padx=5, sticky="e")
@@ -66,20 +68,41 @@ class DBWidgetFrame(tk.Frame, IDBWidgetFrame):
         self.widget_hierarchy_geo.grid(
             row=6, column=1, columnspan=2, padx=5, pady=2, sticky="ew")
         self.widget_hierarchy_geo.bind(
-            '<<ComboboxSelected>>', self.combobox_selected_geo_hierarchy)
+            '<<ComboboxSelected>>', self._combobox_selected_geo_hierarchy)
 
         add_geo_tag_button = ttk.Button(
-            self, text="Add Geo Tag", command=self.on_button_pressed_add_geo_tag)
+            self, text="Add Geo Tag", command=self._on_button_pressed_add_tag)
         add_geo_tag_button.grid(
             row=7, column=1, columnspan=2, pady=5, sticky="ew")
-        self.tooltips.append(
+        self._tooltips.append(
             ToolTip(add_geo_tag_button, "Adds a geo tag with the chosen attributes."))
         add_geo_tag_button = ttk.Button(
-            self, text="Mark as wrong suggestion", command=self.on_button_pressed_mark_wrong_suggestion)
+            self, text="Mark as wrong suggestion", command=self._on_button_pressed_mark_wrong_suggestion)
         add_geo_tag_button.grid(
             row=8, column=1, columnspan=2, pady=5, sticky="ew")
-        self.tooltips.append(ToolTip(
+        self._tooltips.append(ToolTip(
             add_geo_tag_button, "Mark this suggestion as incorrect to ensure it is not recommended again in the future."))
 
     def update(self):
         raise NotImplementedError()
+
+    def _on_button_pressed_start_annotation(self) -> None:
+        pass
+
+    def _on_button_pressed_end_annotation(self) -> None:
+        pass
+
+    def _on_button_pressed_previous_suggestion_button(self) -> None:
+        pass
+
+    def _on_button_pressed_next_suggestion_button(self) -> None:
+        pass
+
+    def _on_button_pressed_add_tag(self) -> None:
+        pass
+
+    def _on_button_pressed_mark_wrong_suggestion(self) -> None:
+        pass
+
+    def _combobox_selected_geo_hierarchy(self, event) -> None:
+        pass

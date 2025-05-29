@@ -40,8 +40,6 @@ class DBWidgetFrame(tk.Frame, IDBWidgetFrame):
         self.tooltips.append(ToolTip(next_suggestion_button,
                                      f"Next {self._tag_type} suggestion."))
 
-        # todo continue here
-
         tk.Label(self, text="Selected Text").grid(
             row=3, column=0, padx=5, sticky="e")
         self.widget_selected_text_geo = tk.Entry(self, state="disabled")
@@ -53,6 +51,7 @@ class DBWidgetFrame(tk.Frame, IDBWidgetFrame):
         self.widget_tid_geo = tk.Entry(self)
         self.widget_tid_geo.grid(
             row=4, column=1, columnspan=2, padx=5, pady=2, sticky="ew")
+        # todo continue here
 
         tk.Label(self, text="NNID").grid(
             row=5, column=0, padx=5, sticky="e")

@@ -1,0 +1,12 @@
+{
+    "type": "PLACE",
+    "id_prefix": "p",
+    "attributes": {
+        "pid": {
+            "type": "ID"
+        },
+        "place_data": {
+            "type": "DB"
+        }
+    }
+}

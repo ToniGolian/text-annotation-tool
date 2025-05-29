@@ -70,12 +70,6 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         Clears all existing widgets and updates the layout with the new ones.
         Ensures that each text display maintains its predefined height.
         """
-        # Destroy existing widgets
-        for widget in self.scrollable_frame.winfo_children():
-            widget.destroy()
-
-        self._reconfigure_widgets()
-
         # Configure layout for each label and text display frame
         for index, (label, text_display_frame) in enumerate(self._widget_structure):
             row = index * 2
@@ -94,24 +88,30 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
             self.scrollable_frame.grid_rowconfigure(
                 i, weight=0)  # Ensure no unexpected expansion
 
-    def _reconfigure_widgets(self) -> None:
+    def _reset_widgets(self) -> None:
         """
-        Reconfigures the widgets based on the current state of num_comparison_displays.
-        Creates a new Label and TextDisplayFrame pair for each document and updates self._widget_structure.
+        Clears all existing widgets, deregisters observers, and recreates 
+        the widget layout based on the current number of comparison displays.
         """
+        # Clear existing widgets and deregister observers
+        for widget in self.scrollable_frame.winfo_children():
+            if isinstance(widget, AnnotationTextDisplayFrame):
+                self._controller.remove_observer(widget)
+            widget.destroy()
+
+        # Rebuild widget structure
         self._widget_structure = []
 
         for _ in range(self._num_comparison_displays):
-            # Create a TextDisplayFrame with a fixed height
             text_display_frame = AnnotationTextDisplayFrame(
-                parent=self.scrollable_frame, controller=self._controller, height=self._comparison_display_height
+                parent=self.scrollable_frame,
+                controller=self._controller,
+                height=self._comparison_display_height
             )
-
-            # Ensure the frame does not expand vertically
             text_display_frame.grid_propagate(False)
-
             self._widget_structure.append(
-                (tk.Label(self.scrollable_frame), text_display_frame))
+                (tk.Label(self.scrollable_frame), text_display_frame)
+            )
 
     def update(self, publisher: IPublisher) -> None:
         """
@@ -126,11 +126,13 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         """
         state = self._controller.get_observer_state(self, publisher)
 
-        # Update view attributes dynamically based on the retrieved state
+        # Only reset displays if the number of displays has changed (i.e., new document loaded)
         if "num_comparison_displays" in state:
-            self._num_comparison_displays = state["num_comparison_displays"]
-            # Render the updated state
-            self._render()
+            new_num = state["num_comparison_displays"]
+            if new_num != self._num_comparison_displays:
+                self._num_comparison_displays = new_num
+                self._reset_widgets()
+                self._render()
         if "file_names" in state:
             self._file_names = state["file_names"]
             for index, (file_name, (label, _)) in enumerate(zip(self._file_names, self._widget_structure)):

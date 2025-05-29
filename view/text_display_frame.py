@@ -63,7 +63,11 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
             self.text_widget.bind("<KeyRelease>", self._on_text_change)
 
         self.text_widget.bind("<ButtonRelease-1>", self._on_selection)
-
+        text = self.text_widget.get('1.0', tk.END)
+        print(
+            f"DEBUG render text {text=}")
+        widget_id = self.text_widget.winfo_id()
+        print(f"DEBUG render text_widget_id: {widget_id}")
         # Ensure the widget respects the given height, if specified
         if self._height is not None:
             self.text_widget.config(height=self._height)
@@ -171,10 +175,14 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
         self.text_widget.config(state="normal")
         self.text_widget.delete("1.0", tk.END)
         self.text_widget.insert("1.0", text)
+        text = self.text_widget.get("1.0", tk.END).strip()
+        print(f"DEBUG update text {text=}")
+        text_widget_id = self.text_widget.winfo_id()
+        print(f"DEBUG update text_widget_id: {text_widget_id}")
         self.text_widget.update_idletasks()
         self.text_widget.update()
 
-        actual_text = self.text_widget.get("1.0", tk.END).strip()
+        # actual_text = self.text_widget.get("1.0", tk.END).strip()
 
         # Restore cursor position if available
         if self._cursor_position:

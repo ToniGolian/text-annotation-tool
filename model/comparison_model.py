@@ -1,9 +1,7 @@
-import hashlib
-from pprint import pprint
 from typing import List, Tuple
 from typing import Dict, List, Tuple, Union
 from model.interfaces import IComparisonModel, IDocumentModel, ITagModel
-from observer.interfaces import IObserver, IPublisher
+from observer.interfaces import IObserver
 from view.comparison_text_displays import ComparisonTextDisplays
 
 
@@ -56,87 +54,67 @@ class ComparisonModel(IComparisonModel):
 
     def set_comparison_data(self, comparison_data: Dict[str, Union[str, List[Tuple[str, ...]], Dict[str, int]]]) -> None:
         """
-        Sets the comparison data including common text, differing sentences, and index mapping.
+        Sets the comparison data including merged document, comparison sentences, index mapping, and initial sentence data.
 
         Args:
             comparison_data (Dict[str, Union[str, List[Tuple[str, ...]], Dict[int, int]]]):
                 A dictionary containing:
-                - "common_text" (str): The full merged reference text.
+                - "merged_document" (AnnotationDocumentModel): The document model representing the full merged reference text.
                 - "comparison_sentences" (List[Tuple[str, ...]]): A list of sentence tuples where each tuple
-                  contains one sentence per annotator and the first item is the unannotated base version.
-                - "differing_to_global" (Dict[int, int]): A mapping from the local index in the differing
-                  sentence list to the corresponding index in the global merged text.
+                contains one sentence per document, starting with the merged base sentence.
+                - "differing_to_global" (Dict[int, int]): A mapping from local index in the differing sentence list
+                to the corresponding index in the global merged text.
+                - "start_data" (Tuple[List[str], List[List[ITagModel]]]): A tuple consisting of:
+                    - A list of sentences (one per document) to display initially.
+                    - A corresponding list of tag lists, each containing ITagModel instances for the sentence.
         """
+
         self._merged_document = comparison_data["merged_document"]
         self._comparison_sentences = comparison_data["comparison_sentences"]
         self._adopted_flags: List[int] = [
             False for _ in self._comparison_sentences]
         self._differing_to_global = comparison_data["differing_to_global"]
-        self._unresolved_references: List[ITagModel] = []
         self._current_index = 0
         self.notify_observers()
-        self._update_document_texts()
+        self.update_documents(*comparison_data["start_data"])
 
-    def next_sentence(self) -> None:
+    def next_sentences(self) -> List[str]:
         """
-        Advances to the next sentence index in the comparison sentences list.
-        If at the last index, it wraps around to the first index.
-        If the current element has been removed, it automatically moves to the next available element.
+        Advances to the next sentence index in the comparison sentences list,
+        wrapping around if necessary, and returns the sentence list at that index.
+
+        Returns:
+            List[str]: The list of sentences at the new current index.
         """
         if not self._comparison_sentences or not self._comparison_sentences[0]:
-            return  # No sentences available
+            return []  # No sentences available
 
         # Move to next index, wrapping around if necessary
         self._current_index = (self._current_index +
                                1) % len(self._comparison_sentences[0])
+        self.notify_observers()
+        return [sentences[self._current_index] for sentences in self._comparison_sentences]
 
-        self._update_document_texts()
-
-    def previous_sentence(self) -> None:
+    def previous_sentences(self) -> List[str]:
         """
-        Moves to the previous sentence index in the comparison sentences list.
-        If at the first index, it wraps around to the last index.
-        If the current element has been removed, it automatically moves to the next available element.
+        Moves to the previous sentence index in the comparison sentences list,
+        wrapping around if necessary, and returns the sentence list at that index.
+
+        Returns:
+            List[str]: The list of sentences at the new current index.
         """
         if not self._comparison_sentences or not self._comparison_sentences[0]:
-            return  # No sentences available
+            return []  # No sentences available
 
         # Move to previous index, wrapping around if necessary
         self._current_index = (self._current_index -
                                1) % len(self._comparison_sentences[0])
-
-        self._update_document_texts()
-
-    # def remove_current_sentence(self) -> None:
-    #     """
-    #     Removes the currently selected sentence across all lists in the comparison sentences.
-    #     After removal, it moves to the next available sentence.
-    #     If the last element is removed, it wraps around to the first element.
-    #     If the list becomes empty, no further action is taken.
-    #     """
-    #     if not self._comparison_sentences or not self._comparison_sentences[0]:
-    #         return  # No sentences available
-
-    #     # Remove the current sentence from all sublists
-    #     for sentence_list in self._comparison_sentences:
-    #         del sentence_list[self._current_index]
-
-    #     # Handle case where sentences become empty after removal
-    #     if not self._comparison_sentences[0]:
-    #         self._current_index = 0  # Reset index, but nothing to navigate
-    #         self._update_document_texts()
-    #     else:
-    #         # Ensure index remains valid after removal
-    #         self._current_index %= len(self._comparison_sentences[0])
-    #     self._update_document_texts()
-    #     return
+        self.notify_observers()
+        return [sentences[self._current_index] for sentences in self._comparison_sentences]
 
     def mark_sentence_as_adopted(self, adopted_index: int = None) -> int:
         """
         Marks the specified sentence as adopted (processed), or the current one if no index is given.
-
-        If all sentences are adopted after this operation, the views are updated with a final message.
-        Otherwise, the next unadopted sentence is selected.
 
         Args:
             adopted_index (int, optional): The index of the sentence to mark as adopted.
@@ -148,26 +126,10 @@ class ComparisonModel(IComparisonModel):
         if not self._comparison_sentences or not self._comparison_sentences[0]:
             return -1  # No valid sentence to mark
 
-        if not adopted_index:
+        if adopted_index is None:
             adopted_index = self._current_index
+
         self._adopted_flags[adopted_index] = True
-
-        # Find the next unadopted sentence
-        total = len(self._adopted_flags)
-        next_index = (adopted_index + 1) % total
-
-        while next_index != adopted_index and self._adopted_flags[next_index]:
-            next_index = (next_index + 1) % total
-
-        if self._adopted_flags[next_index]:
-            # All sentences adopted
-            for i, doc in enumerate(self._document_models):
-                doc.set_text("NO MORE DIFFERING SENTENCES." if i == 0 else "")
-            self.notify_observers()
-        else:
-            self._current_index = next_index
-            self._update_document_texts()
-
         return adopted_index
 
     def unmark_sentence_as_adopted(self, index: int) -> None:
@@ -188,32 +150,24 @@ class ComparisonModel(IComparisonModel):
 
         self._adopted_flags[index] = False
 
-    def _update_document_texts(self) -> None:
+    def update_documents(self, sentences: List[str], tags: List[ITagModel]) -> None:
         """
         Updates the text of each document in self._documents with the corresponding sentence
         from the current index in the comparison sentences list.
 
         Assumes that self._current_index is set correctly.
         """
-        if not self._comparison_sentences or not self._comparison_sentences[0]:
-            # Important: Notify observers with empty state
+        if not sentences:
             self._document_models[0].set_text("NO MORE DIFFERING SENTENCES.")
+            self._document_models[0].set_tags([])
             for document in self._document_models[1:]:
                 document.set_text("")
-            self.notify_observers()
+                document.set_tags([])
             return
 
-        # Extract the current sentence for each document
-        sentence_list = [sentence[self._current_index]
-                         for sentence in self._comparison_sentences]
-
-        for document, sentence in zip(self._document_models, sentence_list):
-            document.set_text(sentence)
-        self.notify_observers()
-
-        # Calc the hash for the current sentence
-        self._current_sentence_hash = hashlib.md5(
-            sentence_list[0].encode("utf-8")).hexdigest()
+        for index, document in enumerate(self._document_models):
+            document.set_text(sentences[index])
+            document.set_tags(tags[index])
 
     def update_comparison_sentences(self) -> None:
         """
@@ -226,23 +180,23 @@ class ComparisonModel(IComparisonModel):
         self._comparison_sentences[0][self._current_index] = self._document_models[0].get_text(
         )
 
-    def clear_all_observers(self) -> None:
-        """
-        Removes all ComparisonTextDisplays observers from this model and its associated document models.
+    # def clear_all_observers(self) -> None:
+    #     """
+    #     Removes all ComparisonTextDisplays observers from this model and its associated document models.
 
-        This is necessary to avoid dangling references to outdated GUI widgets after reloading the comparison.
-        Other observers like ComparisonHeaderFrame are preserved.
-        """
+    #     This is necessary to avoid dangling references to outdated GUI widgets after reloading the comparison.
+    #     Other observers like ComparisonHeaderFrame are preserved.
+    #     """
 
-        # Remove ComparisonTextDisplays from this model's observers
-        self._observers = [obs for obs in self._observers if not isinstance(
-            obs, ComparisonTextDisplays)]
+    #     # Remove ComparisonTextDisplays from this model's observers
+    #     self._observers = [obs for obs in self._observers if not isinstance(
+    #         obs, ComparisonTextDisplays)]
 
-        # Remove ComparisonTextDisplays from each document model
-        for model in self._document_models:
-            model._observers = [
-                obs for obs in model._observers if not isinstance(obs, ComparisonTextDisplays)
-            ]
+    #     # Remove ComparisonTextDisplays from each document model
+    #     for model in self._document_models:
+    #         model._observers = [
+    #             obs for obs in model._observers if not isinstance(obs, ComparisonTextDisplays)
+    #         ]
 
     # getters/setters
 
@@ -270,7 +224,6 @@ class ComparisonModel(IComparisonModel):
         """
         num_sentences = len(
             self._comparison_sentences[0]) if self._comparison_sentences else 0
-
         state = {
             "file_names": self._file_names,
             "num_sentences": num_sentences,
@@ -307,12 +260,12 @@ class ComparisonModel(IComparisonModel):
                 - "tag_models": The list of tag models to adopt.
                 - "target_model": The merged document model to insert the tags into.
         """
-        document_tags = self._document_models[adoption_index].get_tags()
+        sentence_tags = self._document_models[adoption_index].get_tags()
         sentence = self._comparison_sentences[adoption_index][self._current_index]
         is_adopted = self._adopted_flags[self._current_index]
 
         return {
-            "document_tags": document_tags,
+            "sentence_tags": sentence_tags,
             "sentence": sentence,
             "target_model": self._merged_document,
             "is_adopted": is_adopted

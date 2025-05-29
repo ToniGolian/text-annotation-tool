@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple, Union
 from controller.interfaces import IController
 from model.annotation_document_model import AnnotationDocumentModel
 from model.interfaces import IDocumentModel
+from model.tag_model import TagModel
 from utils.interfaces import ITagProcessor
 
 
@@ -53,16 +54,48 @@ class ComparisonManager:
             raw_text, aligned_tagged)
         file_path = documents[0].get_file_path()
 
+        start_sentences, start_tags = self.get_start_data(0)
+        # start_sentences = [
+        #     sentences[0] for sentences in self._comparison_sentences]
+        # start_tags = [[TagModel(tag_data) for tag_data in self._tag_processor.extract_tags_from_text(
+        #     sentence)] for sentence in start_sentences]
+
         merged_document = self._create_merge_document(file_path)
 
+        #! remove
         self._controller.find_equivalent_tags(
             documents, merged_document)
+        #! end remove
 
         return {
             "comparison_sentences": self._comparison_sentences,
             "differing_to_global": self._differing_to_global,
-            "merged_document": merged_document
+            "merged_document": merged_document,
+            "start_data": (start_sentences, start_tags)
         }
+
+    def get_start_data(self, sentence_index: int = 0, comparison_sentences=None) -> Tuple[List[str], List[List[TagModel]]]:
+        """
+        Retrieves the initial sentences and their associated tags for comparison.
+
+        This method returns the first sentence and its tags from the comparison data,
+        which can be used to initialize a comparison view or display.
+
+        Args:
+            sentence_index (int): The index of the sentence to retrieve. Defaults to 0.
+
+        Returns:
+            Tuple[List[str], List[List[TagModel]]]: A tuple containing:
+                - A list with the first sentence.
+                - A list of lists, where each inner list contains TagModel objects for that sentence.
+        """
+        if not comparison_sentences:
+            comparison_sentences = self._comparison_sentences
+        start_sentences = [
+            sentences[sentence_index] for sentences in comparison_sentences]
+        start_tags = [[TagModel(tag_data) for tag_data in self._tag_processor.extract_tags_from_text(
+            sentence)] for sentence in start_sentences]
+        return start_sentences, start_tags
 
     def _align_similar_texts(self, texts: List[List[str]], clean_texts: List[List[str]]) -> Tuple[List[List[str]], List[List[str]]]:
         """

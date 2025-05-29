@@ -13,7 +13,7 @@ from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentMod
 from model.tag_model import TagModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 from utils.comparison_manager import ComparisonManager
 from utils.list_manager import ListManager
 from utils.pdf_extraction_manager import PDFExtractionManager
@@ -166,13 +166,13 @@ class Controller(IController):
         Removes an observer from all relevant publishers and clears any associated mappings or registrations.
 
         This method dynamically retrieves all publishers related to the observer and removes the observer
-        without requiring a specific mapping type.
+        from them by resolving the publisher names via Controller attributes.
 
         Args:
             observer (IObserver): The observer to be removed.
 
         Raises:
-            KeyError: If no mapping exists for the given observer.
+            KeyError: If no mapping exists for the given observer or a publisher instance cannot be resolved.
         """
         # Retrieve the full mapping for the observer (without specifying a publisher)
         observer_config = self._get_observer_config(observer)
@@ -181,21 +181,23 @@ class Controller(IController):
         for config in observer_config.values():
             source_keys = config["source_keys"]
 
-            # Extract publisher instances dynamically based on `source_keys`
-            for publisher_instance in source_keys.keys():
+            for publisher_key in source_keys.keys():
+                # Convert the string key into the actual instance stored in the Controller
+                publisher_instance = getattr(self, f"_{publisher_key}", None)
+
                 if publisher_instance is None:
                     raise KeyError(
-                        f"Publisher instance not found for observer {observer.__class__.__name__}")
+                        f"Publisher instance '{publisher_key}' not found as an attribute in Controller "
+                        f"for observer {observer.__class__.__name__}")
 
                 # Remove observer from the publisher
-                # Assuming all publishers have this method
                 publisher_instance.remove_observer(observer)
 
         # If the observer was added to the finalize list, remove it
         if observer in self._views_to_finalize:
             self._views_to_finalize.remove(observer)
 
-        print(f"Observer {type(observer).__name__} removed.")
+        print(f"DEBUG Observer {type(observer).__name__} removed.")
 
     def get_observer_state(self, observer: IObserver, publisher: IPublisher = None) -> dict:
         """
@@ -203,7 +205,7 @@ class Controller(IController):
 
         This method determines the relevant data sources for the observer. If a publisher is provided,
         it serves as the primary data source. If the publisher is not static, it is used directly in
-        place of a dynamically mapped source. Otherwise, the sources are derived from the observer's 
+        place of a dynamically mapped source. Otherwise, the sources are derived from the observer's
         configuration mapping.
 
         The state information is then extracted based on the specified source keys.
@@ -425,7 +427,7 @@ class Controller(IController):
         Creates and executes an AddTagCommand to add a new tag to the tag manager.
 
         This method augments the provided tag data with the appropriate ID attribute name
-        based on the tag type, constructs a command object, and executes it via the 
+        based on the tag type, constructs a command object, and executes it via the
         undo/redo mechanism for the active document view.
 
         Args:
@@ -593,11 +595,12 @@ class Controller(IController):
         This matches exactly the structure used in `perform_save_as` for comparison view.
         """
         # Step 0: Deregister old display observers
-        self._comparison_model.clear_all_observers()
+        # self._comparison_model.clear_all_observers()
 
         # Step 1: Load merged and source documents
         merged_document_data = self._file_handler.read_file(
             document["document_path"])
+        print(f"DEBUG {document['source_paths']}")
         source_documents_data = [self._file_handler.read_file(
             path) for path in document["source_paths"]]
 
@@ -624,10 +627,13 @@ class Controller(IController):
         merged_model = AnnotationDocumentModel(merged_document_data)
 
         # Step 7: Prepare and set comparison data
+        start_data = self._comparison_manager.get_start_data(sentence_index=document.get(
+            "current_sentence_index", 0), comparison_sentences=document.get("comparison_sentencess"))
         comparison_data = {
             "merged_document": merged_model,
             "comparison_sentences": document["comparison_sentences"],
-            "differing_to_global": document["differing_to_global"]
+            "differing_to_global": document["differing_to_global"],
+            "start_data": start_data,
         }
         self._comparison_model.set_comparison_data(comparison_data)
 
@@ -652,8 +658,8 @@ class Controller(IController):
         """
         Identifies and marks equivalent tags across multiple document versions.
 
-        This method analyzes tags across all annotator documents and the merged document 
-        to determine equivalence based on structure and content. It updates each tag 
+        This method analyzes tags across all annotator documents and the merged document
+        to determine equivalence based on structure and content. It updates each tag
         with a list of UUIDs representing all of its equivalent counterparts.
 
         Args:
@@ -661,8 +667,8 @@ class Controller(IController):
             merged_document (IDocumentModel): The merged reference document.
 
         Side Effects:
-            Each tag in the documents and the merged document will be updated via 
-            `set_equivalent_uuids()` to include the UUIDs of all semantically 
+            Each tag in the documents and the merged document will be updated via
+            `set_equivalent_uuids()` to include the UUIDs of all semantically
             equivalent tags across versions.
         """
         documents_tags = [document.get_tags() for document in documents]
@@ -700,13 +706,14 @@ class Controller(IController):
                 "default_comparison_save_folder")
 
             # Final full paths
-            file_path = os.path.join(annotation_folder, merged_file_name)
+            annotation_file_path = os.path.join(
+                annotation_folder, merged_file_name)
             comparison_info_path = os.path.join(
                 comparison_folder, f"{base_name}_comparison.json")
 
             # Prepare document for saving
             clean_document = {
-                "file_path": file_path,
+                "file_path": annotation_file_path,
                 "file_name": base_name + "_merged",
                 "document_type": "annotation",
                 "meta_tags": {
@@ -751,21 +758,27 @@ class Controller(IController):
 
     def perform_prev_sentence(self) -> None:
         """
-        Moves the comparison model to the previous sentence.
-
-        This method instructs the comparison model to shift to the previous sentence
-        in the comparison sequence, triggering updates to all registered observers.
+        Moves the comparison model to the previous sentence and updates documents.
         """
-        self._comparison_model.previous_sentence()
+        self._shift_and_update(self._comparison_model.previous_sentences)
 
     def perform_next_sentence(self) -> None:
         """
-        Moves the comparison model to the next sentence.
-
-        This method instructs the comparison model to advance to the next sentence
-        in the comparison sequence, triggering updates to all registered observers.
+        Moves the comparison model to the next sentence and updates documents.
         """
-        self._comparison_model.next_sentence()
+        self._shift_and_update(self._comparison_model.next_sentences)
+
+    def _shift_and_update(self, sentence_func: Callable[[], List[str]]) -> None:
+        """
+        Internal helper to shift the current sentence and update the documents.
+
+        Args:
+            sentence_func (Callable[[], List[str]]): Function to retrieve the target sentence(s).
+        """
+        sentences = sentence_func()
+        tags = [[TagModel(tag_data) for tag_data in self._tag_processor.extract_tags_from_text(
+            sentence)] for sentence in sentences]
+        self._comparison_model.update_documents(sentences, tags)
 
     def perform_adopt_annotation(self, adoption_index: int) -> None:
         """
@@ -781,6 +794,12 @@ class Controller(IController):
         # check if sentences is already adopted
         if adoption_data["is_adopted"]:
             self._handle_failure(FailureReason.IS_ALREADY_ADOPTED)
+            comparison_state = self._comparison_model.get_adoption_data(
+                adoption_index)
+            current_index = self._comparison_model._current_index
+            print(f"DEBUG {comparison_state=}")
+            print(f"DEBUG {current_index=}")
+            return
 
         # check if sentence contains references, since it is not possible to resolve references yet.
         adoption_sentence = adoption_data["sentence"]
@@ -789,24 +808,19 @@ class Controller(IController):
             self._handle_failure(FailureReason.COMPARISON_MODE_REF_NOT_ALLOWED)
             return
 
-        tag_data_from_sentence = self._tag_processor.extract_tags_from_text(
-            adoption_sentence)
-        sentence_tags = [TagModel(tag_data)
-                         for tag_data in tag_data_from_sentence]
-
         command = AdoptAnnotationCommand(
             tag_manager=self._tag_manager,
-            tag_models=sentence_tags,
+            tag_models=adoption_data["sentence_tags"],
             target_model=adoption_data["target_model"],
             comparison_model=self._comparison_model
         )
         self._execute_command(command=command, caller_id="comparison")
-
+        self.perform_next_sentence()
     # Helpers
 
     def _handle_failure(self, reason: FailureReason) -> None:
         """
-        Handles a failed user action by showing an appropriate message box 
+        Handles a failed user action by showing an appropriate message box
         based on the provided FailureReason.
 
         Args:
@@ -835,7 +849,7 @@ class Controller(IController):
         """
         Clears both the undo and redo stacks.
 
-        This method resets the state by removing all stored undo and redo actions, 
+        This method resets the state by removing all stored undo and redo actions,
         effectively discarding any command history.
         """
         for undo_redo_model in self._undo_redo_models.values():
@@ -1004,14 +1018,14 @@ class Controller(IController):
         """
         Retrieves the name of the ID attribute for a given tag type.
 
-        This method returns the attribute name that serves as the unique identifier 
+        This method returns the attribute name that serves as the unique identifier
         for a tag of the specified type.
 
         Args:
             tag_type (str): The type of the tag whose ID attribute name is requested.
 
         Returns:
-            str: The name of the ID attribute for the given tag type. Returns an empty string 
+            str: The name of the ID attribute for the given tag type. Returns an empty string
                  if no ID attribute is defined for the tag type.
         """
         return self._configuration_model.get_id_name(tag_type)
@@ -1020,14 +1034,14 @@ class Controller(IController):
         """
         Retrieves the ID references for a given tag type.
 
-        This method returns the attribute name that serves as the unique identifier 
+        This method returns the attribute name that serves as the unique identifier
         for a tag of the specified type.
 
         Args:
             tag_type (str): The type of the tag whose ID attribute name is requested.
 
         Returns:
-            List[str]: A list of all attributes with an ID for the given tag type. 
+            List[str]: A list of all attributes with an ID for the given tag type.
         """
         return self._configuration_model.get_id_refs(tag_type)
 
@@ -1044,8 +1058,8 @@ class Controller(IController):
         """
         Retrieves the alignment option from the default comparison settings.
 
-        This method reads the comparison settings file and extracts the 
-        alignment option, which determines whether texts should be merged 
+        This method reads the comparison settings file and extracts the
+        alignment option, which determines whether texts should be merged
         using "union" or "intersection".
 
         Returns:

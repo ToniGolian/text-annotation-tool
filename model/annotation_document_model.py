@@ -23,7 +23,7 @@ class AnnotationDocumentModel(DocumentModel, IAnnotableDocumentModel):
         """
         return self._tags
 
-    def set_tags(self, tags: list) -> None:
+    def set_tags(self, tags: List[ITagModel]) -> None:
         """
         Sets the tags associated with the document.
 
@@ -32,26 +32,6 @@ class AnnotationDocumentModel(DocumentModel, IAnnotableDocumentModel):
         """
         self._tags = tags
         self.notify_observers()
-
-    # def get_meta_tags(self) -> list:
-    #     """
-    #     Retrieves the meta_tags associated with the document.
-
-    #     Returns:
-    #         list: A list of tags represented as ITagModel objects.
-    #     """
-    #     return self._meta_tags
-
-    # def set_meta_tags(self, tags: list) -> None:
-    #     """
-    #     Sets the meta_tags associated with the document.
-
-    #     Args:
-    #         tags (list): A list of tags represented as ITagModel objects to set.
-    #     """
-    #     self._meta_tags = tags
-    #     print(f" {self._meta_tags=}")
-    #     self.notify_observers()
 
     def get_state(self) -> dict:
         """

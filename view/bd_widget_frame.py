@@ -6,9 +6,9 @@ from view.tooltip import ToolTip
 
 
 class DBWidgetFrame(tk.Frame, IDBWidgetFrame):
-    def __init__(self):
-        self._tag_type = None
-
+    def __init__(self, tag_type: str, id_prefix: str) -> None:
+        self._tag_type = tag_type
+        self._id_prefix = id_prefix
         self._render()
 
     def _render(self):
@@ -24,21 +24,21 @@ class DBWidgetFrame(tk.Frame, IDBWidgetFrame):
         end_annotation_button.grid(
             row=1, column=2, columnspan=1, pady=5, sticky="ew")
         self.tooltips.append(ToolTip(end_annotation_button,
-                                     "Ends the {self._tag_type} annotation mode. After ending, it's still possible to add {self._tag_type} tags manually."))
+                                     f"Ends the {self._tag_type} annotation mode. After ending, it's still possible to add {self._tag_type} tags manually."))
 
         previous_suggestion_button = ttk.Button(
             self, text="Previous", command=self.on_button_pressed_previous_suggestion_button)
         previous_suggestion_button.grid(
             row=2, column=1, columnspan=1, pady=5, sticky="ew")
         self.tooltips.append(ToolTip(previous_suggestion_button,
-                                     "Previous Geo Tag suggestion."))
+                                     f"Previous {self._tag_type} suggestion."))
 
         next_suggestion_button = ttk.Button(
             self, text="Next", command=self.on_button_pressed_next_suggestion_button)
         next_suggestion_button.grid(
             row=2, column=2, columnspan=1, pady=5, sticky="ew")
         self.tooltips.append(ToolTip(next_suggestion_button,
-                                     "Next Geo Tag suggestion."))
+                                     f"Next {self._tag_type} suggestion."))
 
         # todo continue here
 
@@ -48,7 +48,7 @@ class DBWidgetFrame(tk.Frame, IDBWidgetFrame):
         self.widget_selected_text_geo.grid(
             row=3, column=1, columnspan=2, padx=5, pady=2, sticky="ew")
 
-        tk.Label(self, text="TID").grid(
+        tk.Label(self, text=f"{self._id_prefix.upper()}ID").grid(
             row=4, column=0, padx=5, sticky="e")
         self.widget_tid_geo = tk.Entry(self)
         self.widget_tid_geo.grid(

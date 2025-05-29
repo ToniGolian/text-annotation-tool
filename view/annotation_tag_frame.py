@@ -65,7 +65,7 @@ class AnnotationTagFrame(tk.Frame):
             start_annotation_button = ttk.Button(
                 annotation_control_frame,
                 text=f"Start {self._name} Annotation",
-                command=self._button_pressed_start_annotation
+                command=self._button_pressed_start_db_annotation
             )
             start_annotation_button.pack(
                 side=tk.LEFT, expand=True, fill=tk.X, padx=(5, 0))
@@ -77,7 +77,7 @@ class AnnotationTagFrame(tk.Frame):
             end_annotation_button = ttk.Button(
                 annotation_control_frame,
                 text=f"End {self._name} Annotation",
-                command=self._button_pressed_end_annotation
+                command=self._button_pressed_end_db_annotation
             )
             end_annotation_button.pack(
                 side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 5))
@@ -94,7 +94,7 @@ class AnnotationTagFrame(tk.Frame):
             previous_suggestion_button = ttk.Button(
                 navigation_control_frame,
                 text="Previous",
-                command=self._button_pressed_previous_suggestion_button
+                command=self._button_pressed_previous_db_suggestion_button
             )
             previous_suggestion_button.pack(
                 side=tk.LEFT, expand=True, fill=tk.X, padx=(5, 0))
@@ -106,7 +106,7 @@ class AnnotationTagFrame(tk.Frame):
             next_suggestion_button = ttk.Button(
                 navigation_control_frame,
                 text="Next",
-                command=self._button_pressed_next_suggestion_button
+                command=self._button_pressed_next_db_suggestion_button
             )
             next_suggestion_button.pack(
                 side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 5))
@@ -117,7 +117,7 @@ class AnnotationTagFrame(tk.Frame):
             wrong_suggestion_button = ttk.Button(
                 self,
                 text="Mark wrong suggestion",
-                command=self._button_pressed_mark_wrong_suggestion
+                command=self._button_pressed_mark_wrong_db_suggestion
             )
             wrong_suggestion_button.grid(
                 row=3, column=1, sticky="ew", padx=5, pady=5)
@@ -352,19 +352,42 @@ class AnnotationTagFrame(tk.Frame):
         for widget in self._idref_widgets:
             widget.config(values=idrefs)
 
-    def _button_pressed_start_annotation(self) -> None:
-        self._controller.perform_start_annotation(
+    def _button_pressed_start_db_annotation(self) -> None:
+        """
+        Handles the event when the start annotation button is pressed.
+        Initiates the annotation process for the current tag type.
+        """
+        self._controller.perform_start_db_annotation(
             tag_type=self._name, caller_id=self._root_view_id)
 
-    def _button_pressed_end_annotation(self) -> None:
-        self._controller.perform_end_annotation(
+    def _button_pressed_end_db_annotation(self) -> None:
+        """
+        Handles the event when the end annotation button is pressed.
+        Ends the annotation process for the current tag type.
+        """
+        self._controller.perform_end_db_annotation(
             tag_type=self._name, caller_id=self._root_view_id)
 
-    def _button_pressed_previous_suggestion_button(self) -> None:
-        pass
+    def _button_pressed_previous_db_suggestion_button(self) -> None:
+        """
+        Handles the event when the previous suggestion button is pressed.
+        Requests the controller to show the previous suggestion for the tag type.
+        """
+        self._controller.perform_previous_db_suggestion(
+            tag_type=self._name, caller_id=self._root_view_id)
 
-    def _button_pressed_next_suggestion_button(self) -> None:
-        pass
+    def _button_pressed_next_db_suggestion_button(self) -> None:
+        """
+        Handles the event when the next suggestion button is pressed.
+        Requests the controller to show the next suggestion for the tag type.
+        """
+        self._controller.perform_next_db_suggestion(
+            tag_type=self._name, caller_id=self._root_view_id)
 
-    def _button_pressed_mark_wrong_suggestion(self) -> None:
-        pass
+    def _button_pressed_mark_wrong_db_suggestion(self) -> None:
+        """
+        Handles the event when the mark-as-wrong-suggestion button is pressed.
+        Informs the controller that the current suggestion should not be shown again.
+        """
+        self._controller.perform_mark_wrong_db_suggestion(
+            tag_type=self._name, caller_id=self._root_view_id)

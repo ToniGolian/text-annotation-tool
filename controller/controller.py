@@ -350,6 +350,80 @@ class Controller(IController):
             self._comparison_view = view
 
     # Perform methods
+    def perform_start_db_annotation(self, tag_type: str) -> None:
+        """
+        Starts the annotation mode for a specific tag type.
+
+        This method initializes the annotation mode for the specified tag type,
+        allowing the user to annotate text with tags of that type. It sets up
+        the necessary state and prepares the view for annotation.
+
+        Args:
+            tag_type (str): The type of tag to start annotating.
+        """
+        # block manual annotation
+        # check if db_suggestion model exists
+        # else create new model
+        # give first suggestion
+        pass
+
+    def perform_end_db_annotation(self, tag_type: str) -> None:
+        """
+        Ends the annotation mode for a specific tag type.
+
+        This method finalizes the annotation mode for the specified tag type,
+        allowing the user to stop annotating text with tags of that type. It
+        updates the state and prepares the view for further actions.
+
+        Args:
+            tag_type (str): The type of tag to end annotating.
+        """
+        # unblock manual annotation
+        pass
+
+    def perform_next_db_suggestion(self, tag_type: str) -> None:
+        """
+        Moves to the next suggestion for the specified tag type.
+
+        This method updates the tag manager to suggest the next tag of the specified type
+        based on the current text selection or context. It prepares the view to display
+        the next suggestion.
+
+        Args:
+            tag_type (str): The type of tag for which to show the next suggestion.
+        """
+        # call db suggestion model for next suggestion
+        pass
+
+    def perform_previous_db_suggestion(self, tag_type: str) -> None:
+        """
+        Moves to the previous suggestion for the specified tag type.
+
+        This method updates the tag manager to suggest the previous tag of the specified type
+        based on the current text selection or context. It prepares the view to display
+        the previous suggestion.
+
+        Args:
+            tag_type (str): The type of tag for which to show the previous suggestion.
+        """
+        # call db suggestion model for previous suggestion
+        pass
+
+    def mark_wrong_db_suggestion(self, tag_type: str) -> None:
+        """
+        Marks the current suggestion as incorrect for the specified tag type.
+
+        This method updates the tag manager to indicate that the current suggestion
+        for the specified tag type is not valid, allowing the user to skip or correct it.
+
+        Args:
+            tag_type (str): The type of tag for which to mark the suggestion as wrong.
+        """
+        self._tag_manager.mark_wrong_suggestion(tag_type=tag_type)
+        # load wrong suggestions file
+        # add current suggestion to wrong suggestions
+        # store updated wrong suggestions file
+        pass
 
     def perform_pdf_extraction(self, extraction_data: dict) -> None:
         """
@@ -654,6 +728,7 @@ class Controller(IController):
         for document in documents:
             self._tag_manager.extract_tags_from_document(document)
 
+    # todo remove
     def find_equivalent_tags(self, documents: List[IDocumentModel], merged_document: IDocumentModel) -> None:
         """
         Identifies and marks equivalent tags across multiple document versions.

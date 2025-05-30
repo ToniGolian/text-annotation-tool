@@ -26,7 +26,7 @@ import tkinter.messagebox as mbox
 
 
 class Controller(IController):
-    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None):
+    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, annotation_mode_model: IPublisher = None) -> None:
 
         # dependencies
         self._file_handler = FileHandler()
@@ -39,6 +39,7 @@ class Controller(IController):
             self._file_handler, self._settings_manager)
         self._pdf_extraction_manager = PDFExtractionManager(
             list_manager=self._list_manager)
+        self
 
         # config
         # Load the source mapping once and store it in an instance variable
@@ -61,6 +62,7 @@ class Controller(IController):
         self._annotation_document_model: IDocumentModel = annotation_document_model
         self._comparison_model: IComparisonModel = comparison_model
         self._selection_model: ISelectionModel = selection_model
+        self._annotation_mode_model: IPublisher = annotation_mode_model
 
         # command pattern
         self._active_view_id = None  # Track the currently active view
@@ -362,8 +364,8 @@ class Controller(IController):
             tag_type (str): The type of tag to start annotating.
         """
         # block manual annotation
-        # check if db_suggestion model exists
-        # else create new model
+
+        # trigger suggestionsearch (maybe check if its still done)
         # give first suggestion
         pass
 

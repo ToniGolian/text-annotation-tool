@@ -364,24 +364,19 @@ class Controller(IController):
             tag_type (str): The type of tag to start annotating.
         """
         # block manual annotation
-
+        self._annotation_mode_model.set_auto_mode()
         # trigger suggestionsearch (maybe check if its still done)
         # give first suggestion
         pass
 
-    def perform_end_db_annotation(self, tag_type: str) -> None:
+    def perform_end_db_annotation(self) -> None:
         """
         Ends the annotation mode for a specific tag type.
 
-        This method finalizes the annotation mode for the specified tag type,
-        allowing the user to stop annotating text with tags of that type. It
-        updates the state and prepares the view for further actions.
-
-        Args:
-            tag_type (str): The type of tag to end annotating.
+        This method finalizes the auto annotation mode. 
         """
         # unblock manual annotation
-        pass
+        self._annotation_mode_model.set_manual_mode()
 
     def perform_next_db_suggestion(self, tag_type: str) -> None:
         """

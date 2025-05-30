@@ -1,12 +1,12 @@
 import os
-from pathlib import Path
 from commands.add_tag_command import AddTagCommand
 from commands.adopt_annotation_command import AdoptAnnotationCommand
 from commands.delete_tag_command import DeleteTagCommand
 from commands.edit_tag_command import EditTagCommand
-from controller.failure_reasons import FailureReason
+from enums.failure_reasons import FailureReason
 from controller.interfaces import IController
 from commands.interfaces import ICommand
+from enums.search_types import SearchType
 from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
 from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISelectionModel
@@ -68,6 +68,8 @@ class Controller(IController):
         self._selection_model: ISelectionModel = selection_model
         self._annotation_mode_model: IPublisher = annotation_mode_model
         self._search_models: IPublisher = search_models
+
+        self._current_search_model: IPublisher = None
 
         # command pattern
         self._active_view_id = None  # Track the currently active view
@@ -370,10 +372,11 @@ class Controller(IController):
         """
         # block manual annotation
         self._annotation_mode_model.set_auto_mode()
-        # trigger suggestionsearch (maybe check if its still done)
-        self._search_model_accessor.get_valid_model(tag_type)
+        # set current search model
+        self._current_search_model = self._search_model_accessor.get_valid_model(
+            search_str=tag_type, search_type=SearchType.DB)
         # give first suggestion
-        pass
+        self._current_search_model.next_result()
 
     def perform_end_db_annotation(self) -> None:
         """
@@ -383,6 +386,7 @@ class Controller(IController):
         """
         # unblock manual annotation
         self._annotation_mode_model.set_manual_mode()
+        self._current_search_model
 
     def perform_next_db_suggestion(self, tag_type: str) -> None:
         """

@@ -1,23 +1,24 @@
 from typing import List, Optional
 from data_classes.search_Result import SearchResult
+from observer.interfaces import IPublisher
 
 
-class SearchModel:
+class SearchModel(IPublisher):
     """
-    Manages a list of search results and provides indexed navigation.
+    Manages a list of search results and maintains the current selection state.
 
-    This model maintains a list of matched search terms along with their
-    respective character index positions in the source text. It supports
-    adding, clearing, and navigating through results via an internal iterator.
-    It also provides validity tracking to indicate whether the results are up-to-date.
+    Instead of returning results directly, this model maintains an internal
+    current index and notifies observers whenever it changes.
+    It also provides validity tracking to signal whether the model contents are up-to-date.
     """
 
     def __init__(self):
         """
-        Initializes the search model with an empty result set.
+        Initializes the search model with an empty result set and a valid state.
 
-        The model starts with no entries, no selection, and is marked as valid.
+        The model starts with no entries, no selection, and a validity flag set to True.
         """
+        super().__init__()
         self._results: List[SearchResult] = []
         self._current_index: int = -1
         self._valid: bool = True
@@ -25,9 +26,6 @@ class SearchModel:
     def add_result(self, term: str, start: int, end: int) -> None:
         """
         Adds a new search result to the internal list.
-
-        This method appends a new SearchResult instance containing
-        the term and its position to the model's result list.
 
         Args:
             term (str): The search term to be added.
@@ -38,18 +36,16 @@ class SearchModel:
 
     def clear_results(self) -> None:
         """
-        Removes all stored search results and resets the internal index.
-
-        After this call, the result list is empty and no result is selected.
+        Removes all stored search results, resets the selection index,
+        and notifies observers that the state has changed.
         """
         self._results.clear()
         self._current_index = -1
+        self.notify_observers()
 
     def get_all_results(self) -> List[SearchResult]:
         """
         Retrieves the complete list of search results.
-
-        This method returns all stored search results in the order they were added.
 
         Returns:
             List[SearchResult]: A list of all current search results.
@@ -65,57 +61,45 @@ class SearchModel:
         """
         return bool(self._results)
 
-    def get_current_result(self) -> Optional[SearchResult]:
+    def next_result(self) -> None:
         """
-        Retrieves the currently selected search result.
+        Advances to the next search result and notifies observers.
 
-        This method returns the result at the current index if valid,
-        or None if no result is selected.
-
-        Returns:
-            Optional[SearchResult]: The active search result, or None.
-        """
-        if 0 <= self._current_index < len(self._results):
-            return self._results[self._current_index]
-        return None
-
-    def next_result(self) -> Optional[SearchResult]:
-        """
-        Advances to the next search result in the list.
-
-        The internal index is incremented, wrapping around to the beginning
-        if the end of the list is reached.
-
-        Returns:
-            Optional[SearchResult]: The newly selected search result, or None if the list is empty.
+        Wraps around to the beginning if the end of the list is reached.
         """
         if not self._results:
-            return None
-        self._current_index = (self._current_index + 1) % len(self._results)
-        return self._results[self._current_index]
+            return
+        if self._current_index == -1 or self._current_index >= len(self._results) - 1:
+            self._current_index = 0
+        else:
+            self._current_index += 1
+        self.notify_observers()
 
-    def previous_result(self) -> Optional[SearchResult]:
+    def previous_result(self) -> None:
         """
-        Moves to the previous search result in the list.
+        Moves to the previous search result and notifies observers.
 
-        The internal index is decremented, wrapping around to the end
-        if the beginning of the list is passed.
-
-        Returns:
-            Optional[SearchResult]: The newly selected search result, or None if the list is empty.
+        Wraps around to the end if the beginning of the list is passed.
         """
         if not self._results:
-            return None
-        self._current_index = (self._current_index - 1) % len(self._results)
-        return self._results[self._current_index]
+            return
+        if self._current_index <= 0:
+            self._current_index = len(self._results) - 1
+        else:
+            self._current_index -= 1
+        self.notify_observers()
+
+    def trigger_current_result(self) -> None:
+        """
+        Notifies observers of the current result without changing the selection.
+
+        This can be used to explicitly trigger a UI update or state sync.
+        """
+        self.notify_observers()
 
     def is_valid(self) -> bool:
         """
         Indicates whether the search model is currently valid.
-
-        The validity flag is used to determine whether the stored results are
-        up-to-date. This is typically evaluated by the accessor or controller
-        before using the model in a search operation.
 
         Returns:
             bool: True if the model is valid and current, False otherwise.
@@ -125,17 +109,25 @@ class SearchModel:
     def invalidate(self) -> None:
         """
         Marks the search model as invalid.
-
-        This should be called when the input data or configuration changes in
-        a way that renders the current results outdated.
         """
         self._valid = False
 
     def validate(self) -> None:
         """
         Marks the search model as valid.
-
-        This should be called after the model has been fully (re)computed
-        and the results are considered current.
         """
         self._valid = True
+
+    def get_state(self) -> Optional[SearchResult]:
+        """
+        Returns the currently selected SearchResult instance.
+
+        This method provides external components with the current state information,
+        which is typically used in observer callbacks or UI updates.
+
+        Returns:
+            Optional[SearchResult]: The active SearchResult or None if no result is selected.
+        """
+        if 0 <= self._current_index < len(self._results):
+            return self._results[self._current_index]
+        return None

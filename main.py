@@ -6,6 +6,7 @@ from model.appearance_model import AppearanceModel
 from model.comparison_model import ComparisonModel
 from model.configuration_model import ConfigurationModel
 from model.extraction_document_model import ExtractionDocumentModel
+from model.search_models import SearchModels
 from model.selection_model import SelectionModel
 from view.main_window import MainWindow
 
@@ -19,9 +20,10 @@ def main():
     selection_model = SelectionModel()
     appearance_model = AppearanceModel()
     annotation_mode_model = AnnotationModeModel()
+    search_models = SearchModels()
 
     controller = Controller(
-        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, configuration_model=configuration_model, appearance_model=appearance_model, annotation_mode_model=annotation_mode_model)
+        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, configuration_model=configuration_model, appearance_model=appearance_model, annotation_mode_model=annotation_mode_model, search_models=search_models)
     app_view = MainWindow(controller)
     controller.finalize_views()
     #!DEBUG

@@ -1,5 +1,4 @@
 from typing import List, Optional
-
 from data_classes.search_Result import SearchResult
 
 
@@ -10,17 +9,18 @@ class SearchModel:
     This model maintains a list of matched search terms along with their
     respective character index positions in the source text. It supports
     adding, clearing, and navigating through results via an internal iterator.
+    It also provides validity tracking to indicate whether the results are up-to-date.
     """
 
     def __init__(self):
         """
         Initializes the search model with an empty result set.
 
-        The model starts with no entries and the internal index set to -1,
-        indicating that no result is currently selected.
+        The model starts with no entries, no selection, and is marked as valid.
         """
         self._results: List[SearchResult] = []
         self._current_index: int = -1
+        self._valid: bool = True
 
     def add_result(self, term: str, start: int, end: int) -> None:
         """
@@ -108,3 +108,34 @@ class SearchModel:
             return None
         self._current_index = (self._current_index - 1) % len(self._results)
         return self._results[self._current_index]
+
+    def is_valid(self) -> bool:
+        """
+        Indicates whether the search model is currently valid.
+
+        The validity flag is used to determine whether the stored results are
+        up-to-date. This is typically evaluated by the accessor or controller
+        before using the model in a search operation.
+
+        Returns:
+            bool: True if the model is valid and current, False otherwise.
+        """
+        return self._valid
+
+    def invalidate(self) -> None:
+        """
+        Marks the search model as invalid.
+
+        This should be called when the input data or configuration changes in
+        a way that renders the current results outdated.
+        """
+        self._valid = False
+
+    def validate(self) -> None:
+        """
+        Marks the search model as valid.
+
+        This should be called after the model has been fully (re)computed
+        and the results are considered current.
+        """
+        self._valid = True

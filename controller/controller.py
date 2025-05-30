@@ -17,6 +17,8 @@ from typing import Callable, Dict, List, Optional, Tuple
 from utils.comparison_manager import ComparisonManager
 from utils.list_manager import ListManager
 from utils.pdf_extraction_manager import PDFExtractionManager
+from utils.search_manager import SearchManager
+from utils.search_model_accessor import SearchModelAccessor
 from utils.settings_manager import SettingsManager
 from utils.suggestion_manager import SuggestionManager
 from utils.tag_manager import TagManager
@@ -26,7 +28,7 @@ import tkinter.messagebox as mbox
 
 
 class Controller(IController):
-    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, annotation_mode_model: IPublisher = None) -> None:
+    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, annotation_mode_model: IPublisher = None, search_models: IPublisher = None) -> None:
 
         # dependencies
         self._file_handler = FileHandler()
@@ -39,7 +41,9 @@ class Controller(IController):
             self._file_handler, self._settings_manager)
         self._pdf_extraction_manager = PDFExtractionManager(
             list_manager=self._list_manager)
-        self
+        self._search_manager = SearchManager(self)
+        self._search_model_accessor = SearchModelAccessor(
+            search_models, self._search_manager)
 
         # config
         # Load the source mapping once and store it in an instance variable
@@ -63,6 +67,7 @@ class Controller(IController):
         self._comparison_model: IComparisonModel = comparison_model
         self._selection_model: ISelectionModel = selection_model
         self._annotation_mode_model: IPublisher = annotation_mode_model
+        self._search_models: IPublisher = search_models
 
         # command pattern
         self._active_view_id = None  # Track the currently active view
@@ -366,6 +371,7 @@ class Controller(IController):
         # block manual annotation
         self._annotation_mode_model.set_auto_mode()
         # trigger suggestionsearch (maybe check if its still done)
+        self._search_model_accessor.get_valid_model(tag_type)
         # give first suggestion
         pass
 

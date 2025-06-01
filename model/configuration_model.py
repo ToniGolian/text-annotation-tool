@@ -1,7 +1,10 @@
+import os
 from observer.interfaces import IPublisher
 from input_output.template_loader import TemplateLoader
 from input_output.file_handler import FileHandler
 from typing import Dict, List
+
+from utils.path_manager import PathManager
 
 
 class ConfigurationModel(IPublisher):
@@ -14,40 +17,37 @@ class ConfigurationModel(IPublisher):
     and retrieves the current layout state of the application.
     """
 
-    def __init__(self):
+    def __init__(self, path_manager: PathManager) -> None:
         """
         Initializes the ConfigurationModel and loads essential configuration files.
 
-        This constructor initializes dependencies, loads application paths, 
-        retrieves project-specific settings, and sets up the initial layout state.
+        This constructor loads all relevant configuration paths using the provided
+        PathManager, initializes internal state, and prepares the layout and metadata.
         """
         super().__init__()  # Initialize the IPublisher base class
 
-        # Load essential components
-        self._template_loader = TemplateLoader()
+        self._path_manager = path_manager
         self._filehandler = FileHandler()
 
-        # Load default application paths
-        self._app_paths = self._filehandler.read_file(
-            "app_data/app_paths.json")
+        self._project = self._path_manager.get_project_name()
 
-        # Retrieve stored layout configuration path
-        self._saved_layout_path = self._app_paths["saved_layout"]
+        # Resolve required paths via the path manager
+        self._saved_layout_path = self._path_manager.get_path("saved_layout")
+        self._project_path = self._path_manager.get_path(
+            "default_project_config")
+        self._color_path = os.path.join(
+            self._project_path, "color_scheme.json")
 
-        # Extract project name and build project configuration path
-        self._project = self._filehandler.read_file(
-            self._saved_layout_path).get("project", "")
-        self._project_path = f"{self._app_paths['default_project_config']}{self._project}/"
+        print(f"DEBUG {self._saved_layout_path=}")
 
-        # Define path for the color scheme configuration
-        self._color_path = self._project_path + "color_scheme.json"
-
+        # Initialize internal config state
         self._saved_layout = None
         self._layout_state = {}
-        self._id_prefixes = {}  # maps tagtype to id prefix
-        self._id_names = {}  # maps tag_type to id name
+        self._id_prefixes = {}
+        self._id_names = {}
         self._id_ref_attributes = {}
-        # Initialize layout state
+
+        # Load layout and UI state
         self.update_state()
 
     def update_state(self) -> None:

@@ -16,6 +16,7 @@ from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
 from typing import Callable, Dict, List, Optional, Tuple
 from utils.comparison_manager import ComparisonManager
 from utils.list_manager import ListManager
+from utils.path_manager import PathManager
 from utils.pdf_extraction_manager import PDFExtractionManager
 from utils.search_manager import SearchManager
 from utils.search_model_manager import SearchModelManager
@@ -28,10 +29,10 @@ import tkinter.messagebox as mbox
 
 
 class Controller(IController):
-    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, annotation_mode_model: IPublisher = None, search_models: IPublisher = None) -> None:
+    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, annotation_mode_model: IPublisher = None, path_manager: PathManager) -> None:
 
         # dependencies
-        self._file_handler = FileHandler()
+        self._file_handler = FileHandler(path_manager)
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
         self._settings_manager = SettingsManager()
         self._tag_processor = TagProcessor(self)
@@ -42,8 +43,8 @@ class Controller(IController):
         self._pdf_extraction_manager = PDFExtractionManager(
             list_manager=self._list_manager)
         self._search_manager = SearchManager(self)
-        self._search_model_accessor = SearchModelManager(
-            search_models, self._search_manager)
+        self._search_model_accessor = SearchModelManager(self._search_manager)
+        self._path_manager = path_manager
 
         # config
         # Load the source mapping once and store it in an instance variable
@@ -388,33 +389,47 @@ class Controller(IController):
         self._search_model_manager.deactivate_active_model()
         self._current_search_model = None
 
-    def perform_next_db_suggestion(self, tag_type: str) -> None:
+    def perform_next_suggestion(self, tag_type: str) -> None:
         """
-        Moves to the next suggestion for the specified tag type.
+        Advances to the next suggestion for the specified tag type.
 
-        This method updates the tag manager to suggest the next tag of the specified type
-        based on the current text selection or context. It prepares the view to display
-        the next suggestion.
+        This method moves the internal pointer of the currently active search model
+        to the next result. It applies to any search type and assumes that the model
+        for the given tag type is already active.
 
         Args:
-            tag_type (str): The type of tag for which to show the next suggestion.
-        """
-        # call db suggestion model for next suggestion
-        pass
+            tag_type (str): The tag type associated with the active search model.
 
-    def perform_previous_db_suggestion(self, tag_type: str) -> None:
+        Raises:
+            RuntimeError: If no model is active or the active model does not match the tag type.
+        """
+        if not self._current_search_model:
+            raise RuntimeError("No search model is currently active.")
+        if not self._search_model_manager.is_model_active(tag_type):
+            raise RuntimeError(
+                f"Search model for tag type '{tag_type}' is not currently active.")
+        self._current_search_model.next_result()
+
+    def perform_previous_suggestion(self, tag_type: str) -> None:
         """
         Moves to the previous suggestion for the specified tag type.
 
-        This method updates the tag manager to suggest the previous tag of the specified type
-        based on the current text selection or context. It prepares the view to display
-        the previous suggestion.
+        This method moves the internal pointer of the currently active search model
+        to the previous result. It applies to any search type and assumes that the model
+        for the given tag type is already active.
 
         Args:
-            tag_type (str): The type of tag for which to show the previous suggestion.
+            tag_type (str): The tag type associated with the active search model.
+
+        Raises:
+            RuntimeError: If no model is active or the active model does not match the tag type.
         """
-        # call db suggestion model for previous suggestion
-        pass
+        if not self._current_search_model:
+            raise RuntimeError("No search model is currently active.")
+        if not self._search_model_manager.is_model_active(tag_type):
+            raise RuntimeError(
+                f"Search model for tag type '{tag_type}' is not currently active.")
+        self._current_search_model.previous_result()
 
     def mark_wrong_db_suggestion(self, tag_type: str) -> None:
         """

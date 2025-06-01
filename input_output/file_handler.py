@@ -2,12 +2,13 @@ import os
 from typing import Dict
 from input_output.interfaces import IReadWriteStrategy
 from input_output.file_handler_strategies import JsonReadWriteStrategy, CsvReadWriteStrategy, TxtReadWriteStrategy
+from utils.path_manager import PathManager
 
 
 class FileHandler:
     """Handler for reading and writing files with different formats based on file extension."""
 
-    def __init__(self, encoding: str = 'utf-8') -> None:
+    def __init__(self, encoding: str = 'utf-8', path_manager: PathManager) -> None:
         """
         Initializes FileHandler with an optional default encoding and sets up strategies.
 
@@ -16,6 +17,7 @@ class FileHandler:
         """
         self._app_paths_file = "app_data/app_paths.json"
         self.encoding = encoding
+        self._path_manager = path_manager
         self._strategies = {
             '.json': JsonReadWriteStrategy(encoding=self.encoding),
             '.csv': CsvReadWriteStrategy(encoding=self.encoding),

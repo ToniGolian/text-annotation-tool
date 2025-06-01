@@ -12,11 +12,14 @@ class TemplateLoader(ITemplateLoader):
         _file_handler (FileHandler): Instance of FileHandler to manage file operations.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, file_handler: FileHandler) -> None:
         """
         Initializes the TemplateLoader and creates an instance of FileHandler.
+
+        Args:
+            file_handler (FileHandler): An instance responsible for reading and writing files.
         """
-        self._file_handler: FileHandler = FileHandler()
+        self._file_handler: FileHandler = file_handler
 
     def load_template_groups(self, project_path: str) -> List[Dict[str, List[Dict]]]:
         """
@@ -57,16 +60,16 @@ class TemplateLoader(ITemplateLoader):
             FileNotFoundError: If `groups.json` or a tag template file is not found.
             JSONDecodeError: If a file is not in valid JSON format.
         """
-        project_path = os.path.join(project_path, "groups.json")
+        # project_path = os.path.join(project_path, "groups.json")
         groups: Dict[str, List[str]
-                     ] = self._file_handler.read_file(project_path)
+                     ] = self._file_handler.read_file("project_groups")
         template_groups: List[Dict[str, List[Dict]]] = []
 
         for group_name, group_members in groups.items():
             templates: List[Dict] = []
             for group_member in group_members:
-                file_path = os.path.join(
-                    os.path.dirname(project_path),
+                file_path = os.path.join(self._file_handler.get_default_path(
+                    "project_config_folder"),
                     f"tags/{group_member.lower()}.json"
                 )
                 templates.append(

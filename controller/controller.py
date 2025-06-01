@@ -34,7 +34,7 @@ class Controller(IController):
 
         # dependencies
         self._path_manager = PathManager()
-        self._file_handler = FileHandler(self._path_manager)
+        self._file_handler = FileHandler(path_manager=self._path_manager)
         self._configuration_manager = ConfigurationManager(self._file_handler)
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
         self._settings_manager = SettingsManager()
@@ -206,8 +206,6 @@ class Controller(IController):
         if observer in self._views_to_finalize:
             self._views_to_finalize.remove(observer)
 
-        print(f"DEBUG Observer {type(observer).__name__} removed.")
-
     def get_observer_state(self, observer: IObserver, publisher: IPublisher = None) -> dict:
         """
         Retrieves the updated state information for a specific observer and publisher.
@@ -343,6 +341,12 @@ class Controller(IController):
             This method assumes that all views requiring finalization
             have already been registered with the controller.
         """
+        print(f"DEBUG 1 finalize views")
+        configuration = self._configuration_manager.load_configuration()
+        print(f"DEBUG 2 finalize views")
+        self._configuration_model.set_configuration(
+            configuration=configuration)
+        print(f"DEBUG 3 finalize views")
         for view in self._views_to_finalize:
             view.finalize_view()
 
@@ -695,7 +699,6 @@ class Controller(IController):
         # Step 1: Load merged and source documents
         merged_document_data = self._file_handler.read_file(
             document["document_path"])
-        print(f"DEBUG {document['source_paths']}")
         source_documents_data = [self._file_handler.read_file(
             path) for path in document["source_paths"]]
 
@@ -893,8 +896,6 @@ class Controller(IController):
             comparison_state = self._comparison_model.get_adoption_data(
                 adoption_index)
             current_index = self._comparison_model._current_index
-            print(f"DEBUG {comparison_state=}")
-            print(f"DEBUG {current_index=}")
             return
 
         # check if sentence contains references, since it is not possible to resolve references yet.

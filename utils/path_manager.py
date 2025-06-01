@@ -76,22 +76,20 @@ class PathManager:
             for key, path in raw_paths.items()
         }
 
-    def get_path(self, key: str) -> str:
+    def resolve_path(self, key_or_path: str) -> str:
         """
-        Retrieves a fully resolved and normalized path for a given key.
+        Resolves a configuration key to a full file path, or returns the path as-is
+        if it's already a real path.
 
         Args:
-            key (str): The path identifier defined in app_paths.json.
+            key_or_path (str): Key from config or already-resolved file path.
 
         Returns:
-            str: The expanded, normalized file path.
-
-        Raises:
-            KeyError: If the key is not defined.
+            str: Fully resolved and normalized file path.
         """
-        if key not in self._paths:
-            raise KeyError(f"Path key '{key}' not found in configuration.")
-        return self._paths[key]
+        if key_or_path in self._paths:
+            return self._paths[key_or_path]
+        return os.path.normpath(key_or_path)
 
     def update_project(self, new_project: str) -> None:
         """

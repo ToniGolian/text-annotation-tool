@@ -26,7 +26,7 @@ class SuggestionManager:
         self._file_handler = file_handler
         self._controller = controller
         self._attribute_suggestions = self._file_handler.read_file(
-            "app_data/project_config/time_ml/suggestions.json")
+            "project_suggestions")
 
     def get_suggestions(self, selected_text: str, document_model: IAnnotableDocumentModel) -> Dict:
         """

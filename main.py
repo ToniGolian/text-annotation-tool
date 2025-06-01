@@ -22,7 +22,7 @@ def main():
     annotation_mode_model = AnnotationModeModel()
 
     controller = Controller(
-        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, configuration_model=configuration_model, appearance_model=appearance_model, annotation_mode_model=annotation_mode_model, path_manager=path_manager)
+        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, configuration_model=configuration_model, appearance_model=appearance_model, annotation_mode_model=annotation_mode_model)
     app_view = MainWindow(controller)
     controller.finalize_views()
     #!DEBUG

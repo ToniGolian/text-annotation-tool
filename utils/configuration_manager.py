@@ -19,7 +19,7 @@ class ConfigurationManager:
             file_handler (FileHandler): Used to load configuration files via key-based paths.
         """
         self._file_handler = file_handler
-        self._template_loader = TemplateLoader()
+        self._template_loader = TemplateLoader(file_handler=file_handler)
 
     def load_configuration(self) -> Dict:
         """
@@ -32,21 +32,23 @@ class ConfigurationManager:
             Dict: A dictionary containing full layout state including template groups,
                   ID prefixes, ID attributes, ID references, and color scheme.
         """
-        layout = self._file_handler.read_file("saved_layout")
-        color_scheme = self._file_handler.read_file("color_scheme")
+        layout = {}
+        color_scheme = self._file_handler.read_file("project_color_scheme")
 
         project_path = self._file_handler.get_default_path(
-            "default_project_config")
+            "project_config")
         template_groups = self._template_loader.load_template_groups(
             project_path)
 
         id_prefixes = {}
         id_names = {}
         id_ref_attributes = {}
+        tag_types = []
 
         for group in template_groups:
             for template in group.get("templates", []):
                 tag_type = template.get("type")
+                tag_types.append(tag_type)
                 attributes = template.get("attributes", {})
 
                 id_prefixes[tag_type] = template.get("id_prefix", "")
@@ -60,9 +62,9 @@ class ConfigurationManager:
                 ]
 
         layout["template_groups"] = template_groups
-
+        layout["tag_types"] = tag_types
         return {
-            "layout_state": layout,
+            "layout": layout,
             "id_prefixes": id_prefixes,
             "id_names": id_names,
             "id_ref_attributes": id_ref_attributes,

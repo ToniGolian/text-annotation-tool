@@ -8,11 +8,13 @@
     "default_extraction_save_folder": "data/annotation/",
     "default_annotation_save_folder": "data/annotation/",
     "default_comparison_save_folder": "data/comparison/",
+    "project_data_folder": "app_data/projects/<project>/project_data/",
+    "project_config_folder": "app_data/projects/<project>/project_config/",
     "project_abbreviations": "app_data/projects/<project>/project_data/abbreviations.json",
     "project_saved_layout": "app_data/projects/<project>/project_data/saved_layout.json",
-    "project_config": "app_data/projects/<project>/project_config/",
-    "project_data": "app_data/projects/<project>/project_data/",
-    "default_path_settings": "app_data/settings/",
+    "project_color_scheme": "app_data/projects/<project>/project_config/color_scheme.json",
+    "project_groups": "app_data/projects/<project>/project_config/groups.json",
     "project_suggestions": "app_data/projects/<project>/project_data/suggestions.json",
-    "project_wrong_suggestions": "app_data/projects/<project>/project_data/wrong_suggestions.json"
+    "project_wrong_suggestions": "app_data/projects/<project>/project_data/wrong_suggestions.json",
+    "settings_folder": "app_data/settings/"
 }

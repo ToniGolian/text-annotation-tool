@@ -6,7 +6,12 @@ from utils.path_manager import PathManager
 
 
 class FileHandler:
-    """Handler for reading and writing files with different formats based on file extension."""
+    """
+    Handler for reading and writing files with different formats based on file extension.
+
+    All file paths are resolved via a central mechanism, which optionally includes
+    dynamic project-aware substitution using a PathManager.
+    """
 
     def __init__(self, encoding: str = 'utf-8', path_manager: PathManager = None) -> None:
         """
@@ -14,8 +19,8 @@ class FileHandler:
 
         Args:
             encoding (str): The default file encoding to use for all strategies. Default is 'utf-8'.
+            path_manager (PathManager, optional): If provided, this component is used to resolve dynamic paths.
         """
-        self._app_paths_file = "app_data/app_paths.json"
         self.encoding = encoding
         self._path_manager = path_manager
         self._strategies = {
@@ -32,7 +37,7 @@ class FileHandler:
             file_extension (str): The file extension, including the leading dot.
 
         Returns:
-            ReadWriteStrategy: The strategy instance for the given file extension.
+            IReadWriteStrategy: The strategy instance for the given file extension.
 
         Raises:
             ValueError: If no strategy exists for the given file extension.
@@ -48,13 +53,14 @@ class FileHandler:
         Reads a file using the appropriate strategy based on file extension.
 
         Args:
-            file_path (str): Path to the file to be read.
+            file_path (str): Path to the file to be read or a key into the path configuration.
+            extension (str, optional): Optional extension to append before reading.
 
         Returns:
             Dict: The content of the file as a dictionary.
         """
         file_path = self._load_path(file_path, extension)
-        file_extension = f".{file_path.split('.')[-1]}"
+        file_extension = os.path.splitext(file_path)[1]
         strategy = self._get_strategy(file_extension)
         return strategy.read(file_path)
 
@@ -63,78 +69,71 @@ class FileHandler:
         Writes data to a file using the appropriate strategy based on file extension.
 
         Args:
-            file_path (str): Path to the file to be written, or the key to this path.
-            data (Dict): Data to be written to the file.
+            file_path (str): Path to the file or key to be resolved.
+            data (Dict): Data to write to the file.
+            extension (str, optional): Optional extension to append before writing.
         """
-        # Attempt to load file_path from the app paths file
-        app_paths = self._get_strategy('.json').read(self._app_paths_file)
-        file_path = app_paths.get(file_path, file_path)
-
         file_path = self._load_path(file_path, extension)
-        file_extension = f".{file_path.split('.')[-1]}"
+        file_extension = os.path.splitext(file_path)[1]
         strategy = self._get_strategy(file_extension)
         strategy.write(file_path, data)
 
     def _load_path(self, file_path: str, extension: str = "") -> str:
         """
-        Resolves and constructs a file path with an optional extension.
+        Resolves and constructs a file path using the PathManager.
 
-        This method attempts to resolve the given `file_path` using an internal
-        application paths configuration, loaded from a JSON file. If the `file_path`
-        exists as a key in the configuration, its corresponding value is used as the base path.
-        Otherwise, the input `file_path` is retained.
-
-        After resolving the base path, the provided `extension` (if any) is appended to it.
-        Finally, the constructed path is converted to an operating system-specific format.
+        All resolution is delegated to the PathManager. If no PathManager is configured,
+        an exception is raised.
 
         Args:
-            file_path (str): The input file path or configuration key to be resolved.
-            extension (str, optional): The file extension to append to the resolved path. Defaults to None.
+            file_path (str): The key or raw path to be resolved.
+            extension (str, optional): Optional extension to append.
 
         Returns:
-            str: The fully resolved, extended, and OS-specific file path.
-        """
+            str: Fully resolved and system-specific path.
 
-        app_paths = self._get_strategy('.json').read(self._app_paths_file)
-        file_path = app_paths.get(file_path, file_path)
-        file_path += extension
-        return self._convert_path_to_os_specific(file_path)
+        Raises:
+            RuntimeError: If no PathManager is available.
+        """
+        if not self._path_manager:
+            raise RuntimeError(
+                "PathManager is required for path resolution but not set.")
+
+        resolved = self._path_manager.resolve_path(file_path) + extension
+        return self._convert_path_to_os_specific(resolved)
 
     def _convert_path_to_os_specific(self, path: str) -> str:
         """
         Converts a given path to a system-specific format.
 
         Args:
-            path (str): The original path in a neutral format (e.g., "folder/folder/filename.filetype").
+            path (str): The original path.
 
         Returns:
-            str: The path converted to the system-specific format.
+            str: System-normalized path.
         """
         return os.path.normpath(path)
 
     def get_default_path(self, key: str) -> str:
         """
-        Retrieves the default path for a given key.
-
-        This method resolves the default path by calling `_load_path` with the provided key.
-        It allows the retrieval of preconfigured paths defined in the application paths configuration.
+        Retrieves the resolved and system-specific default path for a given configuration key.
 
         Args:
-            key (str): The key for which the default path is to be retrieved.
+            key (str): Key in the application path configuration.
 
         Returns:
-            str: The fully resolved and OS-specific default path associated with the given key.
+            str: Fully resolved default path.
         """
         return self._load_path(key)
 
     def derive_file_name(self, file_path: str) -> str:
         """
-        Extracts the file name, excluding its extension, from a given file path.
+        Extracts the base name (without extension) from a given file path.
 
         Args:
-            filepath (str): The full path to the file.
+            file_path (str): Full file path.
 
         Returns:
-            str: The file name without its extension.
+            str: File name without extension.
         """
         return os.path.splitext(os.path.basename(file_path))[0]

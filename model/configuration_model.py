@@ -1,6 +1,4 @@
 from observer.interfaces import IPublisher
-from input_output.template_loader import TemplateLoader
-from input_output.file_handler import FileHandler
 from typing import Dict, List
 
 
@@ -21,53 +19,38 @@ class ConfigurationModel(IPublisher):
         """
         super().__init__()
 
-        self._template_loader = TemplateLoader()
-        self._filehandler = FileHandler()
-
         self._project_path = ""
         self._color_path = ""
-        self._saved_layout = None
-        self._layout_state = {}
+        # self._saved_layout = None
+        self._layout = {}
         self._id_prefixes = {}
         self._id_names = {}
         self._id_ref_attributes = {}
 
-    def update_state(self, layout_state: dict, project_path: str) -> None:
+    def set_configuration(self, configuration: Dict) -> None:
         """
-        Updates the configuration based on layout and project context.
+        Updates the model state from a preassembled configuration dictionary.
 
-        This method loads template definitions, extracts tag type metadata (ID prefixes,
-        ID attributes, and ID references), and sets up internal state to reflect the current
-        UI and project structure.
+        This method expects the complete configuration dictionary to be passed in,
+        including the layout state, template definitions, tag metadata, and color scheme.
 
         Args:
-            layout_state (dict): The layout state loaded from external configuration.
-            project_path (str): Path to the project configuration root directory.
+            configuration (Dict): A dictionary containing all configuration components. Expected keys:
+                                - "layout"
+                                - "template_groups"
+                                - "id_prefixes"
+                                - "id_names"
+                                - "id_ref_attributes"
+                                - "color_scheme"
         """
-        self._layout_state = layout_state
-        self._saved_layout = layout_state
-        self._project_path = project_path
-        self._color_path = project_path + "color_scheme.json"
-
-        self._filehandler.read_file(self._color_path)
-        self._layout_state["template_groups"] = self._template_loader.load_template_groups(
-            project_path)
-
-        for group in self._layout_state["template_groups"]:
-            for template in group.get("templates", []):
-                tag_type = template.get("type")
-                attributes = template.get("attributes", {})
-
-                self._id_prefixes[tag_type] = template.get("id_prefix", "")
-                self._id_names[tag_type] = next(
-                    (attr for attr, details in attributes.items()
-                     if details.get("type") == "ID"),
-                    ""
-                )
-                self._id_ref_attributes[tag_type] = [
-                    attr for attr, details in attributes.items()
-                    if details.get("type") in {"ID", "IDREF"}
-                ]
+        self._layout = configuration.get("layout", {})
+        print(f"DEBUG {configuration.keys()=}")
+        print(
+            f"Loaded template_groups: {self._layout}")
+        self._id_prefixes = configuration.get("id_prefixes", {})
+        self._id_names = configuration.get("id_names", {})
+        self._id_ref_attributes = configuration.get("id_ref_attributes", {})
+        self._color_scheme = configuration.get("color_scheme", {})
 
         self.notify_observers()
 
@@ -81,7 +64,7 @@ class ConfigurationModel(IPublisher):
         Returns:
             Dict: The layout state dictionary.
         """
-        return self._layout_state
+        return self._layout
 
     def get_color_scheme(self) -> Dict:
         """
@@ -100,7 +83,7 @@ class ConfigurationModel(IPublisher):
             List[str]: A list of tag type strings.
         """
         tag_types = []
-        for group in self._layout_state["template_groups"]:
+        for group in self._layout["template_groups"]:
             for template in group.get("templates", []):
                 tag_types.append(template.get("type", ""))
         return tag_types

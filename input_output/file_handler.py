@@ -99,8 +99,13 @@ class FileHandler:
             raise RuntimeError(
                 "PathManager is required for path resolution but not set.")
 
-        resolved = self._path_manager.resolve_path(file_path) + extension
-        return self._convert_path_to_os_specific(resolved)
+        resolved_path = self._path_manager.resolve_path(file_path)
+
+        if extension:
+            print(f"DEBUG {extension=}")
+            resolved_path = os.path.join(resolved_path, extension)
+
+        return self._convert_path_to_os_specific(resolved_path)
 
     def _convert_path_to_os_specific(self, path: str) -> str:
         """

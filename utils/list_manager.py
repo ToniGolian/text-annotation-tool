@@ -25,7 +25,8 @@ class ListManager(IListManager):
             KeyError: If any of the provided keys are missing in the JSON file.
         """
         languages = self._settings_manager.get_current_languages()
-        abbreviations_data = self._file_handler.read_file("abbreviations")
+        abbreviations_data = self._file_handler.read_file(
+            "project_abbreviations")
         abbreviations = set()
 
         # Combine abbreviations for all specified languages

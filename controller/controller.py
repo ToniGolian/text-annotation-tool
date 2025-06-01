@@ -37,7 +37,7 @@ class Controller(IController):
         self._file_handler = FileHandler(path_manager=self._path_manager)
         self._configuration_manager = ConfigurationManager(self._file_handler)
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
-        self._settings_manager = SettingsManager()
+        self._settings_manager = SettingsManager(self._file_handler)
         self._tag_processor = TagProcessor(self)
         self._tag_manager = TagManager(self, self._tag_processor)
         self._comparison_manager = ComparisonManager(self, self._tag_processor)
@@ -341,12 +341,9 @@ class Controller(IController):
             This method assumes that all views requiring finalization
             have already been registered with the controller.
         """
-        print(f"DEBUG 1 finalize views")
         configuration = self._configuration_manager.load_configuration()
-        print(f"DEBUG 2 finalize views")
         self._configuration_model.set_configuration(
             configuration=configuration)
-        print(f"DEBUG 3 finalize views")
         for view in self._views_to_finalize:
             view.finalize_view()
 
@@ -454,41 +451,50 @@ class Controller(IController):
         """
         Extracts text from a PDF file and updates the preview document model.
 
+        Constructs a basic document dictionary for extraction mode.
+
         Args:
             extraction_data (dict): A dictionary containing parameters for PDF extraction:
                 - "pdf_path" (str): Path to the PDF file (required).
                 - "page_margins" (str): Margins to apply to the pages (optional).
                 - "page_ranges" (str): Specific page ranges to extract (optional).
         """
-
         extracted_text = self._pdf_extraction_manager.extract_document(
             extraction_data=extraction_data)
-        self._extraction_document_model.set_text(text=extracted_text)
+        pdf_path = extraction_data["pdf_path"]
+        file_name = self._file_handler.derive_file_name(pdf_path)
+
+        document = {
+            "file_name": file_name,
+            "file_path": pdf_path,
+            "document_type": "extraction",
+            "meta_tags": {},
+            "text": extracted_text
+        }
+
+        self._extraction_document_model.set_document(document)
 
     def perform_text_adoption(self) -> None:
         """
         Adopts the current preview document's data into the annotation document model.
 
-        This method retrieves the data state from the preview document model and updates
-        the annotation document model with the same data. It also saves the adopted
-        document.
-
-        Updates:
-            - The annotation document model is updated with data from the preview document model.
-            - The adopted document is saved in the extraction save folder.
+        Converts the extraction document into an annotation document, updates the path,
+        and stores the result in the annotation model.
         """
         document = self._extraction_document_model.get_state()
         document["document_type"] = "annotation"
-        # self._annotation_document_model.set_document(document)
 
-        # Construct target path in extraction save folder
+        file_name = self._file_handler.derive_file_name(
+            document.get("file_path", "unnamed"))
         save_dir = self._file_handler.get_default_path(
             "default_extraction_save_folder")
-        file_name = document.get("file_name") or self._file_handler.derive_file_name(
-            document.get("file_path", "unnamed"))
         save_path = os.path.join(save_dir, f"{file_name}.json")
-        self.perform_save_as(save_path)
+        document["file_path"] = save_path
+
+        self._annotation_document_model.set_document(document)
+
         self.set_active_view("annotation")
+        self.perform_save_as(save_path)
         self.perform_open_file([save_path])
         self._appearance_model.set_active_notebook_index(1)
 

@@ -149,5 +149,6 @@
             "tagType": "EVENT",
             "confidenceValue": "0.97"
         }
-    }
+    },
+    "PLACE": {}
 }

@@ -44,9 +44,6 @@ class ConfigurationModel(IPublisher):
                                 - "color_scheme"
         """
         self._layout = configuration.get("layout", {})
-        print(f"DEBUG {configuration.keys()=}")
-        print(
-            f"Loaded template_groups: {self._layout}")
         self._id_prefixes = configuration.get("id_prefixes", {})
         self._id_names = configuration.get("id_names", {})
         self._id_ref_attributes = configuration.get("id_ref_attributes", {})

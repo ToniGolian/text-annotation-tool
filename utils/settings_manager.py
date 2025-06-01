@@ -8,11 +8,11 @@ class SettingsManager:
     Manages application settings, including current and available languages.
     """
 
-    def __init__(self):
+    def __init__(self, file_handler: FileHandler) -> None:
         """
         Initializes the SettingsManager, loading file paths and settings.
         """
-        self._filehandler = FileHandler()
+        self._filehandler = file_handler
 
     def get_current_languages(self) -> List[str]:
         """
@@ -22,7 +22,7 @@ class SettingsManager:
             List[str]: A list of current languages.
         """
         settings = self._filehandler.read_file(
-            "default_path_settings", extension="languages.json")
+            "settings_folder", extension="languages.json")
         return settings.get("current_languages", [])
 
     def set_current_languages(self, current_languages: List[str]) -> None:

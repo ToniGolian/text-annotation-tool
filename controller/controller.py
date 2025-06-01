@@ -18,7 +18,7 @@ from utils.comparison_manager import ComparisonManager
 from utils.list_manager import ListManager
 from utils.pdf_extraction_manager import PDFExtractionManager
 from utils.search_manager import SearchManager
-from utils.search_model_accessor import SearchModelAccessor
+from utils.search_model_manager import SearchModelManager
 from utils.settings_manager import SettingsManager
 from utils.suggestion_manager import SuggestionManager
 from utils.tag_manager import TagManager
@@ -42,7 +42,7 @@ class Controller(IController):
         self._pdf_extraction_manager = PDFExtractionManager(
             list_manager=self._list_manager)
         self._search_manager = SearchManager(self)
-        self._search_model_accessor = SearchModelAccessor(
+        self._search_model_accessor = SearchModelManager(
             search_models, self._search_manager)
 
         # config
@@ -370,23 +370,23 @@ class Controller(IController):
         Args:
             tag_type (str): The type of tag to start annotating.
         """
-        # block manual annotation
         self._annotation_mode_model.set_auto_mode()
-        # set current search model
-        self._current_search_model = self._search_model_accessor.get_valid_model(
-            search_str=tag_type, search_type=SearchType.DB)
-        # give first suggestion
-        self._current_search_model.next_result()
+        self._current_search_model = self._search_model_manager.get_active_model(
+            tag_type=tag_type,
+            search_type=SearchType.DB
+        )
+        # current_search_model is already activated and shows the first result
 
     def perform_end_db_annotation(self) -> None:
         """
         Ends the annotation mode for a specific tag type.
 
-        This method finalizes the auto annotation mode. 
+        This method finalizes the auto annotation mode by switching to manual mode
+        and deactivating the currently active search model.
         """
-        # unblock manual annotation
         self._annotation_mode_model.set_manual_mode()
-        self._current_search_model
+        self._search_model_manager.deactivate_active_model()
+        self._current_search_model = None
 
     def perform_next_db_suggestion(self, tag_type: str) -> None:
         """

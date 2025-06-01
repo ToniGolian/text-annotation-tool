@@ -1,136 +1,105 @@
-import os
 from observer.interfaces import IPublisher
 from input_output.template_loader import TemplateLoader
 from input_output.file_handler import FileHandler
 from typing import Dict, List
 
-from utils.path_manager import PathManager
-
 
 class ConfigurationModel(IPublisher):
     """
-    Manages application configuration, including templates, meta tag names, 
-    template groups, and layout settings.
+    Manages application configuration, including layout, templates, and tag metadata.
 
-    This class loads and provides access to configuration-related data such as 
-    project settings, template groups, and the color scheme. It also maintains 
-    and retrieves the current layout state of the application.
+    This model does not load any data during initialization. Instead, external components
+    must supply the layout state and project path via `update_state`. From this input,
+    template information and tag metadata such as ID prefixes and references are extracted.
     """
 
-    def __init__(self, path_manager: PathManager) -> None:
+    def __init__(self) -> None:
         """
-        Initializes the ConfigurationModel and loads essential configuration files.
+        Initializes an empty ConfigurationModel.
 
-        This constructor loads all relevant configuration paths using the provided
-        PathManager, initializes internal state, and prepares the layout and metadata.
+        All internal state is uninitialized until `update_state` is called.
         """
-        super().__init__()  # Initialize the IPublisher base class
+        super().__init__()
 
-        self._path_manager = path_manager
+        self._template_loader = TemplateLoader()
         self._filehandler = FileHandler()
 
-        self._project = self._path_manager.get_project_name()
-
-        # Resolve required paths via the path manager
-        self._saved_layout_path = self._path_manager.get_path("saved_layout")
-        self._project_path = self._path_manager.get_path(
-            "default_project_config")
-        self._color_path = os.path.join(
-            self._project_path, "color_scheme.json")
-
-        print(f"DEBUG {self._saved_layout_path=}")
-
-        # Initialize internal config state
+        self._project_path = ""
+        self._color_path = ""
         self._saved_layout = None
         self._layout_state = {}
         self._id_prefixes = {}
         self._id_names = {}
         self._id_ref_attributes = {}
 
-        # Load layout and UI state
-        self.update_state()
-
-    def update_state(self) -> None:
+    def update_state(self, layout_state: dict, project_path: str) -> None:
         """
-        Updates the current layout state of the application.
+        Updates the configuration based on layout and project context.
 
-        This method reads the saved layout configuration from a file and 
-        updates the `layout_state` attribute with relevant UI settings. 
-        It also loads template groups associated with the current project.
+        This method loads template definitions, extracts tag type metadata (ID prefixes,
+        ID attributes, and ID references), and sets up internal state to reflect the current
+        UI and project structure.
+
+        Args:
+            layout_state (dict): The layout state loaded from external configuration.
+            project_path (str): Path to the project configuration root directory.
         """
-        # Load the saved layout configuration
-        self._saved_layout = self._filehandler.read_file(
-            self._saved_layout_path)
+        self._layout_state = layout_state
+        self._saved_layout = layout_state
+        self._project_path = project_path
+        self._color_path = project_path + "color_scheme.json"
 
-        # Store all key-value pairs from the saved layout
-        self._layout_state = {key: value for key,
-                              value in self._saved_layout.items()}
-
-        # Load and add template groups based on the saved project path
+        self._filehandler.read_file(self._color_path)
         self._layout_state["template_groups"] = self._template_loader.load_template_groups(
-            self._project_path)
+            project_path)
 
-        # Load the id prefixes an id names
         for group in self._layout_state["template_groups"]:
             for template in group.get("templates", []):
                 tag_type = template.get("type")
                 attributes = template.get("attributes", {})
 
-                # Set ID prefix
                 self._id_prefixes[tag_type] = template.get("id_prefix", "")
-
-                # Set ID name (first attribute with type "ID")
                 self._id_names[tag_type] = next(
                     (attr for attr, details in attributes.items()
                      if details.get("type") == "ID"),
                     ""
                 )
-
-                # Set ID references (attributes with type "ID" or "IDREF")
                 self._id_ref_attributes[tag_type] = [
-                    attr for attr, details in attributes.items() if details.get("type") in {"ID", "IDREF"}
+                    attr for attr, details in attributes.items()
+                    if details.get("type") in {"ID", "IDREF"}
                 ]
+
+        self.notify_observers()
 
     def get_state(self) -> Dict:
         """
-        Retrieves the current layout state of the application.
+        Returns the current UI and layout state.
 
-        This method returns a dictionary containing key-value pairs that define 
-        the current layout configuration, including window positions, panel 
-        visibility, and other UI settings.
+        This includes all information passed in via `update_state`, such as
+        window positions and template group definitions.
 
         Returns:
-            Dict: A dictionary representing the current layout state.
+            Dict: The layout state dictionary.
         """
         return self._layout_state
 
     def get_color_scheme(self) -> Dict:
         """
-        Retrieves the current color scheme used in the application.
-
-        This method loads and returns a dictionary containing UI color settings. 
-        The color scheme defines the visual appearance, including background, 
-        foreground, and highlight colors.
+        Loads and returns the color scheme for the current project.
 
         Returns:
-            Dict: A dictionary mapping UI elements to their respective colors.
+            Dict: Dictionary of UI color settings.
         """
-        self._color_scheme = self._filehandler.read_file(self._color_path)
         return self._color_scheme
 
     def get_tag_types(self) -> List[str]:
         """
-        Extracts and returns all available tag types from the loaded template groups.
-
-        This method iterates through the template groups and collects unique 
-        tag types used within the templates.
+        Returns all tag types defined in the template groups.
 
         Returns:
-            List[str]: A list of unique tag types found in the template groups.
+            List[str]: A list of tag type strings.
         """
         tag_types = []
-
-        # Extract tag types from all template groups
         for group in self._layout_state["template_groups"]:
             for template in group.get("templates", []):
                 tag_types.append(template.get("type", ""))
@@ -138,40 +107,33 @@ class ConfigurationModel(IPublisher):
 
     def get_id_prefixes(self) -> Dict[str, str]:
         """
-        Retrieves a dictionary, which maps the tag types to the id prefixes
+        Returns a mapping of tag types to their ID prefixes.
 
         Returns:
-            Dict[str,str]: A Dict which maps the tag types to the id prefixes.
+            Dict[str, str]: Dictionary mapping tag type to ID prefix.
         """
         return self._id_prefixes
 
     def get_id_name(self, tag_type: str) -> str:
         """
-        Retrieves the name of the ID attribute for a given tag type.
-
-        This method returns the attribute name that serves as the unique identifier 
-        for a tag of the specified type.
+        Returns the attribute name used as ID for a given tag type.
 
         Args:
-            tag_type (str): The type of the tag whose ID attribute name is requested.
+            tag_type (str): The tag type to query.
 
         Returns:
-            str: The name of the ID attribute for the given tag type. Returns an empty string 
-                 if no ID attribute is defined for the tag type.
+            str: The ID attribute name, or an empty string if not defined.
         """
         return self._id_names.get(tag_type, "")
 
-    def get_id_refs(self, tag_type: str) -> str:
+    def get_id_refs(self, tag_type: str) -> List[str]:
         """
-        Retrieves the ID references for a given tag type.
-
-        This method returns the attribute name that serves as the unique identifier 
-        for a tag of the specified type.
+        Returns all attributes of a tag type that reference IDs.
 
         Args:
-            tag_type (str): The type of the tag whose ID attribute name is requested.
+            tag_type (str): The tag type to query.
 
         Returns:
-            List[str]: A list of all attributes with an ID for the given tag type. 
+            List[str]: List of attribute names that are ID or IDREF types.
         """
         return self._id_ref_attributes.get(tag_type, [])

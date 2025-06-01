@@ -15,6 +15,7 @@ from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
 from typing import Callable, Dict, List, Optional, Tuple
 from utils.comparison_manager import ComparisonManager
+from utils.configuration_manager import ConfigurationManager
 from utils.list_manager import ListManager
 from utils.path_manager import PathManager
 from utils.pdf_extraction_manager import PDFExtractionManager
@@ -29,10 +30,12 @@ import tkinter.messagebox as mbox
 
 
 class Controller(IController):
-    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, annotation_mode_model: IPublisher = None, path_manager: PathManager) -> None:
+    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, annotation_mode_model: IPublisher = None) -> None:
 
         # dependencies
-        self._file_handler = FileHandler(path_manager)
+        self._path_manager = PathManager()
+        self._file_handler = FileHandler(self._path_manager)
+        self._configuration_manager = ConfigurationManager(self._file_handler)
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
         self._settings_manager = SettingsManager()
         self._tag_processor = TagProcessor(self)
@@ -43,14 +46,12 @@ class Controller(IController):
         self._pdf_extraction_manager = PDFExtractionManager(
             list_manager=self._list_manager)
         self._search_manager = SearchManager(self)
-        self._search_model_accessor = SearchModelManager(self._search_manager)
-        self._path_manager = path_manager
+        self._search_model_manager = SearchModelManager(self._search_manager)
 
         # config
         # Load the source mapping once and store it in an instance variable
-        # todo change hardcoded path
         self._source_mapping = self._file_handler.read_file(
-            "app_data/source_mapping.json")
+            "source_mapping")
 
         # views
         self._comparison_view: IComparisonView = None
@@ -68,8 +69,6 @@ class Controller(IController):
         self._comparison_model: IComparisonModel = comparison_model
         self._selection_model: ISelectionModel = selection_model
         self._annotation_mode_model: IPublisher = annotation_mode_model
-        self._search_models: IPublisher = search_models
-
         self._current_search_model: IPublisher = None
 
         # command pattern

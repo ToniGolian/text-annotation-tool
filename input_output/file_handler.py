@@ -8,7 +8,7 @@ from utils.path_manager import PathManager
 class FileHandler:
     """Handler for reading and writing files with different formats based on file extension."""
 
-    def __init__(self, encoding: str = 'utf-8', path_manager: PathManager) -> None:
+    def __init__(self, encoding: str = 'utf-8', path_manager: PathManager = None) -> None:
         """
         Initializes FileHandler with an optional default encoding and sets up strategies.
 

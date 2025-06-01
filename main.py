@@ -12,12 +12,11 @@ from view.main_window import MainWindow
 
 
 def main():
-    path_manager = PathManager()
     # Initialize model and controller
     preview_document_model = ExtractionDocumentModel()
     annotation_document_model = AnnotationDocumentModel()
     comparison_model = ComparisonModel()
-    configuration_model = ConfigurationModel(path_manager=path_manager)
+    configuration_model = ConfigurationModel()
     selection_model = SelectionModel()
     appearance_model = AppearanceModel()
     annotation_mode_model = AnnotationModeModel()

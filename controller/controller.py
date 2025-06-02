@@ -45,7 +45,7 @@ class Controller(IController):
             self._file_handler, self._settings_manager)
         self._pdf_extraction_manager = PDFExtractionManager(
             list_manager=self._list_manager)
-        self._search_manager = SearchManager(self)
+        self._search_manager = SearchManager(self._file_handler)
         self._search_model_manager = SearchModelManager(self._search_manager)
 
         # config
@@ -360,7 +360,7 @@ class Controller(IController):
             self._comparison_view = view
 
     # Perform methods
-    def perform_start_db_annotation(self, tag_type: str) -> None:
+    def perform_start_db_annotation(self, tag_type: str, caller_id: str) -> None:
         """
         Starts the annotation mode for a specific tag type.
 
@@ -378,7 +378,7 @@ class Controller(IController):
         )
         # current_search_model is already activated and shows the first result
 
-    def perform_end_db_annotation(self) -> None:
+    def perform_end_db_annotation(self, caller_id: str) -> None:
         """
         Ends the annotation mode for a specific tag type.
 

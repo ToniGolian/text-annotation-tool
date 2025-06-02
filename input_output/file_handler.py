@@ -97,7 +97,7 @@ class FileHandler:
         path = self._load_path(file_key, filename)
 
         if not os.path.exists(path):
-            db_data = self._csv_db_converter.convert_csv_to_json(tag_type)
+            db_data = self._csv_db_converter.create_dict(tag_type)
             self.write_file(file_key, db_data, filename)
             return db_data
 

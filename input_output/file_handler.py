@@ -92,6 +92,7 @@ class FileHandler:
         Returns:
             Dict: The loaded or generated database dictionary.
         """
+        tag_type = tag_type.lower()
         file_key = "project_db_dictionaries_folder"
         filename = f"{tag_type}_db_dict.json"
         path = self._load_path(file_key, filename)

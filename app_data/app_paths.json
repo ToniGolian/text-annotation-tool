@@ -9,6 +9,7 @@
     "default_annotation_save_folder": "data/annotation/",
     "default_comparison_save_folder": "data/comparison/",
     "project_data_folder": "app_data/projects/<project>/project_data/",
+    "project_db_dictionaries_folder": "app_data/projects/<project>/project_data/db_dictionaries",
     "project_config_folder": "app_data/projects/<project>/project_config/",
     "project_abbreviations": "app_data/projects/<project>/project_data/abbreviations.json",
     "project_saved_layout": "app_data/projects/<project>/project_data/saved_layout.json",

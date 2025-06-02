@@ -1,11 +1,11 @@
 {
-    "TIMEX3": {},
-    "TLINK": {},
-    "EVENT": {},
-    "MAKEINSTANCE": {},
-    "ALINK": {},
-    "SLINK": {},
-    "SIGNAL": {},
-    "CONFIDENCE": {},
-    "PLACE": {}
+    "TIMEX3": [],
+    "TLINK": [],
+    "EVENT": [],
+    "MAKEINSTANCE": [],
+    "ALINK": [],
+    "SLINK": [],
+    "SIGNAL": [],
+    "CONFIDENCE": [],
+    "PLACE": []
 }

@@ -102,13 +102,15 @@ class ComparisonTextDisplays(tk.Frame, IComparisonTextDisplays):
         # Rebuild widget structure
         self._widget_structure = []
 
-        for _ in range(self._num_comparison_displays):
+        for index in range(self._num_comparison_displays):
             text_display_frame = AnnotationTextDisplayFrame(
                 parent=self.scrollable_frame,
                 controller=self._controller,
                 height=self._comparison_display_height
             )
             text_display_frame.grid_propagate(False)
+            if index > 0:
+                text_display_frame.disable_selection()
             self._widget_structure.append(
                 (tk.Label(self.scrollable_frame), text_display_frame)
             )

@@ -433,19 +433,20 @@ class Controller(IController):
 
     def mark_wrong_db_suggestion(self, tag_type: str) -> None:
         """
-        Marks the current suggestion as incorrect for the specified tag type.
-
-        This method updates the tag manager to indicate that the current suggestion
-        for the specified tag type is not valid, allowing the user to skip or correct it.
-
-        Args:
-            tag_type (str): The type of tag for which to mark the suggestion as wrong.
+        Marks the current suggestion as wrong for the specified tag type and deletes it from the search model.
         """
-        self._tag_manager.mark_wrong_suggestion(tag_type=tag_type)
+        # load the current suggestion from the search model
+        wrong_suggestion = self._current_search_model.get_current_result()
         # load wrong suggestions file
+        wrong_suggestions = self._file_handler.read_file(
+            "project_wrong_suggestions")
         # add current suggestion to wrong suggestions
+        wrong_suggestions[tag_type].append(wrong_suggestion)
         # store updated wrong suggestions file
-        pass
+        self._file_handler.write_file(
+            "project_wrong_suggestions", wrong_suggestions)
+        # Clean up the current search model by deleting the current result
+        self._current_search_model.delete_current_result()
 
     def perform_pdf_extraction(self, extraction_data: dict) -> None:
         """

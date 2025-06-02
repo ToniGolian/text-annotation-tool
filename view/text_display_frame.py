@@ -138,6 +138,17 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
             new_text)  # Final update to ensure sync
         self._debounce_job = None  # Reset the job reference
 
+    def disable_selection(self) -> None:
+        """
+        Disables text selection in the text widget by binding mouse events to a no-op function.
+        This prevents the user from selecting text, effectively making the text widget read-only
+        while still allowing it to display text.
+        """
+        self.text_widget.bind("<Button-1>", lambda e: "break")
+        self.text_widget.bind("<B1-Motion>", lambda e: "break")
+        self.text_widget.bind("<Double-1>", lambda e: "break")
+        self.text_widget.bind("<Triple-1>", lambda e: "break")
+
     def update(self, publisher: IPublisher) -> None:
         """
         Observer method to handle updates from subjects, refreshing the displayed text.

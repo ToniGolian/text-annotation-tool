@@ -2,6 +2,7 @@ import os
 from typing import Dict
 from input_output.interfaces import IReadWriteStrategy
 from input_output.file_handler_strategies import JsonReadWriteStrategy, CsvReadWriteStrategy, TxtReadWriteStrategy
+from utils.csv_db_converter import CSVDBConverter
 from utils.path_manager import PathManager
 
 
@@ -28,6 +29,7 @@ class FileHandler:
             '.csv': CsvReadWriteStrategy(encoding=self.encoding),
             '.txt': TxtReadWriteStrategy(encoding=self.encoding)
         }
+        self._csv_db_converter = CSVDBConverter(self)
 
     def _get_strategy(self, file_extension: str) -> IReadWriteStrategy:
         """
@@ -78,6 +80,29 @@ class FileHandler:
         strategy = self._get_strategy(file_extension)
         strategy.write(file_path, data)
 
+    def read_db_dict(self, tag_type: str) -> Dict:
+        """
+        Loads the database dictionary for a given tag_type.
+
+        If the file does not exist, it will be generated using the CSV converter.
+
+        Args:
+            tag_type (str): The type of tag for which to load the database dictionary.
+
+        Returns:
+            Dict: The loaded or generated database dictionary.
+        """
+        file_key = "project_db_dictionaries_folder"
+        filename = f"{tag_type}_db_dict.json"
+        path = self._load_path(file_key, filename)
+
+        if not os.path.exists(path):
+            data = self._csv_db_converter.convert_csv_to_json(tag_type)
+            self.write_file(file_key, data, filename)
+            return data
+
+        return self.read_file(file_key, filename)
+
     def _load_path(self, file_path: str, extension: str = "") -> str:
         """
         Resolves and constructs a file path using the PathManager.
@@ -102,7 +127,6 @@ class FileHandler:
         resolved_path = self._path_manager.resolve_path(file_path)
 
         if extension:
-            print(f"DEBUG {extension=}")
             resolved_path = os.path.join(resolved_path, extension)
 
         return self._convert_path_to_os_specific(resolved_path)

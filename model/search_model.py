@@ -93,6 +93,20 @@ class SearchModel(IPublisher):
         """
         return self._valid
 
+    def delete_current_result(self) -> None:
+        """
+        Deletes the currently selected search result and updates the selection.
+
+        If the current index is invalid after deletion, it resets to -1.
+        """
+        if 0 <= self._current_index < len(self._results):
+            del self._results[self._current_index]
+            if not self._results:
+                self._current_index = -1
+            elif self._current_index >= len(self._results):
+                self._current_index = len(self._results) - 1
+            self.notify_observers()
+
 # observerpattern
     def notify_observers(self) -> None:
         """
@@ -120,3 +134,15 @@ class SearchModel(IPublisher):
             "current_result": current_result,
             "results": self._results
         }
+
+    # getters
+    def get_current_result(self) -> Optional[SearchResult]:
+        """
+        Retrieves the currently selected search result.
+
+        Returns:
+            Optional[SearchResult]: The current result or None if no valid selection exists.
+        """
+        if 0 <= self._current_index < len(self._results):
+            return self._results[self._current_index]
+        return None

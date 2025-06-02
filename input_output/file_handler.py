@@ -97,9 +97,9 @@ class FileHandler:
         path = self._load_path(file_key, filename)
 
         if not os.path.exists(path):
-            data = self._csv_db_converter.convert_csv_to_json(tag_type)
-            self.write_file(file_key, data, filename)
-            return data
+            db_data = self._csv_db_converter.convert_csv_to_json(tag_type)
+            self.write_file(file_key, db_data, filename)
+            return db_data
 
         return self.read_file(file_key, filename)
 
@@ -143,17 +143,16 @@ class FileHandler:
         """
         return os.path.normpath(path)
 
-    def get_default_path(self, key: str) -> str:
+    def resolve_path(self, key: str, extension: str = "") -> str:
         """
-        Retrieves the resolved and system-specific default path for a given configuration key.
-
+        Resolves a configuration key to a full file path, optionally appending an extension.
         Args:
-            key (str): Key in the application path configuration.
-
+            key (str): Key from config or already-resolved file path.
+            extension (str, optional): Optional extension to append.
         Returns:
-            str: Fully resolved default path.
+            str: Fully resolved and normalized file path.
         """
-        return self._load_path(key)
+        return self._load_path(key, extension)
 
     def derive_file_name(self, file_path: str) -> str:
         """

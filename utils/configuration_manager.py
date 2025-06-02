@@ -35,7 +35,7 @@ class ConfigurationManager:
         layout = {}
         color_scheme = self._file_handler.read_file("project_color_scheme")
 
-        project_path = self._file_handler.get_default_path(
+        project_path = self._file_handler.resolve_path(
             "project_config")
         template_groups = self._template_loader.load_template_groups(
             project_path)

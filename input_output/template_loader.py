@@ -68,7 +68,7 @@ class TemplateLoader(ITemplateLoader):
         for group_name, group_members in groups.items():
             templates: List[Dict] = []
             for group_member in group_members:
-                file_path = os.path.join(self._file_handler.get_default_path(
+                file_path = os.path.join(self._file_handler.resolve_path(
                     "project_config_folder"),
                     f"tags/{group_member.lower()}.json"
                 )

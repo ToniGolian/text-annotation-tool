@@ -1,8 +1,0 @@
-abstract:
-1. part bis montag 17.02. schicken
-dienstag 13 Uhr besprechen
--umweltbezug
-https://sns.uba.de/umthes/de.html
--neues feld mit sns id
-
-sonst noch die PLACE tags

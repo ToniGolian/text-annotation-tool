@@ -1,5 +1,0 @@
-comparison
--die positionen beim einfügen im merging passen nciht. offset muss auch auf tags in der warteschlange ausgeweitet werden. 
-
-view
--db_widget_frame dynamic layout

@@ -487,7 +487,7 @@ class Controller(IController):
 
         file_name = self._file_handler.derive_file_name(
             document.get("file_path", "unnamed"))
-        save_dir = self._file_handler.get_default_path(
+        save_dir = self._file_handler.resolve_path(
             "default_extraction_save_folder")
         save_path = os.path.join(save_dir, f"{file_name}.json")
         document["file_path"] = save_path
@@ -806,9 +806,9 @@ class Controller(IController):
                 document["source_file_paths"][0])
             merged_file_name = f"{base_name}_merged.json"
 
-            annotation_folder = self._file_handler.get_default_path(
+            annotation_folder = self._file_handler.resolve_path(
                 "default_annotation_save_folder")
-            comparison_folder = self._file_handler.get_default_path(
+            comparison_folder = self._file_handler.resolve_path(
                 "default_comparison_save_folder")
 
             # Final full paths
@@ -1030,7 +1030,7 @@ class Controller(IController):
             multiselect = False
 
         key = f"default_{self._active_view_id}_load_folder"
-        initial_dir = self._file_handler.get_default_path(key)
+        initial_dir = self._file_handler.resolve_path(key)
 
         # Construct the dialog configuration
         return {
@@ -1060,7 +1060,7 @@ class Controller(IController):
         file_extension = "json"
         data_source = self._document_source_mapping[self._active_view_id]
         key = f"default_{self._active_view_id}_save_folder"
-        initial_dir = self._file_handler.get_default_path(key)
+        initial_dir = self._file_handler.resolve_path(key)
 
         # Construct the dialog configuration
         return {
@@ -1174,7 +1174,7 @@ class Controller(IController):
             FileNotFoundError: If the comparison settings file cannot be found.
         """
         key = "default_comparison_settings"
-        comparison_settings_path = self._file_handler.get_default_path(key)
+        comparison_settings_path = self._file_handler.resolve_path(key)
         comparison_settings = self._file_handler.read_file(
             comparison_settings_path)
         align_option = comparison_settings["align_option"]

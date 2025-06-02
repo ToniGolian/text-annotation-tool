@@ -166,3 +166,6 @@ todo.txt
 /test_data
 /test_img
 comparison_main.py
+
+# csv
+*.csv

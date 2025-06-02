@@ -1,5 +1,6 @@
 from typing import Dict, Optional
 from enums.search_types import SearchType
+from model.interfaces import IDocumentModel
 from model.search_model import SearchModel
 from utils.search_manager import SearchManager
 
@@ -24,7 +25,7 @@ class SearchModelManager:
         self._models: Dict[str, SearchModel] = {}
         self._active_key: Optional[str] = None
 
-    def get_active_model(self, tag_type: str, search_type: SearchType = SearchType.DB) -> SearchModel:
+    def get_active_model(self, tag_type: str, search_type: SearchType = SearchType.DB, document_model: IDocumentModel = None) -> SearchModel:
         """
         Retrieves and activates a valid SearchModel for the specified tag type.
 
@@ -34,15 +35,17 @@ class SearchModelManager:
         Args:
             tag_type (str): The tag type for which the model should be retrieved.
             search_type (SearchType): The calculation mode if recalculation is necessary.
-
+            document_model (IDocumentModel, optional): The document model to use for context, if needed.
         Returns:
             SearchModel: A valid, activated SearchModel instance.
+        Raises:
+            ValueError: If the search type is invalid or not supported.
         """
         # Recalculate if necessary
         model = self._models.get(tag_type)
         if model is None or not model.is_valid():
             model = self._search_manager.calculate_model(
-                tag_type, search_type)
+                tag_type=tag_type, search_type=search_type, document_model=document_model)
             self._models[tag_type] = model
 
         # Deactivate previous

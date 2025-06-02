@@ -19,7 +19,14 @@ class CSVDBConverter:
         self._infixes = None
 
     def create_dict(self, tag_type: str):
-        """Create the dictionary from the CSV file and the belonging configuration file and save the dictionary to a JSON file."""
+        """Creates a dictionary for the specified tag type using data from a CSV file.
+
+        Args:
+            tag_type (str): The type of tag for which the dictionary is created.
+
+        Returns:
+            dict: A dictionary containing the data for the specified tag type.
+        """
         tag_type = tag_type.lower()
         # load columns and options
         self._load_options_and_columns(tag_type)
@@ -77,7 +84,13 @@ class CSVDBConverter:
         return our_dict
 
     def _initialize_config_fields(self, config: dict):
-        """Initialize the configuration fields from the config dictionary."""
+        """
+        Initializes the internal fields of the CSVDBConverter based on the provided configuration dictionary.
+        Args:
+            config (dict): A dictionary containing the configuration for the CSVDBConverter.
+        Raises:
+            KeyError: If the configuration dictionary does not contain the expected keys.
+        """
         self._key_column = config["columns"]["key_column"]
         self._output_columns = config["columns"]["output_columns"]
         self._display_columns = config["columns"]["display_columns"]
@@ -111,22 +124,6 @@ class CSVDBConverter:
             raise ValueError(
                 "Configuration file malformatted. Please check the file format."
             )
-
-    # def _update_paths(self, file_name: str):
-    #     # set original path for the csv basis file
-    #     self._file_path = self._file_handler._convert_path_to_os_specific(
-    #         f"./app_data/project_data/{file_name}.csv"
-    #     )
-
-    #     # set the dict saving/loading path
-    #     self._dict_path = self._file_handler._convert_path_to_os_specific(
-    #         f"./app_data/project_data/{file_name}.json"
-    #     )
-
-    #     # set the saving/loading configuration path
-    #     self._dict_config_path = self._file_handler._convert_path_to_os_specific(
-    #         f"./app_data/project_config/db_config/{file_name}_config.json"
-    #     )
 
     def _create_dict_layer(
         self,
@@ -215,7 +212,16 @@ class CSVDBConverter:
         return current_dict
 
     def _strip_output_and_add_delimiter(self, col: int, entry: str) -> str:
-        """Strip the postfix, prefix, and infix from the entry and add a delimiter."""
+        """
+        Strip the postfix, prefix, and infix from the entry and add a delimiter.
+        Args:
+            col (int): The column number to check for prefixes, postfixes, and infixes.
+            entry (str): The entry string from which to strip the postfix, prefix, and infix.
+        Returns:
+            str: The entry with the postfix, prefix, and infix stripped, followed by a delimiter.
+        Raises:
+            ValueError: If the entry is None or empty.
+        """
         if not entry:
             return ""
         # Strip postfix, prefix, and infix in sequence
@@ -227,20 +233,43 @@ class CSVDBConverter:
         return f"{stripped_entry}{self._delimiter}" if stripped_entry else ""
 
     def _create_string(self, row: list[str], columns: list[int]) -> str:
-        """Create a string from the row based on the specified columns."""
+        """
+        Creates a concatenated string from the specified columns of a row.
+        This method takes the values from the given columns, removes defined prefixes, postfixes, and infixes,
+        adds a delimiter between the values, and returns the final processed string.
+
+        Args:
+            row (list[str]): The values of a row.
+            columns (list[int]): The indices of the columns to use.
+
+        Returns:
+            str: The processed and concatenated string.
+        """
         output = ""
         for col in columns:
-            # stripping the postfix and prefix
             output_stripped_post_and_prefix = self._strip_output_and_add_delimiter(
                 col, row[col]
             )
-            # add the output
             output += output_stripped_post_and_prefix
 
         return output[: -len(self._delimiter)]
 
     def _strip_postfix(self, column_number: int, entry: str) -> str:
-        """Strip the postfix from the entry based on the column number."""
+        """
+        Removes a specified postfix from the given entry string based on the column number.
+
+        Args:
+            column_number (int): The index of the column whose postfixes should be considered.
+            entry (str): The string entry from which to remove the postfix.
+
+        Returns:
+            str: The entry string with the postfix removed if a matching postfix is found; otherwise, returns the original entry.
+
+        Notes:
+            - The method checks if the specified column has any postfixes defined in `self._postfixes`.
+            - If a matching postfix is found at the end of the entry, it is removed.
+            - If no matching postfix is found, the original entry is returned unchanged.
+        """
         postfixes = self._postfixes
         # check if the column has a postfix that should be removed
         if not (str(column_number) in postfixes):
@@ -256,7 +285,21 @@ class CSVDBConverter:
         return entry  # no postfix matched
 
     def _strip_infix(self, column_number: int, entry: str) -> str:
-        """Strip the infix from the entry based on the column number."""
+        """
+        Removes specified infixes from a string entry based on the column number.
+
+        Args:
+            column_number (int): The column index to check for infixes.
+            entry (str): The string from which infixes should be removed.
+
+        Returns:
+            str: The entry string with all matching infixes removed.
+
+        Notes:
+            - Infixes to be removed are defined in self._infixes, which should be a mapping from column numbers (as strings) to lists of infix strings.
+            - If no infixes are specified for the given column, the entry is returned unchanged.
+            - All occurrences of the infixes are removed, and removal is done in reverse order to avoid index shifting issues.
+        """
         infixes = self._infixes
         # check if the column has a infix that should be removed
         if not (str(column_number) in infixes):
@@ -295,7 +338,16 @@ class CSVDBConverter:
         return entry  # no prefix matched
 
     def _starts_with_current_word(self, entry: str, starting_word: str) -> bool:
-        """Check if the entry starts with the current word or a delimiter."""
+        """
+        Check if the given entry starts with the specified starting word or with the starting word followed by any delimiter.
+
+        Args:
+            entry (str): The string to check.
+            starting_word (str): The word to check for at the start of the entry.
+
+        Returns:
+            bool: True if the entry starts with the starting_word or with starting_word followed by any delimiter in self._dict_delimiters, False otherwise.
+        """
         # check if the entry starts with a " "
         if entry == starting_word:
             return True
@@ -303,26 +355,3 @@ class CSVDBConverter:
             if entry.startswith(starting_word + prefix):
                 return True
         return False
-
-
-# columns = {"key_column": 4, "output_columns": [0], "display_columns": [2, 0]}
-
-# options = {
-#     # how to separate columns for the display string and output string
-#     "delimiter": " | ",
-#     # how to separate the dictionary keys, create a subdict if keys are separated by any of these delimiters e.g. "Berlin Bahnhof" would then be "Berlin" with subdict "Berlin Bahnhof"
-#     "dict_delimiters": ["|", "-", "/", ",", ";", ":", "_", " "],
-#     # which prefixes to remove per column: applied to both display and output columns
-#     "prefixes": {2: ["AX_"]},
-#     # which postfixes to remove per column: applied to both display and output columns
-#     "postfixes": {2: [""]},
-#     # which infixes to remove per column: applied to both display and output columns
-#     "infixes": {2: [""]},
-# # }
-
-# file_name = "locationdata"
-# conv = CSVDBConverter()
-# dicti = conv.create_dict(file_name)
-# ic(dicti)
-# # ic(conv._options)
-# # ic(conv.dict["Aachen"])

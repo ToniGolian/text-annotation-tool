@@ -21,7 +21,7 @@ class SearchModel(IPublisher):
         self._valid: bool = True
         self._is_active: bool = False
 
-    def add_result(self, term: str, start: int, end: int) -> None:
+    def add_result(self, search_result: SearchResult) -> None:
         """
         Adds a new search result to the internal list.
 
@@ -30,7 +30,7 @@ class SearchModel(IPublisher):
             start (int): Start index in the text.
             end (int): End index in the text.
         """
-        self._results.append(SearchResult(term, start, end))
+        self._results.append(search_result)
 
     def next_result(self) -> None:
         """
@@ -146,3 +146,13 @@ class SearchModel(IPublisher):
         if 0 <= self._current_index < len(self._results):
             return self._results[self._current_index]
         return None
+
+#!DEBUG
+    def print_results(self) -> None:
+        """
+        Prints the current search results to the console for debugging purposes.
+        """
+        print("Search Results:")
+        for i, result in enumerate(self._results):
+            print(f"{i}: {result.term} ({result.start}-{result.end})")
+        print(f"Current Index: {self._current_index}")

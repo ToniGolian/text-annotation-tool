@@ -16,13 +16,8 @@
                 "AX_"
             ]
         },
-        "postfixes": {
-        },
-        "infixes": {
-            "2": [
-                "e"
-            ]
-        }
+        "postfixes": {},
+        "infixes": {}
     },
     "columns": {
         "key_column": 4,

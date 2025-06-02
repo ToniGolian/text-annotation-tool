@@ -1,5 +1,7 @@
+from data_classes.search_Result import SearchResult
 from enums.search_types import SearchType
 from input_output.file_handler import FileHandler
+from model.interfaces import IDocumentModel
 from model.search_model import SearchModel
 
 
@@ -10,8 +12,9 @@ class SearchManager:
             file_handler (FileHandler, optional): An instance of FileHandler for file operations.
         """
         self._file_handler = file_handler
+        self._common_suffixes = ["s"]  # todo load language dependet suffixes
 
-    def calculate_model(self, tag_type: str, search_type) -> SearchModel:
+    def calculate_model(self, tag_type: str, search_type: SearchType, document_model: IDocumentModel) -> SearchModel:
         """
         Calculates a new SearchModel for the specified tag type and search type.
 
@@ -26,20 +29,92 @@ class SearchManager:
             raise ValueError("Invalid search type specified.")
         search_model = SearchModel()
         if search_type == SearchType.DB:
-            # Load the database dictionary
             db_dict = self._file_handler.read_db_dict(tag_type=tag_type)
-            # perform the search based on the database dictionary
-            # todo: Implement the actual database search logic
-            search_results = []
-            # store the results in the search_model
-            raise NotImplementedError("Database search logic not implemented.")
+            text = document_model.get_text()
+            tokens = text.split()
+            index = 0
+            char_pos = 0  # current character position in the text
+
+            while index < len(tokens):
+                word = tokens[index]
+                current_dict = None
+                matched_word = word
+
+                # Try exact match or suffix-stripped variant
+                if word in db_dict:
+                    current_dict = db_dict[word]
+                else:
+                    for suffix in self._common_suffixes:
+                        if word.endswith(suffix):
+                            stripped = word[:-len(suffix)]
+                            if stripped in db_dict:
+                                matched_word = stripped
+                                current_dict = db_dict[stripped]
+                                break
+
+                if not current_dict:
+                    # advance char_pos to the next token including exact spacing
+                    next_token_pos = text.find(tokens[index], char_pos)
+                    char_pos = next_token_pos + len(tokens[index])
+                    # skip over any spacing after token
+                    while char_pos < len(text) and text[char_pos].isspace():
+                        char_pos += 1
+                    index += 1
+                    continue
+
+                match_tokens = [word]
+                match_data = current_dict
+                last_valid_data = match_data
+                end_index = index + 1
+
+                for j in range(index + 1, len(tokens)):
+                    next_token = tokens[j]
+                    candidate_tokens = tokens[index:j+1]
+                    candidate = " ".join(candidate_tokens)
+
+                    if candidate in match_data.get("children", {}):
+                        match_tokens.append(next_token)
+                        match_data = match_data["children"][candidate]
+                        last_valid_data = match_data
+                        end_index = j + 1
+                    else:
+                        stripped_candidate = None
+                        for suffix in self._common_suffixes:
+                            if candidate.endswith(suffix):
+                                stripped_candidate = candidate[:-len(suffix)]
+                                if stripped_candidate in match_data.get("children", {}):
+                                    match_tokens.append(next_token)
+                                    match_data = match_data["children"][stripped_candidate]
+                                    last_valid_data = match_data
+                                    end_index = j + 1
+                                    break
+                        if not stripped_candidate:
+                            break
+
+                matched_str = " ".join(tokens[index:end_index])
+                start_char = text.find(matched_str, char_pos)
+                end_char = start_char + len(matched_str)
+
+                result = SearchResult(
+                    term=matched_str,
+                    start=start_char,
+                    end=end_char,
+                    display=last_valid_data.get("display"),
+                    output=last_valid_data.get("output"),
+                )
+                search_model.add_result(result)
+
+                index = end_index
+                char_pos = end_char
+                while char_pos < len(text) and text[char_pos].isspace():
+                    char_pos += 1
+
         elif search_type == SearchType.MANUAL:
             # todo: Implement manual search logic
             search_results = []
             # Placeholder for manual search logic
+            search_model.add_results(search_results)
             raise NotImplementedError("Manual search logic not implemented.")
-
-        search_model.set_results(search_results)
         search_model.validate()
 
         return search_model

@@ -1,20 +1,25 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 
 @dataclass
 class SearchResult:
     """
-    Represents a search term and its position in the text.
+    Represents a search result and its character-level position in the original text.
 
-    Instances of this class store the matched term along with its
-    start and end character indices in the original text, enabling
-    functionalities such as highlighting and contextual lookup.
+    This class is used to store information about a successfully matched expression from a database
+    dictionary search. In addition to the matched string itself, it tracks the exact character offsets 
+    within the full document text, as well as any metadata relevant for display or annotation.
 
     Attributes:
-        term (str): The matched search term.
-        start (int): The start index of the term in the text.
-        end (int): The end index of the term in the text.
+        term (str): The matched phrase as found in the text.
+        start (int): Start character index of the match in the text.
+        end (int): End character index (exclusive) of the match in the text.
+        display (Optional[List[str]]): Display alternatives for UI purposes.
+        output (Optional[List[str]]): Output alternatives for annotation tagging.
     """
     term: str
     start: int
     end: int
+    display: Optional[List[str]] = field(default=None)
+    output: Optional[List[str]] = field(default=None)

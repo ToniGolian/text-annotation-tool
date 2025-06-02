@@ -180,26 +180,6 @@ class ComparisonModel(IComparisonModel):
         self._comparison_sentences[0][self._current_index] = self._document_models[0].get_text(
         )
 
-    # def clear_all_observers(self) -> None:
-    #     """
-    #     Removes all ComparisonTextDisplays observers from this model and its associated document models.
-
-    #     This is necessary to avoid dangling references to outdated GUI widgets after reloading the comparison.
-    #     Other observers like ComparisonHeaderFrame are preserved.
-    #     """
-
-    #     # Remove ComparisonTextDisplays from this model's observers
-    #     self._observers = [obs for obs in self._observers if not isinstance(
-    #         obs, ComparisonTextDisplays)]
-
-    #     # Remove ComparisonTextDisplays from each document model
-    #     for model in self._document_models:
-    #         model._observers = [
-    #             obs for obs in model._observers if not isinstance(obs, ComparisonTextDisplays)
-    #         ]
-
-    # getters/setters
-
     def get_state(self) -> dict:
         """
         Returns the serialized state of the comparison model for saving.

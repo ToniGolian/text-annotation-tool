@@ -371,14 +371,21 @@ class Controller(IController):
         Args:
             tag_type (str): The type of tag to start annotating.
         """
+        print(f"DEBUG {caller_id=}")
+        print(f"DEBUG {self._active_view_id=}")
         self._annotation_mode_model.set_auto_mode()
+        document_model = self._comparison_model.get_raw_text_model(
+        ) if caller_id == "comparison" else self._document_source_mapping[caller_id]
+
         self._current_search_model = self._search_model_manager.get_active_model(
             tag_type=tag_type,
-            search_type=SearchType.DB
+            search_type=SearchType.DB,
+            document_model=document_model
         )
+        self._current_search_model.print_results()
         # current_search_model is already activated and shows the first result
 
-    def perform_end_db_annotation(self, caller_id: str) -> None:
+    def perform_end_db_annotation(self) -> None:
         """
         Ends the annotation mode for a specific tag type.
 

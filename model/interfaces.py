@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple, Union
-from observer.interfaces import IObserver, IPublisher, IPublisher
+from typing import Dict, List, Optional, Union
+from data_classes.search_Result import SearchResult
+from observer.interfaces import IObserver, IPublisher
 
 
 class ITagModel(ABC):
@@ -328,4 +329,65 @@ class ISelectionModel(IPublisher):
         Returns:
             Dict[str, str]: A dictionary containing the selected text.
         """
+        pass
+
+
+class ISearchModel(IPublisher):
+    """
+    Interface for a search model that manages search results and navigation state.
+    """
+
+    @abstractmethod
+    def add_result(self, search_result: SearchResult) -> None:
+        """Adds a search result to the model."""
+        pass
+
+    @abstractmethod
+    def next_result(self) -> None:
+        """Selects the next result in the list, with wrapping."""
+        pass
+
+    @abstractmethod
+    def previous_result(self) -> None:
+        """Selects the previous result in the list, with wrapping."""
+        pass
+
+    @abstractmethod
+    def activate(self) -> None:
+        """Marks the model as active, enabling observer notifications."""
+        pass
+
+    @abstractmethod
+    def deactivate(self) -> None:
+        """Marks the model as inactive, disabling observer notifications."""
+        pass
+
+    @abstractmethod
+    def invalidate(self) -> None:
+        """Marks the model as invalid, triggering recalculation on next use."""
+        pass
+
+    @abstractmethod
+    def validate(self) -> None:
+        """Marks the model as valid after successful calculation."""
+        pass
+
+    @abstractmethod
+    def is_valid(self) -> bool:
+        """Returns whether the model is currently valid."""
+        pass
+
+    @abstractmethod
+    def delete_current_result(self) -> None:
+        """Deletes the currently selected result."""
+        pass
+
+    @abstractmethod
+    def get_state(self) -> dict:
+        """Returns the current state of the model, including selected result."""
+        pass
+
+    @abstractmethod
+    def get_current_result(self) -> Optional[SearchResult]:
+        """Returns the currently selected result, or None if not available."""
         pass

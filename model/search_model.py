@@ -1,9 +1,9 @@
 from typing import List, Optional
 from data_classes.search_Result import SearchResult
-from observer.interfaces import IPublisher
+from model.interfaces import ISearchModel
 
 
-class SearchModel(IPublisher):
+class SearchModel(ISearchModel):
     """
     Manages a list of search results and maintains the current selection state.
 
@@ -107,7 +107,7 @@ class SearchModel(IPublisher):
                 self._current_index = len(self._results) - 1
             self.notify_observers()
 
-# observerpattern
+    # observerpattern
     def notify_observers(self) -> None:
         """
         Notifies observers if the model is active.
@@ -131,23 +131,22 @@ class SearchModel(IPublisher):
             else None
         )
         return {
-            "current_result": current_result,
-            "results": self._results
+            "current_search_result": current_result,
         }
 
     # getters
-    def get_current_result(self) -> Optional[SearchResult]:
-        """
-        Retrieves the currently selected search result.
+    # def get_current_result(self) -> Optional[SearchResult]:
+    #     """
+    #     Retrieves the currently selected search result.
 
-        Returns:
-            Optional[SearchResult]: The current result or None if no valid selection exists.
-        """
-        if 0 <= self._current_index < len(self._results):
-            return self._results[self._current_index]
-        return None
+    #     Returns:
+    #         Optional[SearchResult]: The current result or None if no valid selection exists.
+    #     """
+    #     if 0 <= self._current_index < len(self._results):
+    #         return self._results[self._current_index]
+    #     return None
 
-#!DEBUG
+    #!DEBUG REMOVE LATER
     def print_results(self) -> None:
         """
         Prints the current search results to the console for debugging purposes.
@@ -155,4 +154,4 @@ class SearchModel(IPublisher):
         print("Search Results:")
         for i, result in enumerate(self._results):
             print(f"{i}: {result.term} ({result.start}-{result.end})")
-        print(f"Current Index: {self._current_index}")
+            print(f"Display: {result.display}, Output: {result.output}")

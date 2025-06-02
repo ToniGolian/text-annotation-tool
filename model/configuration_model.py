@@ -27,6 +27,8 @@ class ConfigurationModel(IPublisher):
         self._id_names = {}
         self._id_ref_attributes = {}
 
+        self._are_all_search_results_highlighted = True
+
     def set_configuration(self, configuration: Dict) -> None:
         """
         Updates the model state from a preassembled configuration dictionary.
@@ -117,3 +119,21 @@ class ConfigurationModel(IPublisher):
             List[str]: List of attribute names that are ID or IDREF types.
         """
         return self._id_ref_attributes.get(tag_type, [])
+
+    def are_all_search_results_highlighted(self) -> bool:
+        """
+        Checks if all search results are highlighted.
+
+        Returns:
+            bool: True if all search results are highlighted, False otherwise.
+        """
+        return self._are_all_search_results_highlighted
+
+    def set_all_search_results_highlighted(self, highlighted: bool) -> None:
+        """
+        Sets the highlight state for all search results.
+
+        Args:
+            highlighted (bool): True to highlight all results, False to unhighlight.
+        """
+        self._are_all_search_results_highlighted = highlighted

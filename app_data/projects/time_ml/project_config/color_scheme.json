@@ -1,10 +1,20 @@
 {
-    "TIMEX3": "#ff4500",
-    "TLINK": "#ffa500",
-    "EVENT": "#ffcc00",
-    "MAKEINSTANCE": "#32cd32",
-    "ALINK": "#228b22",
-    "SLINK": "#ff6347",
-    "SIGNAL": "#ff1493",
-    "CONFIDENCE": "#8b0000"
+    "tags": {
+        "TIMEX3": "#ff4500",
+        "TLINK": "#ffa500",
+        "EVENT": "#ffcc00",
+        "MAKEINSTANCE": "#32cd32",
+        "ALINK": "#228b22",
+        "SLINK": "#ff6347",
+        "SIGNAL": "#ff1493",
+        "CONFIDENCE": "#8b0000"
+    },
+    "search": {
+        "font_color": "#000000",
+        "background_color": "#f0f0f0"
+    },
+    "current_search": {
+        "font_color": "#ffffff",
+        "background_color": "#0000ff"
+    }
 }

@@ -54,7 +54,6 @@ class CSVDBConverter:
         Returns:
             dict: The nested dictionary.
         """
-        print(f"DEBUG {file_path=}")
         # init the dictionary
         our_dict = {}
         # get the column number

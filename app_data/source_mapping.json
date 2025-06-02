@@ -14,8 +14,15 @@
             "finalize": false,
             "source_keys": {
                 "annotation_document_model": [
-                    "text",
-                    "highlight_data"
+                    "text"
+                ]
+            }
+        },
+        "SearchModelManager": {
+            "finalize": false,
+            "source_keys": {
+                "search_model_manager": [
+                    "current_search_result"
                 ]
             }
         }

@@ -9,7 +9,7 @@ from commands.interfaces import ICommand
 from enums.search_types import SearchType
 from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
-from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISelectionModel
+from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISearchModel, ISelectionModel
 from model.tag_model import TagModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
@@ -371,8 +371,6 @@ class Controller(IController):
         Args:
             tag_type (str): The type of tag to start annotating.
         """
-        print(f"DEBUG {caller_id=}")
-        print(f"DEBUG {self._active_view_id=}")
         self._annotation_mode_model.set_auto_mode()
         document_model = self._comparison_model.get_raw_text_model(
         ) if caller_id == "comparison" else self._document_source_mapping[caller_id]
@@ -382,8 +380,6 @@ class Controller(IController):
             search_type=SearchType.DB,
             document_model=document_model
         )
-        self._current_search_model.print_results()
-        # current_search_model is already activated and shows the first result
 
     def perform_end_db_annotation(self) -> None:
         """
@@ -443,7 +439,8 @@ class Controller(IController):
         Marks the current suggestion as wrong for the specified tag type and deletes it from the search model.
         """
         # load the current suggestion from the search model
-        wrong_suggestion = self._current_search_model.get_current_result()
+        wrong_suggestion = self._current_search_model.get_state().get(
+            "current_search_result", None)
         # load wrong suggestions file
         wrong_suggestions = self._file_handler.read_file(
             "project_wrong_suggestions")
@@ -1093,25 +1090,41 @@ class Controller(IController):
 
     def get_highlight_data(self, target_model: IPublisher = None) -> List[Tuple[str, int, int]]:
         """
-        Retrieves the highlight data for text annotation.
+        Retrieves the highlight data for text annotation or search results.
 
-        This method fetches the highlight data from the tag manager and maps the tag types
-        to their corresponding colors using the color scheme from the configuration model.
+        If the target model is an IDocumentModel, this method fetches annotation highlights.
+        If the target model is an ISearchModel, it fetches search result highlights.
 
         Returns:
             List[Tuple[str, int, int]]: A list of tuples where:
-                - The first element (str) is the highlight color associated with the tag type.
-                - The second element (int) is the start position of the highlight in the text.
-                - The third element (int) is the end position of the highlight in the text.
+                - The first element (str) is the highlight color.
+                - The second element (int) is the start position in characters.
+                - The third element (int) is the end position in characters.
         """
-        # if not target_model:
-        #     target_model = self._document_source_mapping[self._active_view_id]
-        color_scheme = self._configuration_model.get_color_scheme()
-        highlight_data = self._tag_manager.get_highlight_data(target_model)
-        highlight_data = [
-            (color_scheme[tag], start, end) for tag, start, end in highlight_data
-        ]
-        return highlight_data
+        if isinstance(target_model, IDocumentModel):
+            color_scheme = self._configuration_model.get_color_scheme()["tags"]
+            highlight_data = self._tag_manager.get_highlight_data(target_model)
+            return [
+                (color_scheme[tag], start, end) for tag, start, end in highlight_data
+            ]
+
+        elif isinstance(target_model, ISearchModel):
+            current_search_color = self._configuration_model.get_color_scheme()[
+                "current_search"]["background_color"]
+            search_state = target_model.get_state()
+            current_search_result = search_state.get(
+                "current_search_result", None)
+            highlight_data = [
+                (current_search_color, current_search_result.start, current_search_result.end)]
+            if self._configuration_model.are_all_search_results_highlighted():
+                # If all search results should be highlighted, add them to the highlight data
+                search_color = self._configuration_model.get_color_scheme()[
+                    "search"]["background_color"]
+                highlight_data += [(search_color, result.start, result.end)
+                                   for result in search_state.get("results", []) if result != current_search_result]
+            return highlight_data
+
+        return []
 
     def get_tag_types(self) -> List[str]:
         """

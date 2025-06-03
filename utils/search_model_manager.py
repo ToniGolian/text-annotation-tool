@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 from enums.search_types import SearchType
 from model.interfaces import IDocumentModel
 from model.search_model import SearchModel
@@ -27,31 +27,43 @@ class SearchModelManager(IPublisher):
         self._models: Dict[str, SearchModel] = {}
         self._active_key: Optional[str] = None
 
-    def get_active_model(self, tag_type: str, search_type: SearchType = SearchType.DB, document_model: IDocumentModel = None) -> SearchModel:
+    def get_active_model(self, tag_type: str = None, search_type: SearchType = SearchType.DB, document_model: IDocumentModel = None, options: Optional[Dict] = None) -> SearchModel:
         """
-        Retrieves and activates a valid SearchModel for the specified tag type.
+        Retrieves and activates a valid SearchModel for the specified search context.
 
-        If the model does not exist or is invalid, it is recalculated.
-        The requested model becomes the only active model; all others are deactivated.
+        This method manages both database-based and manual search models:
+        - For DB search: it retrieves or recalculates a model based on the tag type.
+        - For manual search: it uses the search term as the key and builds the model
+          based on custom options (e.g., case sensitivity, regex).
+
+        If the model does not exist or is invalid, it will be recalculated.
+        Only one model is active at a time; previously active models are deactivated.
 
         Args:
-            tag_type (str): The tag type for which the model should be retrieved.
-            search_type (SearchType): The calculation mode if recalculation is necessary.
-            document_model (IDocumentModel, optional): The document model to use for context, if needed.
+            tag_type (str, optional): The tag type identifier (used only for DB search).
+            search_type (SearchType): The search strategy (DB or MANUAL).
+            document_model (IDocumentModel, optional): The source document to search in.
+            options (Dict, optional): Parameters for manual search (keys: 'search_term', 'case_sensitive', 'whole_word', 'regex').
+
         Returns:
             SearchModel: A valid, activated SearchModel instance.
-        Raises:
-            ValueError: If the search type is invalid or not supported.
         """
-        # Recalculate if necessary
-        model = self._models.get(tag_type)
-        if model is None or not model.is_valid():
-            model = self._search_manager.calculate_model(
-                tag_type=tag_type, search_type=search_type, document_model=document_model)
-            # Register observers if this is a new model
-            for observer in self._observers:
-                model.add_observer(observer)
-            self._models[tag_type] = model
+        if search_type == SearchType.MANUAL:
+            search_term = options.get("search_term", "")
+            model = self._models.get(search_term)
+            if model is None or not model.is_valid():
+                model = self._search_manager.calculate_manual_model(
+                    options=options, document_model=document_model)
+                # Register observers if this is a new model
+                self._register_observers_to_search_model(model)
+
+        if search_type == SearchType.DB:
+            # Recalculate if necessary
+            model = self._models.get(tag_type)
+            if model is None or not model.is_valid():
+                model = self._search_manager.calculate_db_model(
+                    tag_type=tag_type, document_model=document_model)
+                self._register_observers_to_search_model(model)
 
         # Deactivate previous
         if self._active_key and self._active_key != tag_type:
@@ -83,13 +95,24 @@ class SearchModelManager(IPublisher):
         for model in self._models.values():
             model.invalidate()
 
-    def deactivate_active_model(self) -> None:
+    def _deactivate_active_model(self) -> None:
         """
         Deactivates the currently active model, if one is set.
         """
         if self._active_key:
             self._models[self._active_key].deactivate()
             self._active_key = None
+
+    def _register_observers_to_search_model(self, model: SearchModel) -> None:
+        """
+        Registers all current observers to a new SearchModel instance.
+
+        This is used when a new model is created or recalculated.
+        Args:
+            model (SearchModel): The model instance to which observers should be added.
+        """
+        for observer in self._observers:
+            model.add_observer(observer)
 
     def get_state(self):
         """Just to use the class as proxy for the observer interface."""

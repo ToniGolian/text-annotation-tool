@@ -4,6 +4,7 @@ from controller.interfaces import IController
 from view.annotation_text_display_frame import AnnotationTextDisplayFrame
 from view.meta_tags_frame import MetaTagsFrame
 from view.annotation_menu_frame import AnnotationMenuFrame
+from view.search_frame import SearchFrame
 from view.view import View
 
 
@@ -43,11 +44,20 @@ class AnnotationView(View):
         self.lower_frame = AnnotationTextDisplayFrame(
             self.left_paned, controller=self._controller, is_static_observer=True)
 
+        # Search frame for text input
+        self.search_frame = SearchFrame(
+            self.left_paned, controller=self._controller)
+
         # Add both frames to the vertical PanedWindow inside left_frame
         # MetaTagsFrame gets less space
         self.left_paned.add(self.upper_frame, weight=0)
         # AnnotationTextDisplayFrame gets more space
         self.left_paned.add(self.lower_frame, weight=4)
+        # SearchFrame gets a small space at the bottom
+        wrapper = ttk.Frame(self.left_paned, padding=(10, 5))  # (padx, pady)
+        self.search_frame = SearchFrame(wrapper, self._controller)
+        self.search_frame.pack(fill="both", expand=True)
+        self.left_paned.add(wrapper, weight=0)
 
         # Right frame for the tagging menu
         self.right_frame = AnnotationMenuFrame(

@@ -1,82 +1,80 @@
 import tkinter as tk
+from tkinter import ttk
+from controller.interfaces import IController
 
 
 class SearchFrame(tk.Frame):
-    """
-    A frame for user-driven text search with support for case sensitivity, whole word,
-    and regular expression options. The frame includes a label, toggle buttons, and a text entry.
-
-    Debounced input ensures that searches are only triggered after a short pause in typing.
-    """
-
-    def __init__(self, parent: tk.Widget, controller: object) -> None:
+    def __init__(self, parent: tk.Widget, controller: IController) -> None:
         """
-        Initializes the SearchFrame UI and binds the input logic.
+        Initializes the SearchFrame with a search entry and option buttons.
 
         Args:
-            parent (tk.Widget): The parent widget to attach this frame to.
-            controller (object): The controller responsible for handling the search logic.
+            parent (tk.Widget): The parent widget.
+            controller (IController): The controller for coordinating search actions.
         """
         super().__init__(parent)
         self._controller = controller
-        self._debounce_id: int | None = None
 
-        label = tk.Label(self, text="Search")
-        label.grid(row=0, column=0, columnspan=3, pady=(5, 2))
+        self._label = ttk.Label(self, text="Search:")
 
-        self._case_button = tk.Checkbutton(self, text="Aa", indicatoron=False)
-        self._whole_word_button = tk.Checkbutton(
-            self, text="ab_", indicatoron=False)
-        self._regex_button = tk.Checkbutton(self, text="□*", indicatoron=False)
+        self._entry = ttk.Entry(self)
+        self._entry.bind("<KeyRelease>", self._on_key_pressed)
+        self._debounce_after_id = None
 
-        self._case_button.grid(row=1, column=0, sticky="ew", padx=2)
-        self._whole_word_button.grid(row=1, column=1, sticky="ew", padx=2)
-        self._regex_button.grid(row=1, column=2, sticky="ew", padx=2)
+        self._button_frame = ttk.Frame(self)
 
-        self._initialize_button_vars()
+        # Variable declarations
+        self._case_var = tk.BooleanVar(value=False)
+        self._whole_word_var = tk.BooleanVar(value=False)
+        self._regex_var = tk.BooleanVar(value=False)
 
-        self._entry = tk.Entry(self)
-        self._entry.grid(row=2, column=0, columnspan=3,
-                         sticky="ew", pady=(5, 5), padx=2)
-        self._entry.bind("<KeyRelease>", self._on_entry_changed)
+        # Checkbuttons with assigned variables
+        self._case_button = ttk.Checkbutton(
+            self._button_frame, text="Aa", variable=self._case_var)
+        self._whole_word_button = ttk.Checkbutton(
+            self._button_frame, text="|ab|", variable=self._whole_word_var)
+        self._regex_button = ttk.Checkbutton(
+            self._button_frame, text="□*", variable=self._regex_var)
 
-        for i in range(3):
-            self.columnconfigure(i, weight=1)
+        self._render()
 
-    def _initialize_button_vars(self) -> None:
+    def _render(self) -> None:
         """
-        Initializes internal state variables for toggle buttons.
+        Renders and arranges the widgets within the frame.
         """
-        self._case_button.var = tk.IntVar()
-        self._whole_word_button.var = tk.IntVar()
-        self._regex_button.var = tk.IntVar()
+        self.grid_columnconfigure(1, weight=1)  # Entry expands horizontally
 
-        self._case_button.config(variable=self._case_button.var)
-        self._whole_word_button.config(variable=self._whole_word_button.var)
-        self._regex_button.config(variable=self._regex_button.var)
+        self._label.grid(row=0, column=0, padx=(5, 2), pady=5, sticky="w")
+        self._entry.grid(row=0, column=1, padx=2, pady=5, sticky="ew")
+        self._button_frame.grid(
+            row=0, column=2, padx=(2, 5), pady=5, sticky="e")
 
-    def _on_entry_changed(self, event: tk.Event) -> None:
+        # Style buttons small and compact
+        for i, button in enumerate([self._case_button, self._whole_word_button, self._regex_button]):
+            button.grid(row=0, column=i, padx=1)
+            button.configure(width=3)
+
+    def _on_key_pressed(self, event) -> None:
         """
-        Debounced event handler for user input in the search entry.
+        Triggers search with debouncing when user types in the search entry.
 
-        Cancels any pending search trigger and schedules a new one.
+        Args:
+            event: Tkinter event object from the keypress.
         """
-        if self._debounce_id:
-            self.after_cancel(self._debounce_id)
-        self._debounce_id = self.after(300, self._trigger_search)
+        if self._debounce_after_id:
+            self.after_cancel(self._debounce_after_id)
+
+        self._debounce_after_id = self.after(300, self._trigger_search)
 
     def _trigger_search(self) -> None:
         """
-        Collects current search parameters and initiates the manual search via controller.
+        Extracts search parameters and delegates the search to the controller.
         """
-        search_term: str = self._entry.get().strip()
-        case_sensitive: bool = bool(self._case_button.var.get())
-        whole_word: bool = bool(self._whole_word_button.var.get())
-        regex: bool = bool(self._regex_button.var.get())
-
+        options = {
+            "search_term": self._entry.get(),
+            "case_sensitive": self._case_var.get(),
+            "whole_word": self._whole_word_var.get(),
+            "regex": self._regex_var.get()
+        }
         self._controller.perform_manual_search(
-            search_term=search_term,
-            case_sensitive=case_sensitive,
-            whole_word=whole_word,
-            regex=regex
-        )
+            search_options=options, caller_id=self._root_view_id)

@@ -4,6 +4,7 @@ from controller.interfaces import IController
 from view.meta_tags_frame import MetaTagsFrame
 from view.extraction_frame import ExtractionFrame
 from view.preview_text_display_frame import PreviewTextDisplayFrame
+from view.search_frame import SearchFrame
 from view.text_display_frame import TextDisplayFrame
 from view.annotation_menu_frame import AnnotationMenuFrame
 from view.view import View
@@ -45,6 +46,11 @@ class ExtractionView(View):
         self.lower_frame = PreviewTextDisplayFrame(
             self.left_frame, controller=self._controller, editable=True)
         self.lower_frame.pack(fill=tk.BOTH, expand=True, side="top")
+
+        # Search frame for text input
+        self.search_frame = SearchFrame(
+            self.left_frame, controller=self._controller)
+        self.search_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
         # Now pack left_frame itself in the paned_window
         self.left_frame.pack(fill=tk.BOTH, expand=True)

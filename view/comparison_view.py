@@ -9,6 +9,7 @@ from view.annotation_menu_frame import AnnotationMenuFrame
 from view.comparison_header_frame import ComparisonHeaderFrame
 from view.comparison_text_displays import ComparisonTextDisplays
 from view.interfaces import IComparisonView
+from view.search_frame import SearchFrame
 from view.view import View
 
 
@@ -47,6 +48,11 @@ class ComparisonView(View, IComparisonView):
             self.left_frame, self._controller)
         self._text_displays.pack(side=tk.TOP, fill=tk.BOTH,
                                  expand=True, padx=10, pady=5)
+
+        # Search frame for text input
+        self.search_frame = SearchFrame(
+            self.left_frame, controller=self._controller)
+        self.search_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
         # Now pack left_frame itself in the paned_window
         self.left_frame.pack(fill="both", expand=True)

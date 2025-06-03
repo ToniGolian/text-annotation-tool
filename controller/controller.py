@@ -358,6 +358,30 @@ class Controller(IController):
             self._comparison_view = view
 
     # Perform methods
+    def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:
+        """
+        Initiates a manual search with the specified parameters.
+
+        This method delegates the execution of a manual search to the search model manager,
+        based on user-defined search options such as case sensitivity, whole word matching,
+        and regular expressions. The corresponding document model is selected using the caller ID.
+
+        Args:
+            search_options (Dict): A dictionary of search parameters with the following keys:
+                - 'search_term' (str): The term to search for in the document.
+                - 'case_sensitive' (bool): Whether the search should be case-sensitive.
+                - 'whole_word' (bool): Whether to match only whole words.
+                - 'regex' (bool): Whether the search term should be treated as a regular expression.
+            caller_id (str): The identifier of the view or component initiating the search,
+                             used to select the appropriate document model.
+        """
+        self._annotation_mode_model.set_manual_mode()
+        document_model = self._comparison_model.get_raw_text_model(
+        ) if caller_id == "comparison" else self._document_source_mapping[caller_id]
+        self._current_search_model = self._search_model_manager.get_active_model(
+            search_type=SearchType.MANUAL, document_model=document_model, options=search_options)
+
+        # todo how to deactivate manual search model?
     def perform_start_db_annotation(self, tag_type: str, caller_id: str) -> None:
         """
         Starts the annotation mode for a specific tag type.
@@ -387,7 +411,7 @@ class Controller(IController):
         and deactivating the currently active search model.
         """
         self._annotation_mode_model.set_manual_mode()
-        self._search_model_manager.deactivate_active_model()
+        self._search_model_manager._deactivate_active_model()
         self._current_search_model = None
 
     def perform_next_suggestion(self, tag_type: str) -> None:

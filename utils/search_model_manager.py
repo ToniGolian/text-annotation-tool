@@ -24,7 +24,8 @@ class SearchModelManager(IPublisher):
         """
         super().__init__()
         self._search_manager = search_manager
-        self._models: Dict[str, SearchModel] = {}
+        self._manual_models: Dict[str, SearchModel] = {}
+        self._db_models: Dict[str, SearchModel] = {}
         self._active_key: Optional[str] = None
 
     def get_active_model(self, tag_type: str = None, search_type: SearchType = SearchType.DB, document_model: IDocumentModel = None, options: Optional[Dict] = None) -> SearchModel:
@@ -50,28 +51,36 @@ class SearchModelManager(IPublisher):
         """
         if search_type == SearchType.MANUAL:
             search_term = options.get("search_term", "")
-            model = self._models.get(search_term)
+            model = self._manual_models.get(search_term)
             if model is None or not model.is_valid():
-                model = self._search_manager.calculate_manual_model(
+                model = self._search_manager.calculate_manual_search_model(
                     options=options, document_model=document_model)
-                # Register observers if this is a new model
                 self._register_observers_to_search_model(model)
+                self._manual_models[search_term] = model
+            key = search_term  # for activation tracking
 
-        if search_type == SearchType.DB:
-            # Recalculate if necessary
-            model = self._models.get(tag_type)
+        elif search_type == SearchType.DB:
+            model = self._db_models.get(tag_type)
             if model is None or not model.is_valid():
-                model = self._search_manager.calculate_db_model(
+                model = self._search_manager.calculate_db_search_model(
                     tag_type=tag_type, document_model=document_model)
                 self._register_observers_to_search_model(model)
+                self._db_models[tag_type] = model
+            key = tag_type  # for activation tracking
 
-        # Deactivate previous
-        if self._active_key and self._active_key != tag_type:
-            self._models[self._active_key].deactivate()
+        # Deactivate previous model if different
+        if self._active_key and self._active_key != key:
+            # Deactivate the old model from either dict
+            old_model = (
+                self._manual_models.get(self._active_key)
+                or self._db_models.get(self._active_key)
+            )
+            if old_model:
+                old_model.deactivate()
 
         # Activate current
         model.activate()
-        self._active_key = tag_type
+        self._active_key = key
         model.next_result()
 
         return model
@@ -95,12 +104,20 @@ class SearchModelManager(IPublisher):
         for model in self._models.values():
             model.invalidate()
 
-    def _deactivate_active_model(self) -> None:
+    def deactivate_active_search_model(self) -> None:
         """
         Deactivates the currently active model, if one is set.
         """
         if self._active_key:
             self._models[self._active_key].deactivate()
+            self._active_key = None
+
+    def deactivate_active_manual_search_model(self) -> None:
+        """
+        Deactivates the currently active manual search model, if one is set.
+        """
+        if self._active_key and self._active_key in self._manual_models:
+            self._manual_models[self._active_key].deactivate()
             self._active_key = None
 
     def _register_observers_to_search_model(self, model: SearchModel) -> None:

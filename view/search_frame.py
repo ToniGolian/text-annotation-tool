@@ -4,16 +4,18 @@ from controller.interfaces import IController
 
 
 class SearchFrame(tk.Frame):
-    def __init__(self, parent: tk.Widget, controller: IController) -> None:
+    def __init__(self, parent: tk.Widget, controller: IController, root_view_id: str) -> None:
         """
         Initializes the SearchFrame with a search entry and option buttons.
 
         Args:
             parent (tk.Widget): The parent widget.
             controller (IController): The controller for coordinating search actions.
+            root_view_id (str): Identifier for the root view, used for search context.
         """
         super().__init__(parent)
         self._controller = controller
+        self._root_view_id = root_view_id
 
         self._label = ttk.Label(self, text="Search:")
 
@@ -70,6 +72,10 @@ class SearchFrame(tk.Frame):
         """
         Extracts search parameters and delegates the search to the controller.
         """
+        search_term = self._entry.get()
+        if not search_term:
+            self._controller.perform_deactivate_manual_search_model()
+            return
         options = {
             "search_term": self._entry.get(),
             "case_sensitive": self._case_var.get(),

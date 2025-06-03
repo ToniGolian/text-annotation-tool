@@ -44,10 +44,6 @@ class AnnotationView(View):
         self.lower_frame = AnnotationTextDisplayFrame(
             self.left_paned, controller=self._controller, is_static_observer=True)
 
-        # Search frame for text input
-        self.search_frame = SearchFrame(
-            self.left_paned, controller=self._controller)
-
         # Add both frames to the vertical PanedWindow inside left_frame
         # MetaTagsFrame gets less space
         self.left_paned.add(self.upper_frame, weight=0)
@@ -55,7 +51,8 @@ class AnnotationView(View):
         self.left_paned.add(self.lower_frame, weight=4)
         # SearchFrame gets a small space at the bottom
         wrapper = ttk.Frame(self.left_paned, padding=(10, 5))  # (padx, pady)
-        self.search_frame = SearchFrame(wrapper, self._controller)
+        self.search_frame = SearchFrame(
+            wrapper, controller=self._controller, root_view_id=self._view_id)
         self.search_frame.pack(fill="both", expand=True)
         self.left_paned.add(wrapper, weight=0)
 

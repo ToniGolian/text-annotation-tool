@@ -381,7 +381,12 @@ class Controller(IController):
         self._current_search_model = self._search_model_manager.get_active_model(
             search_type=SearchType.MANUAL, document_model=document_model, options=search_options)
 
-        # todo how to deactivate manual search model?
+    def perform_deactivate_manual_search_model(self) -> None:
+        """
+        Deactivates the currently active manual search model.
+        """
+        self._search_model_manager.deactivate_active_manual_search_model()
+
     def perform_start_db_annotation(self, tag_type: str, caller_id: str) -> None:
         """
         Starts the annotation mode for a specific tag type.
@@ -411,7 +416,7 @@ class Controller(IController):
         and deactivating the currently active search model.
         """
         self._annotation_mode_model.set_manual_mode()
-        self._search_model_manager._deactivate_active_model()
+        self._search_model_manager.deactivate_active_search_model()
         self._current_search_model = None
 
     def perform_next_suggestion(self, tag_type: str) -> None:

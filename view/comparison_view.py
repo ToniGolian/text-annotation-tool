@@ -51,7 +51,7 @@ class ComparisonView(View, IComparisonView):
 
         # Search frame for text input
         self.search_frame = SearchFrame(
-            self.left_frame, controller=self._controller)
+            self.left_frame, controller=self._controller, root_view_id=self._view_id)
         self.search_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
         # Now pack left_frame itself in the paned_window

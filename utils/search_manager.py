@@ -1,5 +1,5 @@
+from typing import Dict
 from data_classes.search_Result import SearchResult
-from enums.search_types import SearchType
 from input_output.file_handler import FileHandler
 from model.interfaces import IDocumentModel
 from model.search_model import SearchModel
@@ -16,7 +16,7 @@ class SearchManager:
         # Characters to strip from words during search
         self._chars_to_strip = ".,;:!?()[]{}\"'`~@#$%^&*_-+=|\\/<>"  # todo load from settings
 
-    def calculate_db_model(self, tag_type: str, document_model: IDocumentModel) -> SearchModel:
+    def calculate_db_search_model(self, tag_type: str, document_model: IDocumentModel) -> SearchModel:
         """
         Calculates a new SearchModel for the specified tag type and search type.
 
@@ -110,4 +110,50 @@ class SearchManager:
             while char_pos < len(text) and text[char_pos].isspace():
                 char_pos += 1
 
+        return search_model
+
+    def calculate_manual_search_model(self, options: Dict, document_model: IDocumentModel) -> SearchModel:
+        """
+        Calculates a SearchModel based on manual search parameters.
+
+        This method scans the document text using the provided search term and options
+        for case sensitivity, whole-word matching, and regex interpretation.
+
+        Args:
+            options (Dict): Dictionary containing search options:
+                - "search_term" (str): The term to search for.
+                - "case_sensitive" (bool): Whether the search should be case-sensitive.
+                - "whole_word" (bool): Whether to match only whole words.
+                - "regex" (bool): Whether to interpret the search term as a regular expression.
+            document_model (IDocumentModel): The model containing the text to search.
+
+        Returns:
+            SearchModel: A populated SearchModel containing all matches.
+        """
+        import re
+
+        search_model = SearchModel()
+        text = document_model.get_text()
+        term = options.get("search_term", "")
+        if not term:
+            return search_model
+
+        flags = 0 if options.get("case_sensitive") else re.IGNORECASE
+        if options.get("regex"):
+            pattern = term
+        else:
+            pattern = re.escape(term)
+
+        if options.get("whole_word"):
+            pattern = r'\b' + pattern + r'\b'
+
+        for match in re.finditer(pattern, text, flags):
+            result = SearchResult(
+                term=match.group(),
+                start=match.start(),
+                end=match.end(),
+            )
+            search_model.add_result(result)
+
+        search_model.validate()
         return search_model

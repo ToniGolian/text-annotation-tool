@@ -2,10 +2,11 @@ from typing import Dict, Optional
 from enums.search_types import SearchType
 from model.interfaces import IDocumentModel
 from model.search_model import SearchModel
+from observer.interfaces import IPublisher
 from utils.search_manager import SearchManager
 
 
-class SearchModelManager:
+class SearchModelManager(IPublisher):
     """
     Central manager for search models.
 
@@ -21,6 +22,7 @@ class SearchModelManager:
         Args:
             search_manager (SearchManager): Component responsible for model calculation.
         """
+        super().__init__()
         self._search_manager = search_manager
         self._models: Dict[str, SearchModel] = {}
         self._active_key: Optional[str] = None
@@ -46,6 +48,9 @@ class SearchModelManager:
         if model is None or not model.is_valid():
             model = self._search_manager.calculate_model(
                 tag_type=tag_type, search_type=search_type, document_model=document_model)
+            # Register observers if this is a new model
+            for observer in self._observers:
+                model.add_observer(observer)
             self._models[tag_type] = model
 
         # Deactivate previous
@@ -85,3 +90,7 @@ class SearchModelManager:
         if self._active_key:
             self._models[self._active_key].deactivate()
             self._active_key = None
+
+    def get_state(self):
+        """Just to use the class as proxy for the observer interface."""
+        return super().get_state()

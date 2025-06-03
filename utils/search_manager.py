@@ -13,6 +13,8 @@ class SearchManager:
         """
         self._file_handler = file_handler
         self._common_suffixes = ["s"]  # todo load language dependet suffixes
+        # Characters to strip from words during search
+        self._chars_to_strip = ".,;:!?()[]{}\"'`~@#$%^&*_-+=|\\/<>"  # todo load from settings
 
     def calculate_model(self, tag_type: str, search_type: SearchType, document_model: IDocumentModel) -> SearchModel:
         """
@@ -36,9 +38,10 @@ class SearchManager:
             char_pos = 0  # current character position in the text
 
             while index < len(tokens):
-                word = tokens[index]
+                raw_token = tokens[index]
+                stripped_token = raw_token.rstrip(self._chars_to_strip)
+                word = stripped_token
                 current_dict = None
-                matched_word = word
 
                 # Try exact match or suffix-stripped variant
                 if word in db_dict:
@@ -48,50 +51,50 @@ class SearchManager:
                         if word.endswith(suffix):
                             stripped = word[:-len(suffix)]
                             if stripped in db_dict:
-                                matched_word = stripped
+                                word = stripped
                                 current_dict = db_dict[stripped]
                                 break
 
                 if not current_dict:
-                    # advance char_pos to the next token including exact spacing
-                    next_token_pos = text.find(tokens[index], char_pos)
-                    char_pos = next_token_pos + len(tokens[index])
-                    # skip over any spacing after token
+                    # advance char_pos to the next token including spacing
+                    next_token_pos = text.find(raw_token, char_pos)
+                    char_pos = next_token_pos + len(raw_token)
                     while char_pos < len(text) and text[char_pos].isspace():
                         char_pos += 1
                     index += 1
                     continue
 
-                match_tokens = [word]
+                match_tokens = [stripped_token]
                 match_data = current_dict
                 last_valid_data = match_data
                 end_index = index + 1
 
                 for j in range(index + 1, len(tokens)):
-                    next_token = tokens[j]
-                    candidate_tokens = tokens[index:j+1]
+                    next_raw = tokens[j]
+                    next_clean = next_raw.rstrip(self._chars_to_strip)
+                    candidate_tokens = [
+                        t.rstrip(self._chars_to_strip) for t in tokens[index:j+1]]
                     candidate = " ".join(candidate_tokens)
 
                     if candidate in match_data.get("children", {}):
-                        match_tokens.append(next_token)
+                        match_tokens.append(next_clean)
                         match_data = match_data["children"][candidate]
                         last_valid_data = match_data
                         end_index = j + 1
                     else:
-                        stripped_candidate = None
                         for suffix in self._common_suffixes:
                             if candidate.endswith(suffix):
                                 stripped_candidate = candidate[:-len(suffix)]
                                 if stripped_candidate in match_data.get("children", {}):
-                                    match_tokens.append(next_token)
+                                    match_tokens.append(next_clean)
                                     match_data = match_data["children"][stripped_candidate]
                                     last_valid_data = match_data
                                     end_index = j + 1
                                     break
-                        if not stripped_candidate:
+                        else:
                             break
 
-                matched_str = " ".join(tokens[index:end_index])
+                matched_str = " ".join(match_tokens)
                 start_char = text.find(matched_str, char_pos)
                 end_char = start_char + len(matched_str)
 

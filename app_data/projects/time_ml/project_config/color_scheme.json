@@ -14,7 +14,7 @@
         "background_color": "#f0f0f0"
     },
     "current_search": {
-        "font_color": "#ffffff",
-        "background_color": "#0000ff"
+        "font_color": "#000000",
+        "background_color": "#cc0c12"
     }
 }

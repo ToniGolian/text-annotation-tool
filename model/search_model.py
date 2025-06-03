@@ -134,19 +134,8 @@ class SearchModel(ISearchModel):
             "current_search_result": current_result,
         }
 
-    # getters
-    # def get_current_result(self) -> Optional[SearchResult]:
-    #     """
-    #     Retrieves the currently selected search result.
-
-    #     Returns:
-    #         Optional[SearchResult]: The current result or None if no valid selection exists.
-    #     """
-    #     if 0 <= self._current_index < len(self._results):
-    #         return self._results[self._current_index]
-    #     return None
-
     #!DEBUG REMOVE LATER
+
     def print_results(self) -> None:
         """
         Prints the current search results to the console for debugging purposes.

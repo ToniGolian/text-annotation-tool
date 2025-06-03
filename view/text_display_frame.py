@@ -1,5 +1,6 @@
 import tkinter as tk
 from controller.interfaces import IController
+from model.interfaces import IDocumentModel
 from observer.interfaces import IPublisher
 from view.interfaces import ITextDisplayFrame
 import uuid
@@ -172,6 +173,10 @@ class TextDisplayFrame(tk.Frame, ITextDisplayFrame):
         """
         if self._is_typing:
             # Skip updates while the user is typing to prevent overwrites
+            return
+
+        # Only react to updates from document models
+        if not isinstance(publisher, IDocumentModel):
             return
 
         self._internal_update = True  # Mark this as an internal update

@@ -386,8 +386,3 @@ class ISearchModel(IPublisher):
     def get_state(self) -> dict:
         """Returns the current state of the model, including selected result."""
         pass
-
-    @abstractmethod
-    def get_current_result(self) -> Optional[SearchResult]:
-        """Returns the currently selected result, or None if not available."""
-        pass

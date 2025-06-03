@@ -159,12 +159,10 @@ class Controller(IController):
                 publisher_instance = getattr(self, f"_{publisher_key}", None)
 
                 if publisher_instance is None:
-                    raise KeyError(
-                        f"Publisher instance '{publisher_key}' not found as an attribute in Controller "
-                        f"for observer {observer.__class__.__name__}")
-
-                # Register observer with the publisher
-                publisher_instance.add_observer(observer)
+                    print(
+                        f"INFO: Publisher '{publisher_key}' not yet available for observer '{observer.__class__.__name__}'")
+                else:  # Register observer with the publisher
+                    publisher_instance.add_observer(observer)
 
             # Add observer to finalize list if required
             if finalize:
@@ -408,9 +406,6 @@ class Controller(IController):
         """
         if not self._current_search_model:
             raise RuntimeError("No search model is currently active.")
-        if not self._search_model_manager.is_model_active(tag_type):
-            raise RuntimeError(
-                f"Search model for tag type '{tag_type}' is not currently active.")
         self._current_search_model.next_result()
 
     def perform_previous_suggestion(self, tag_type: str) -> None:
@@ -429,9 +424,6 @@ class Controller(IController):
         """
         if not self._current_search_model:
             raise RuntimeError("No search model is currently active.")
-        if not self._search_model_manager.is_model_active(tag_type):
-            raise RuntimeError(
-                f"Search model for tag type '{tag_type}' is not currently active.")
         self._current_search_model.previous_result()
 
     def mark_wrong_db_suggestion(self, tag_type: str) -> None:

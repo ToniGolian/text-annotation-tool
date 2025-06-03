@@ -366,23 +366,23 @@ class AnnotationTagFrame(tk.Frame):
         Ends the annotation process for the current tag type.
         """
         self._controller.perform_end_db_annotation(
-            tag_type=self._name, caller_id=self._root_view_id)
+            tag_type=self._name)
 
     def _button_pressed_previous_db_suggestion_button(self) -> None:
         """
         Handles the event when the previous suggestion button is pressed.
         Requests the controller to show the previous suggestion for the tag type.
         """
-        self._controller.perform_previous_db_suggestion(
-            tag_type=self._name, caller_id=self._root_view_id)
+        self._controller.perform_previous_suggestion(
+            tag_type=self._name)
 
     def _button_pressed_next_db_suggestion_button(self) -> None:
         """
         Handles the event when the next suggestion button is pressed.
         Requests the controller to show the next suggestion for the tag type.
         """
-        self._controller.perform_next_db_suggestion(
-            tag_type=self._name, caller_id=self._root_view_id)
+        self._controller.perform_next_suggestion(
+            tag_type=self._name)
 
     def _button_pressed_mark_wrong_db_suggestion(self) -> None:
         """
@@ -390,4 +390,4 @@ class AnnotationTagFrame(tk.Frame):
         Informs the controller that the current suggestion should not be shown again.
         """
         self._controller.perform_mark_wrong_db_suggestion(
-            tag_type=self._name, caller_id=self._root_view_id)
+            tag_type=self._name)

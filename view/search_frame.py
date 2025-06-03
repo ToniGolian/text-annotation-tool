@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from controller.interfaces import IController
+from view.tooltip import ToolTip
 
 
 class SearchFrame(tk.Frame):
@@ -30,13 +31,21 @@ class SearchFrame(tk.Frame):
         self._whole_word_var = tk.BooleanVar(value=False)
         self._regex_var = tk.BooleanVar(value=False)
 
-        # Checkbuttons with assigned variables
+        # Checkbox Buttons
         self._case_button = ttk.Checkbutton(
             self._button_frame, text="Aa", variable=self._case_var)
+        ToolTip(self._case_button,
+                text="Case-sensitive search.\nMatches only exact upper/lowercase.")
+
         self._whole_word_button = ttk.Checkbutton(
             self._button_frame, text="|ab|", variable=self._whole_word_var)
+        ToolTip(self._whole_word_button,
+                text="Whole word match.\nMatches only complete tokens.")
+
         self._regex_button = ttk.Checkbutton(
             self._button_frame, text="□*", variable=self._regex_var)
+        ToolTip(self._regex_button,
+                text="Regex mode.\nInterpret search term as a regular expression.")
 
         self._render()
 

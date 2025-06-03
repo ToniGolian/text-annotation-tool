@@ -48,15 +48,34 @@ class ToolTip:
 
     def show_tooltip(self, event=None):
         """
-        Displays the tooltip at the mouse position after a delay.
+        Displays the tooltip at a position near the cursor, adjusted to stay on-screen.
 
         Parameters:
         - event: The event that triggered this method. Defaults to None.
         """
         def create_tooltip_window():
-            x, y, _, _ = self.widget.bbox("insert")
-            x += self.widget.winfo_rootx() + 25
-            y += self.widget.winfo_rooty() + 20
+            # Get screen and cursor info
+            screen_width = self.widget.winfo_screenwidth()
+            screen_height = self.widget.winfo_screenheight()
+            mouse_x = self.widget.winfo_pointerx()
+            mouse_y = self.widget.winfo_pointery()
+
+            # Estimate tooltip size (rough, will be corrected later)
+            tooltip_width = 200
+            tooltip_height = 50
+
+            distance_from_cursor = 5  # Distance from cursor to tooltip
+            # Adjust position so the tooltip stays on-screen
+            if mouse_x + tooltip_width > screen_width:
+                x = mouse_x - tooltip_width - distance_from_cursor
+            else:
+                x = mouse_x + distance_from_cursor
+
+            if mouse_y + tooltip_height > screen_height:
+                y = mouse_y - tooltip_height - distance_from_cursor
+            else:
+                y = mouse_y + distance_from_cursor
+
             self.tw = tk.Toplevel(self.widget)
             self.tw.wm_overrideredirect(True)
             self.tw.wm_geometry(f"+{x}+{y}")

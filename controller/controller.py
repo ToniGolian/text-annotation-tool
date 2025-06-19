@@ -419,16 +419,9 @@ class Controller(IController):
         self._search_model_manager.deactivate_active_search_model()
         self._current_search_model = None
 
-    def perform_next_suggestion(self, tag_type: str) -> None:
+    def perform_next_suggestion(self) -> None:
         """
-        Advances to the next suggestion for the specified tag type.
-
-        This method moves the internal pointer of the currently active search model
-        to the next result. It applies to any search type and assumes that the model
-        for the given tag type is already active.
-
-        Args:
-            tag_type (str): The tag type associated with the active search model.
+        Moves to the next suggestion for the active search type.
 
         Raises:
             RuntimeError: If no model is active or the active model does not match the tag type.
@@ -437,16 +430,9 @@ class Controller(IController):
             raise RuntimeError("No search model is currently active.")
         self._current_search_model.next_result()
 
-    def perform_previous_suggestion(self, tag_type: str) -> None:
+    def perform_previous_suggestion(self) -> None:
         """
-        Moves to the previous suggestion for the specified tag type.
-
-        This method moves the internal pointer of the currently active search model
-        to the previous result. It applies to any search type and assumes that the model
-        for the given tag type is already active.
-
-        Args:
-            tag_type (str): The tag type associated with the active search model.
+        Moves to the previous suggestion for the active search type.
 
         Raises:
             RuntimeError: If no model is active or the active model does not match the tag type.

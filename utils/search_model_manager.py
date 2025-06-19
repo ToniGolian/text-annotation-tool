@@ -83,6 +83,7 @@ class SearchModelManager(IPublisher):
         self._active_key = key
         model.next_result()
 
+        print(f"DEBUG {model.get_state()=}")
         return model
 
     def add_model(self, tag_type: str, model: SearchModel) -> None:

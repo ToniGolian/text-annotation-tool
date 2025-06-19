@@ -373,16 +373,14 @@ class AnnotationTagFrame(tk.Frame):
         Handles the event when the previous suggestion button is pressed.
         Requests the controller to show the previous suggestion for the tag type.
         """
-        self._controller.perform_previous_suggestion(
-            tag_type=self._name)
+        self._controller.perform_previous_suggestion()
 
     def _button_pressed_next_db_suggestion_button(self) -> None:
         """
         Handles the event when the next suggestion button is pressed.
         Requests the controller to show the next suggestion for the tag type.
         """
-        self._controller.perform_next_suggestion(
-            tag_type=self._name)
+        self._controller.perform_next_suggestion()
 
     def _button_pressed_mark_wrong_db_suggestion(self) -> None:
         """

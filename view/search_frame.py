@@ -47,6 +47,18 @@ class SearchFrame(tk.Frame):
         ToolTip(self._regex_button,
                 text="Regex mode.\nInterpret search term as a regular expression.")
 
+        self._next_prev_frame = ttk.Frame(self)
+        self._prev_button = ttk.Button(
+            self._next_prev_frame, text="<", command=lambda: self._controller.perform_previous_search(self._root_view_id))
+        self._next_button = ttk.Button(
+            self._next_prev_frame, text=">", command=lambda: self._controller.perform_next_search(self._root_view_id))
+        self._prev_button.pack(side=tk.LEFT, padx=2)
+        self._next_button.pack(side=tk.LEFT, padx=2)
+        ToolTip(self._prev_button, text="Go to previous search result.")
+        ToolTip(self._next_button, text="Go to next search result.")
+        self._next_prev_frame.grid(
+            row=0, column=3, padx=(2, 5), pady=5, sticky="e")
+
         self._render()
 
     def _render(self) -> None:

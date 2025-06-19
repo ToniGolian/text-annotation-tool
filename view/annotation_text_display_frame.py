@@ -37,7 +37,7 @@ class AnnotationTextDisplayFrame(TextDisplayFrame):
                 - int: The start position of the highlight in the text.
                 - int: The end position of the highlight in the text.
         """
-        for color, start, end in highlight_data:
+        for (color, start, end) in highlight_data:
             tag_name = f"highlight_{color}"
             self.text_widget.tag_configure(tag_name, background=color)
             start_index = f"1.0+{start}c"

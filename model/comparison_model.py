@@ -2,7 +2,6 @@ from typing import List, Tuple
 from typing import Dict, List, Tuple, Union
 from model.interfaces import IComparisonModel, IDocumentModel, ITagModel
 from observer.interfaces import IObserver
-from view.comparison_text_displays import ComparisonTextDisplays
 
 
 class ComparisonModel(IComparisonModel):

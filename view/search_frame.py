@@ -49,9 +49,9 @@ class SearchFrame(tk.Frame):
 
         self._next_prev_frame = ttk.Frame(self)
         self._prev_button = ttk.Button(
-            self._next_prev_frame, text="<", command=lambda: self._controller.perform_previous_search(self._root_view_id))
+            self._next_prev_frame, text="<", command=lambda: self._controller.perform_previous_suggestion())
         self._next_button = ttk.Button(
-            self._next_prev_frame, text=">", command=lambda: self._controller.perform_next_search(self._root_view_id))
+            self._next_prev_frame, text=">", command=lambda: self._controller.perform_next_suggestion())
         self._prev_button.pack(side=tk.LEFT, padx=2)
         self._next_button.pack(side=tk.LEFT, padx=2)
         ToolTip(self._prev_button, text="Go to previous search result.")

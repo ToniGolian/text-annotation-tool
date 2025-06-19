@@ -1108,12 +1108,14 @@ class Controller(IController):
                 - The second element (int) is the start position in characters.
                 - The third element (int) is the end position in characters.
         """
+
         if isinstance(target_model, IDocumentModel):
             color_scheme = self._configuration_model.get_color_scheme()["tags"]
             highlight_data = self._tag_manager.get_highlight_data(target_model)
             return [
                 (color_scheme[tag], start, end) for tag, start, end in highlight_data
             ]
+        # todo add search highlights
 
         elif isinstance(target_model, ISearchModel):
             current_search_color = self._configuration_model.get_color_scheme()[
@@ -1129,6 +1131,17 @@ class Controller(IController):
                     "search"]["background_color"]
                 highlight_data += [(search_color, result.start, result.end)
                                    for result in search_state.get("results", []) if result != current_search_result]
+            if self._active_view_id == "annotation":
+                document_model = self._annotation_document_model
+            if self._active_view_id == "comparison":
+                document_model = self._comparison_model.get_raw_text_model()
+            color_scheme = self._configuration_model.get_color_scheme()["tags"]
+            tag_data = self._tag_manager.get_highlight_data(
+                document_model)
+            tag_highlights = [
+                (color_scheme[tag], start, end) for tag, start, end in tag_data
+            ]
+            highlight_data += tag_highlights
             return highlight_data
 
         return []

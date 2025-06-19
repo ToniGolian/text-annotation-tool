@@ -27,6 +27,7 @@ class SearchModelManager(IPublisher):
         self._manual_models: Dict[str, SearchModel] = {}
         self._db_models: Dict[str, SearchModel] = {}
         self._active_key: Optional[str] = None
+        self._current_search_config = None
 
     def get_active_model(self, tag_type: str = None, search_type: SearchType = SearchType.DB, document_model: IDocumentModel = None, options: Optional[Dict] = None) -> SearchModel:
         """
@@ -49,6 +50,14 @@ class SearchModelManager(IPublisher):
         Returns:
             SearchModel: A valid, activated SearchModel instance.
         """
+        # Store the current search configuration to restore later if needed
+        self._current_search_config = {
+            "tag_type": tag_type,
+            "search_type": search_type,
+            "document_model": document_model,
+            "options": options,
+        }
+
         if search_type == SearchType.MANUAL:
             search_term = options.get("search_term", "")
             model = self._manual_models.get(search_term)
@@ -100,7 +109,9 @@ class SearchModelManager(IPublisher):
         """
         Marks all models as invalid, triggering recalculation on next access.
         """
-        for model in self._models.values():
+        for model in self._manual_models.values():
+            model.invalidate()
+        for model in self._db_models.values():
             model.invalidate()
 
     def deactivate_active_search_model(self) -> None:
@@ -143,3 +154,26 @@ class SearchModelManager(IPublisher):
             model.reset()
         self._active_key = None
         self.notify_observers()
+
+    def update_model(self, model: SearchModel) -> SearchModel:
+        """
+        Recomputes the active model using the stored configuration and restores its current index.
+
+        Args:
+            model (SearchModel): The model whose index state should be preserved.
+
+        Returns:
+            SearchModel: The updated model with restored index.
+        """
+        current_index = model.get_current_index()
+        config = self._current_search_config
+
+        updated_model = self.get_active_model(
+            tag_type=config["tag_type"],
+            search_type=config["search_type"],
+            document_model=config["document_model"],
+            options=config["options"],
+        )
+
+        updated_model.set_current_index(current_index)
+        return updated_model

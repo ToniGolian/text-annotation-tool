@@ -143,3 +143,25 @@ class SearchModel(ISearchModel):
         self._current_index = -1
         self._valid = True
         self._is_active = False
+
+    def get_current_index(self) -> int:
+        """
+        Returns the current index of the selected search result.
+
+        Returns:
+            int: The current index, or -1 if no result is selected.
+        """
+        return self._current_index
+
+    def set_current_index(self, index: int) -> None:
+        """
+        Sets the current index to a specific value and notifies observers.
+
+        Args:
+            index (int): The new index to set.
+        """
+        if 0 <= index < len(self._results):
+            self._current_index = index
+            self.notify_observers()
+        else:
+            raise IndexError("Index out of bounds for search results.")

@@ -358,6 +358,24 @@ class Controller(IController):
         if view_id == "comparison":
             self._comparison_view = view
 
+    # decorators
+    def invalidate_search_models(method):
+        """Decorator to invalidate search models before executing a method.
+        This decorator ensures that all search models are invalidated before the method is executed,
+        and the current search model is updated afterwards.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            result = method(self, *args, **kwargs)
+            self._search_model_manager.invalidate_all()
+            self._current_search_model = self._search_model_manager.update_model(
+                self._current_search_model)
+            # Jump to next search result if the calling method is perform_add_tag
+            if method.__name__ == "perform_add_tag":
+                self.perform_next_suggestion()
+            return result
+        return wrapper
+
     # Perform methods
     def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:
         """
@@ -565,6 +583,7 @@ class Controller(IController):
         target_model = self._document_source_mapping[self._active_view_id]
         self._tag_manager.set_meta_tags(tag_strings, target_model)
 
+    @invalidate_search_models
     def perform_add_tag(self, tag_data: Dict, caller_id: str) -> None:
         """
         Creates and executes an AddTagCommand to add a new tag to the tag manager.
@@ -592,6 +611,7 @@ class Controller(IController):
             self._tag_manager, tag_data, target_model=target_model, caller_id=caller_id)
         self._execute_command(command=command, caller_id=caller_id)
 
+    @invalidate_search_models
     def perform_edit_tag(self, tag_id: str, tag_data: Dict, caller_id: str) -> None:
         """
         Creates and executes an EditTagCommand to modify an existing tag in the tag manager.
@@ -609,6 +629,7 @@ class Controller(IController):
             self._tag_manager, tag_uuid, tag_data, target_model)
         self._execute_command(command=command, caller_id=caller_id)
 
+    @invalidate_search_models
     def perform_delete_tag(self, tag_id: str, caller_id: str) -> None:
         """
         Creates and executes a DeleteTagCommand to remove a tag from the tag manager.

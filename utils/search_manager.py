@@ -1,3 +1,4 @@
+import re
 from typing import Dict
 from data_classes.search_Result import SearchResult
 from input_output.file_handler import FileHandler
@@ -37,8 +38,15 @@ class SearchManager:
 
         while index < len(tokens):
             raw_token = tokens[index]
-            stripped_token = raw_token.rstrip(self._chars_to_strip)
-            word = stripped_token
+
+            # Strip tag-wrapped tokens only if they end with a closing tag
+            stripped_token = raw_token
+            if re.search(r"</[^>]+>$", raw_token):
+                stripped_token = re.sub(r'^.*?>\s*|</[^>]+>$', '', raw_token)
+
+            # Remove trailing punctuation characters
+            word = stripped_token.rstrip(self._chars_to_strip)
+
             current_dict = None
 
             # Try exact match or suffix-stripped variant
@@ -154,6 +162,5 @@ class SearchManager:
                 end=match.end(),
             )
             search_model.add_result(result)
-
         search_model.validate()
         return search_model

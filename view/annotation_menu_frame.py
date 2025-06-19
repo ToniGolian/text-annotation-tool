@@ -121,9 +121,7 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
 
         if "suggestions" in state:
             for tag_frame in self._tag_frames:
-                print(f"DEBUG {tag_frame.get_name()=}")
                 suggestions = state["suggestions"][tag_frame.get_name()]
-                print(f"DEBUG {suggestions=}")
                 tag_frame.set_attributes(suggestions)
 
         if "tags" in state:

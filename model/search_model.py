@@ -132,15 +132,14 @@ class SearchModel(ISearchModel):
         )
         return {
             "current_search_result": current_result,
+            "results": self._results
         }
 
-    #!DEBUG REMOVE LATER
-
-    def print_results(self) -> None:
+    def reset(self) -> None:
         """
-        Prints the current search results to the console for debugging purposes.
+        Resets the search model to its initial state, clearing all results and selection.
         """
-        print("Search Results:")
-        for i, result in enumerate(self._results):
-            print(f"{i}: {result.term} ({result.start}-{result.end})")
-            print(f"Display: {result.display}, Output: {result.output}")
+        self._results.clear()
+        self._current_index = -1
+        self._valid = True
+        self._is_active = False

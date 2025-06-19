@@ -12,11 +12,9 @@ class SelectionModel(IPublisher):
         Initializes the SelectionModel with no selected text or position.
         """
         super().__init__()  # Initializes _data_observers from the base class
-        self._selected_data: Dict[str, Union[str, int]] = {
-            "text": "",
-            "position": -1,  # -1 indicates no position is set
-            "suggestions": {}
-        }
+        self._selected_text = ""
+        self._position = -1
+        self._suggestions = {}
 
     def set_selected_text_data(self, data: Dict[str, Union[str, int]]) -> None:
         """
@@ -24,10 +22,13 @@ class SelectionModel(IPublisher):
 
         Args:
             data (Dict[str, Union[str, int]]): A dictionary containing:
-                - "text" (str): The newly selected text.
+                - "selected_text" (str): The newly selected text.
                 - "position" (int): The starting position of the selected text.
+                - "suggestions" (Dict[str, str]): A dictionary of suggestion terms and their corresponding metadata.
         """
-        self._selected_data = data
+        self._selected_text = data.get("selected_text", "")
+        self._position = data.get("position", -1)
+        self._suggestions = data.get("suggestions", {})
         self.notify_observers()
 
     def get_state(self) -> Dict[str, Union[str, int]]:
@@ -37,4 +38,8 @@ class SelectionModel(IPublisher):
         Returns:
             Dict[str, Union[str, int]]: A dictionary containing the selected text and its position.
         """
-        return self._selected_data
+        return {
+            "selected_text": self._selected_text,
+            "position": self._position,
+            "suggestions": self._suggestions
+        }

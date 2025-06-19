@@ -365,8 +365,7 @@ class AnnotationTagFrame(tk.Frame):
         Handles the event when the end annotation button is pressed.
         Ends the annotation process for the current tag type.
         """
-        self._controller.perform_end_db_annotation(
-            tag_type=self._name)
+        self._controller.perform_end_db_annotation()
 
     def _button_pressed_previous_db_suggestion_button(self) -> None:
         """

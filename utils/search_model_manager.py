@@ -81,9 +81,7 @@ class SearchModelManager(IPublisher):
         # Activate current
         model.activate()
         self._active_key = key
-        model.next_result()
 
-        print(f"DEBUG {model.get_state()=}")
         return model
 
     def add_model(self, tag_type: str, model: SearchModel) -> None:
@@ -135,3 +133,13 @@ class SearchModelManager(IPublisher):
     def get_state(self):
         """Just to use the class as proxy for the observer interface."""
         return super().get_state()
+
+    def reset_models(self) -> None:
+        """
+        Resets all models, clearing the internal dictionaries and deactivating any active model.
+        """
+        self._manual_models.clear()
+        for model in self._db_models.values():
+            model.reset()
+        self._active_key = None
+        self.notify_observers()

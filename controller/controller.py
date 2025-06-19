@@ -3,6 +3,7 @@ from commands.add_tag_command import AddTagCommand
 from commands.adopt_annotation_command import AdoptAnnotationCommand
 from commands.delete_tag_command import DeleteTagCommand
 from commands.edit_tag_command import EditTagCommand
+from data_classes.search_Result import SearchResult
 from enums.failure_reasons import FailureReason
 from controller.interfaces import IController
 from commands.interfaces import ICommand
@@ -375,11 +376,16 @@ class Controller(IController):
             caller_id (str): The identifier of the view or component initiating the search,
                              used to select the appropriate document model.
         """
+        # Load the current search model
         self._annotation_mode_model.set_manual_mode()
         document_model = self._comparison_model.get_raw_text_model(
         ) if caller_id == "comparison" else self._document_source_mapping[caller_id]
         self._current_search_model = self._search_model_manager.get_active_model(
             search_type=SearchType.MANUAL, document_model=document_model, options=search_options)
+        self._current_search_model.next_result()
+
+        # Update the selection model with the current search result
+        self._current_search_to_selection()
 
     def perform_deactivate_manual_search_model(self) -> None:
         """
@@ -407,6 +413,24 @@ class Controller(IController):
             search_type=SearchType.DB,
             document_model=document_model
         )
+        self._current_search_model.next_result()
+        # Update the selection model with the current search result
+        self._current_search_to_selection()
+
+    def _current_search_to_selection(self) -> None:
+        """
+        Updates the selection model with the current search result.
+
+        Args:
+            search_model (ISearchModel): The search model containing the current search result.
+        """
+        search_result = self._current_search_model.get_state().get(
+            "current_search_result", None)
+        current_selection = {
+            "selected_text": search_result.term if search_result else "",
+            "position": search_result.start if search_result else -1
+        }
+        self.perform_text_selected(current_selection)
 
     def perform_end_db_annotation(self) -> None:
         """
@@ -429,6 +453,7 @@ class Controller(IController):
         if not self._current_search_model:
             raise RuntimeError("No search model is currently active.")
         self._current_search_model.next_result()
+        self._current_search_to_selection()
 
     def perform_previous_suggestion(self) -> None:
         """
@@ -440,6 +465,7 @@ class Controller(IController):
         if not self._current_search_model:
             raise RuntimeError("No search model is currently active.")
         self._current_search_model.previous_result()
+        self._current_search_to_selection()
 
     def mark_wrong_db_suggestion(self, tag_type: str) -> None:
         """
@@ -615,7 +641,6 @@ class Controller(IController):
             selection_data (Dict): A dictionary containing:
                 - "selected_text" (str): The selected text.
                 - "position" (int): The starting position of the selected text in the document.
-                - "suggestions" (Dict): A dictionary containing ID and attribute suggestions for relevant tag types.
 
         Updates:
             - The `selected_text`, `selected_position`, and `suggestions` attributes in the selection model.

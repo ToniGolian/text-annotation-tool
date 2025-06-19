@@ -7,11 +7,12 @@
         "ALINK": "#228b22",
         "SLINK": "#ff6347",
         "SIGNAL": "#ff1493",
-        "CONFIDENCE": "#8b0000"
+        "CONFIDENCE": "#8b0000",
+        "PLACE": "#1e90ff"
     },
     "search": {
         "font_color": "#000000",
-        "background_color": "#f0f0f0"
+        "background_color": "#ccf2f2"
     },
     "current_search": {
         "font_color": "#000000",

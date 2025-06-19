@@ -41,6 +41,7 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         self._root_view_id = root_view_id
         # Flag to indicate if initial layout is already rendered
         self._layout_rendered = False
+        self._observers_registered = False
 
     def _render(self) -> None:
         """
@@ -128,6 +129,7 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
             publisher (IPublisher): The publisher that triggered the update.
         """
         state = self._controller.get_observer_state(self, publisher)
+        print(f"DEBUG {state=}")
 
         if "template_groups" in state:
             self._template_groups = state["template_groups"]
@@ -152,9 +154,21 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
                 tag_frame.set_idref_list(idref_list)
 
         if "display" in state:
-            raise NotImplementedError()
+            tag_type = state.get("tag_type")
+            if tag_type in self._tag_frames:
+                tag_frame = self._tag_frames[tag_type]
+                tag_frame.set_display(state["display"])
+            else:
+                raise ValueError(
+                    f"Tag type '{tag_type}' not found in tag frames.")
         if "output" in state:
-            raise NotImplementedError()
+            tag_type = state.get("tag_type")
+            if tag_type in self._tag_frames:
+                tag_frame = self._tag_frames[tag_type]
+                tag_frame.set_output(state["output"])
+            else:
+                raise ValueError(
+                    f"Tag type '{tag_type}' not found in tag frames.")
 
     def finalize_view(self) -> None:
         """
@@ -164,3 +178,12 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         state = self._controller.get_observer_state(self)
         self._template_groups = state["template_groups"]
         self._render()
+
+    def finalize_observers(self) -> None:
+        """
+        Finalizes the observer registration process.
+        This method should be called once to ensure observers are registered correctly.
+        """
+        self._controller.add_observer(self)
+        self._observers_registered = True
+        print("DEBUG: AnnotationMenuFrame observers registered.")

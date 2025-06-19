@@ -34,6 +34,8 @@ class AnnotationTagFrame(tk.Frame):
         # dict of attribute widgets to chose references to other tags
         self._idref_attributes = {}
         self._selected_text_entry = None  # Entry for selected text
+        self._output_widget = None
+        self._display_widget = None
         self._tooltips = []
         self._render()
 
@@ -41,13 +43,10 @@ class AnnotationTagFrame(tk.Frame):
         """
         Renders widgets for the tag based on the template, adding labels and entry or combobox widgets for each active attribute.
         """
-        # Configure grid columns: column 0 to fit contents, column 1 to expand
-        self.grid_columnconfigure(0, weight=0)  # Left column for labels
-        # Right column for entry widgets
+        self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure(1, weight=1)
 
         row = 0
-        # Display header label
         self._name = self._template.get("type", "Tag")
         header_label = tk.Label(
             self, text=f"{self._name[0].upper()+self._name[1:]}-Tag", font=("Helvetica", 16))
@@ -57,7 +56,6 @@ class AnnotationTagFrame(tk.Frame):
 
         is_db = self._template.get("db", False)
         if is_db:
-            # Frame for Start/End annotation buttons
             annotation_control_frame = tk.Frame(self)
             annotation_control_frame.grid(
                 row=1, column=1, columnspan=2, pady=5, sticky="ew")
@@ -86,7 +84,6 @@ class AnnotationTagFrame(tk.Frame):
                 f"Ends the {self._name} annotation mode. After ending, it's still possible to add {self._name} tags manually."
             ))
 
-            # Frame for Previous/Next navigation buttons
             navigation_control_frame = tk.Frame(self)
             navigation_control_frame.grid(
                 row=2, column=1, columnspan=2, pady=5, sticky="ew")
@@ -114,6 +111,7 @@ class AnnotationTagFrame(tk.Frame):
                 next_suggestion_button,
                 f"Next {self._name} suggestion."
             ))
+
             wrong_suggestion_button = ttk.Button(
                 self,
                 text="Mark wrong suggestion",
@@ -136,53 +134,45 @@ class AnnotationTagFrame(tk.Frame):
         self._selected_text_entry.grid(
             row=row, column=1, sticky="ew", padx=5, pady=5)
         row += 1
-        # Iterate over each attribute in the template
+
         for attribute_name, attribute_data in self._template["attributes"].items():
-            # Create label for the attribute
             label = tk.Label(self, text=attribute_name)
             label.grid(row=row, column=0, sticky="w", padx=(15, 5), pady=5)
 
             attribute_type = attribute_data["type"].upper()
-            # Choose widget based on the type
-            if attribute_type.upper() in ["CDATA", "ID", "UNION"]:
-                # Entry widget for CDATA type
+
+            if attribute_type in ["CDATA", "ID", "UNION"]:
                 widget = tk.Entry(self)
-
+            elif attribute_type == "OUTPUT":
+                widget = tk.Entry(self, state="disabled")
+                self._output_widget = widget
+            elif attribute_type == "DISPLAY":
+                widget = ttk.Combobox(self, values=[""])
+                self._display_widget = widget
             else:
-                # Combobox for other types
-                allowed_values = [""]
-                if "allowedValues" in attribute_data:
-                    allowed_values = [""] + attribute_data["allowedValues"]
+                allowed_values = [""] + attribute_data.get("allowedValues", [])
                 widget = ttk.Combobox(self, values=allowed_values)
-                widget.set(allowed_values[0])
+                widget.set(attribute_data.get(
+                    "default", allowed_values[0] if allowed_values else ""))
 
-                if "default" in attribute_data:
-                    default_value = attribute_data["default"]
-                    if default_value and default_value in allowed_values:
-                        widget.set(default_value)
-
-            # Place the widget in the grid
             widget.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
 
-            # Rename attribute, if id
             if attribute_type == "ID":
                 attribute_name = "id"
 
-            # Store reference to the widget
             self._data_widgets[attribute_name] = widget
-            if attribute_type.upper() == "IDREF":
+            if attribute_type == "IDREF":
                 self._idref_attributes[attribute_name] = widget
                 self._idref_widgets.append(widget)
+
             row += 1
 
-        # Add "Add Tag" button
         add_tag_button = ttk.Button(
             self, text="Add Tag", command=self._button_pressed_add_tag)
         add_tag_button.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
         row += 1
 
         if not is_db:
-            # Add label and combobox for "ID to Edit"
             edit_label = tk.Label(self, text="ID to Edit")
             edit_label.grid(row=row, column=0, sticky="w",
                             padx=(15, 5), pady=5)
@@ -193,17 +183,14 @@ class AnnotationTagFrame(tk.Frame):
                 row=row, column=1, sticky="ew", padx=5, pady=5)
             row += 1
 
-            # Add "Edit Tag" button
             edit_tag_button = ttk.Button(
                 self, text="Edit Tag", command=self._button_pressed_edit_tag)
             edit_tag_button.grid(
                 row=row, column=1, sticky="ew", padx=5, pady=5)
             row += 1
 
-        # Add label and combobox for "ID to Delete"
         delete_label = tk.Label(self, text="ID to Delete")
-        delete_label.grid(row=row, column=0, sticky="w",
-                          padx=(15, 5), pady=5)
+        delete_label.grid(row=row, column=0, sticky="w", padx=(15, 5), pady=5)
 
         self.delete_id_combobox = ttk.Combobox(self, values=[""])
         self._idref_widgets.append(self.delete_id_combobox)
@@ -211,11 +198,9 @@ class AnnotationTagFrame(tk.Frame):
             row=row, column=1, sticky="ew", padx=5, pady=5)
         row += 1
 
-        # Add "Delete Tag" button
         delete_tag_button = ttk.Button(
             self, text="Delete Tag", command=self._button_pressed_delete_tag)
-        delete_tag_button.grid(
-            row=row, column=1, sticky="ew", padx=5, pady=5)
+        delete_tag_button.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
 
     def set_selected_text(self, text: str) -> None:
         """
@@ -337,6 +322,35 @@ class AnnotationTagFrame(tk.Frame):
             widget = self._data_widgets.get(attribute_name, None)
             if widget:
                 widget.insert(0, attribute_value)
+
+    def set_display(self, display: str) -> None:
+        """
+        Sets the display value for the tag type.
+
+        This method updates the display combobox with the provided display value,
+        ensuring that it reflects the current state of the tag type.
+
+        Args:
+            display (str): The display value to set for the tag type.
+        """
+        if self._display_widget:
+            self._display_widget.set(display)
+
+    def set_output(self, output: str) -> None:
+        """
+        Sets the output value for the tag type.
+
+        This method updates the output entry with the provided output value,
+        ensuring that it reflects the current state of the tag type.
+
+        Args:
+            output (str): The output value to set for the tag type.
+        """
+        if self._output_widget:
+            self._output_widget.config(state="normal")
+            self._output_widget.delete(0, tk.END)
+            self._output_widget.insert(0, output)
+            self._output_widget.config(state="disabled")
 
     def set_idref_list(self, idrefs: List[str]) -> None:
         """

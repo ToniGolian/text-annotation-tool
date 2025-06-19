@@ -100,6 +100,20 @@
                 ]
             }
         },
+        "SearchModelManager": {
+            "finalize": false,
+            "source_keys": {
+                "search_model_manager": []
+            }
+        },
+        "SearchModel": {
+            "finalize": false,
+            "source_keys": {
+                "search_model": [
+                    "current_search_result"
+                ]
+            }
+        },
         "ConfigurationModel": {
             "finalize": true,
             "source_keys": {

@@ -6,8 +6,11 @@
         "pid": {
             "type": "ID"
         },
+        "place type": {
+            "type": "DISPLAY"
+        },
         "nnid": {
-            "type": "string"
+            "type": "OUTPUT"
         }
     }
 }

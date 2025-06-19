@@ -209,12 +209,8 @@ class Controller(IController):
         """
         Retrieves the updated state information for a specific observer and publisher.
 
-        This method determines the relevant data sources for the observer. If a publisher is provided,
-        it serves as the primary data source. If the publisher is not static, it is used directly in
-        place of a dynamically mapped source. Otherwise, the sources are derived from the observer's
-        configuration mapping.
-
-        The state information is then extracted based on the specified source keys.
+        If a required data source (publisher) is not yet available, it is ignored temporarily,
+        but the subscription remains valid and will be re-evaluated on the next update.
 
         Args:
             observer (IObserver): The observer requesting updated state information.
@@ -224,61 +220,37 @@ class Controller(IController):
             dict: The computed state information specific to the requesting observer.
 
         Raises:
-            KeyError: If the provided observer or publisher is not registered in the mapping.
+            KeyError: If the provided observer is not registered.
         """
-        # Retrieve the observer's configuration mapping
         mapping = self._get_observer_config(observer, publisher)
 
+        state = {}
+
         if publisher:
-            # Extract source keys from mapping
             source_keys = mapping["source_keys"]
 
-            if observer.is_static_observer():
-                # Static publisher: Use all sources from the mapping (retrieved with getattr)
-                sources = [
-                    getattr(self, f"_{source_name}", None)
-                    for source_name in source_keys
-                ]
-            else:
-                # Dynamic publisher: Use it directly for its mapped source_name, others from getattr
-                sources = [
-                    publisher if source_name in mapping["source_keys"] else getattr(
-                        self, f"_{source_name}", None)
-                    for source_name in source_keys
-                ]
+            for source_name, keys in source_keys.items():
+                if observer.is_static_observer() or source_name not in mapping["source_keys"]:
+                    source = getattr(self, f"_{source_name}", None)
+                else:
+                    source = publisher
 
-            # Filter out invalid sources (None values)
-            sources = [source for source in sources if source is not None]
+                if source is not None:
+                    for key in keys:
+                        value = source.get_state().get(key)
+                        if value is not None:
+                            state[key] = value
 
         else:
-            # No publisher: Merge source keys from all registered publishers for this observer
-            merged_source_keys = {}
+            # Combine all keys from all publishers
             for publisher_mapping in mapping.values():
                 for source_name, keys in publisher_mapping["source_keys"].items():
-                    if source_name not in merged_source_keys:
-                        merged_source_keys[source_name] = set()
-                    merged_source_keys[source_name].update(keys)
-
-            # Convert merged sets back to lists
-            source_keys = {
-                source_name: list(keys) for source_name, keys in merged_source_keys.items()
-            }
-
-            # Retrieve sources dynamically based on the source names (only if they are not None)
-            sources = [
-                getattr(self, f"_{source_name}", None)
-                for source_name in source_keys
-            ]
-            sources = [source for source in sources if source is not None]
-
-        # Collect state data from all valid sources
-        state = {
-            key: value
-            for source, keys in zip(sources, source_keys.values())
-            if source is not None  # Ensure source is valid
-            for key, value in source.get_state().items()
-            if key in keys
-        }
+                    source = getattr(self, f"_{source_name}", None)
+                    if source is not None:
+                        for key in keys:
+                            value = source.get_state().get(key)
+                            if value is not None:
+                                state[key] = value
 
         return state
 

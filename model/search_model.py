@@ -125,6 +125,7 @@ class SearchModel(ISearchModel):
                 - 'current_result' (Optional[SearchResult]): The selected result or None.
                 - 'results' (List[SearchResult]): The full list of results (can be empty).
         """
+        print(f"DEBUG {self._observers=}")
         current_result = (
             self._results[self._current_index]
             if 0 <= self._current_index < len(self._results)

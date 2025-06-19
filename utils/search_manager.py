@@ -110,6 +110,7 @@ class SearchManager:
                 end=end_char,
                 display=last_valid_data.get("display"),
                 output=last_valid_data.get("output"),
+                tag_type=tag_type,
             )
             search_model.add_result(result)
 

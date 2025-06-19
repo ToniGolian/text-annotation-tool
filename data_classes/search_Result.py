@@ -17,9 +17,11 @@ class SearchResult:
         end (int): End character index (exclusive) of the match in the text.
         display (Optional[List[str]]): Display alternatives for UI purposes.
         output (Optional[List[str]]): Output alternatives for annotation tagging.
+        tag_type (str): The type of tag associated with this search result.
     """
     term: str
     start: int
     end: int
     display: Optional[List[str]] = field(default=None)
     output: Optional[List[str]] = field(default=None)
+    tag_type: str = field(default="")

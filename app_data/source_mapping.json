@@ -27,7 +27,7 @@
         "SearchModel": {
             "finalize": false,
             "source_keys": {
-                "search_model": [
+                "current_search_model": [
                     "current_search_result"
                 ]
             }
@@ -109,7 +109,7 @@
         "SearchModel": {
             "finalize": false,
             "source_keys": {
-                "search_model": [
+                "current_search_model": [
                     "current_search_result"
                 ]
             }

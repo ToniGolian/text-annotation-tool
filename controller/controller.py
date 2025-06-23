@@ -230,14 +230,24 @@ class Controller(IController):
             source_keys = mapping["source_keys"]
 
             for source_name, keys in source_keys.items():
+                print_flag = source_name == "search_model" or source_name == "current_search_model"
+
                 if observer.is_static_observer() or source_name not in mapping["source_keys"]:
                     source = getattr(self, f"_{source_name}", None)
                 else:
                     source = publisher
 
+                if print_flag:
+                    print(f"DEBUG source:{source.__class__.__name__}")
+                    if not source:
+                        print(f"DEBUG source is None for {source_name}")
+
                 if source is not None:
                     for key in keys:
                         value = source.get_state().get(key)
+                        if publisher.__class__.__name__ == "SearchModel":
+                            print(f"DEBUG {key=}")
+                            print(f"DEBUG {value=}")
                         if value is not None:
                             state[key] = value
 

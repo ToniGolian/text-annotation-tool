@@ -129,7 +129,6 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
             publisher (IPublisher): The publisher that triggered the update.
         """
         state = self._controller.get_observer_state(self, publisher)
-        print(f"DEBUG {state=}")
 
         if "template_groups" in state:
             self._template_groups = state["template_groups"]
@@ -186,4 +185,3 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         """
         self._controller.add_observer(self)
         self._observers_registered = True
-        print("DEBUG: AnnotationMenuFrame observers registered.")

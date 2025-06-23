@@ -372,6 +372,7 @@ class Controller(IController):
         return wrapper
 
     # Perform methods
+    @with_highlight_update
     def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:
         """
         Initiates a manual search with the specified parameters.
@@ -400,14 +401,15 @@ class Controller(IController):
         # Update the selection model with the current search result
         self._current_search_to_selection()
 
-    def perform_deactivate_manual_search_model(self) -> None:
-        """
-        Deactivates the currently active manual search model.
-        """
-        self._search_model_manager.deactivate_active_manual_search_model()
+    # @with_highlight_update
+    # def perform_deactivate_manual_search_model(self) -> None:
+    #     """
+    #     Deactivates the currently active manual search model.
+    #     """
+    #     self._search_model_manager.deactivate_active_manual_search_model()
 
     @with_highlight_update
-    def perform_start_db_annotation(self, tag_type: str, caller_id: str) -> None:
+    def perform_start_db_search(self, tag_type: str, caller_id: str) -> None:
         """
         Starts the annotation mode for a specific tag type.
 
@@ -427,7 +429,6 @@ class Controller(IController):
             search_type=SearchType.DB,
             document_model=document_model
         )
-        # self._update_highlight_model()
         self._current_search_model.next_result()
         # Update the selection model with the current search result
         self._current_search_to_selection()
@@ -447,8 +448,7 @@ class Controller(IController):
         }
         self.perform_text_selected(current_selection)
 
-    @with_highlight_update
-    def perform_end_db_annotation(self) -> None:
+    def perform_end_search(self) -> None:
         """
         Ends the annotation mode for a specific tag type.
 
@@ -457,6 +457,8 @@ class Controller(IController):
         """
         self._annotation_mode_model.set_manual_mode()
         self._search_model_manager.deactivate_active_search_model()
+        self._highlight_model.clear_search_highlights()
+        self._current_search_model.previous_result()  # Reset to the last result
         self._current_search_model = None
 
     @with_highlight_update
@@ -679,6 +681,7 @@ class Controller(IController):
         self._selection_model.set_selected_text_data(selection_data)
 
     @with_highlight_update
+    @invalidate_search_models
     def perform_open_file(self, file_paths: List[str]) -> None:
         """
         Handles the process of opening files and updating the appropriate document model based on the active view.
@@ -1207,7 +1210,6 @@ class Controller(IController):
         tag_highlights = [
             (color_scheme[tag], start, end) for tag, start, end in highlight_data
         ]
-        print(f"DEBUG {tag_highlights=}")
         self._highlight_model.add_tag_highlights(tag_highlights)
 
         if not self._current_search_model:

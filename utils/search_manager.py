@@ -1,6 +1,7 @@
 import re
 from typing import Dict
 from data_classes.search_result import SearchResult
+from enums.search_types import SearchType
 from input_output.file_handler import FileHandler
 from model.interfaces import IDocumentModel
 from model.search_model import SearchModel
@@ -113,6 +114,7 @@ class SearchManager:
                     last_valid_data.get("output", [])
                 )),
                 tag_type=tag_type,
+                search_type=SearchType.DB,
             )
 
             search_model.add_result(result)
@@ -164,6 +166,7 @@ class SearchManager:
                 term=match.group(),
                 start=match.start(),
                 end=match.end(),
+                search_type=SearchType.MANUAL,
             )
             search_model.add_result(result)
         search_model.validate()

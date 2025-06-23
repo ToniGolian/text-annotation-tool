@@ -95,7 +95,7 @@ class SearchFrame(tk.Frame):
         """
         search_term = self._entry.get()
         if not search_term:
-            self._controller.perform_deactivate_manual_search_model()
+            self._controller.perform_end_search()
             return
         options = {
             "search_term": self._entry.get(),

@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Dict, List
 from controller.interfaces import IController
+from enums.search_types import SearchType
 from observer.interfaces import IPublisher
 from view.annotation_tag_frame import AnnotationTagFrame
 from view.interfaces import IAnnotationMenuFrame
@@ -154,14 +155,19 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
 
         if "current_search_result" in state:
             current_search_result = state["current_search_result"]
-            tag_type = getattr(
-                current_search_result, "tag_type", None)
-            if tag_type in self._tag_frames:
-                tag_frame = self._tag_frames[tag_type]
-                tag_frame.set_search_result(current_search_result)
-            else:
-                raise ValueError(
-                    f"Tag type '{tag_type}' not found in tag frames.")
+            print(f"DEBUG {current_search_result=}")
+            # Check if the search result is from the database
+            if getattr(current_search_result, "search_type", None) == SearchType.DB:
+
+                tag_type = getattr(
+                    current_search_result, "tag_type", None)
+                if tag_type in self._tag_frames:
+                    tag_frame = self._tag_frames[tag_type]
+                    tag_frame.set_search_result(current_search_result)
+                    # The text is displayed via Selection Model, so we don't need to set it here.
+                else:
+                    raise ValueError(
+                        f"Tag type '{tag_type}' not found in tag frames.")
 
     def finalize_view(self) -> None:
         """

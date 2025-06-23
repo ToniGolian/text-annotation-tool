@@ -392,7 +392,7 @@ class AnnotationTagFrame(tk.Frame):
         Handles the event when the start annotation button is pressed.
         Initiates the annotation process for the current tag type.
         """
-        self._controller.perform_start_db_annotation(
+        self._controller.perform_start_db_search(
             tag_type=self._name, caller_id=self._root_view_id)
 
     def _button_pressed_end_db_annotation(self) -> None:
@@ -400,7 +400,7 @@ class AnnotationTagFrame(tk.Frame):
         Handles the event when the end annotation button is pressed.
         Ends the annotation process for the current tag type.
         """
-        self._controller.perform_end_db_annotation()
+        self._controller.perform_end_search()
 
     def _button_pressed_previous_db_suggestion_button(self) -> None:
         """

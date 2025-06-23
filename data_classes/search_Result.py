@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
+from enums.search_types import SearchType
+
 
 @dataclass
 class SearchResult:
@@ -23,6 +25,7 @@ class SearchResult:
     end: int
     db_data: Optional[List[Tuple[str, str]]] = field(default=None)
     tag_type: str = field(default="")
+    search_type: SearchType = field(default=SearchType.DB)
 
     def get_display_list(self) -> List[str]:
         """

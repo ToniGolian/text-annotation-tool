@@ -119,7 +119,8 @@ class SearchModelManager(IPublisher):
         Deactivates the currently active model, if one is set.
         """
         if self._active_key:
-            self._models[self._active_key].deactivate()
+            self._manual_models[self._active_key].deactivate()
+            self._db_models[self._active_key].deactivate()
             self._active_key = None
 
     def deactivate_active_manual_search_model(self) -> None:
@@ -165,6 +166,8 @@ class SearchModelManager(IPublisher):
         Returns:
             SearchModel: The updated model with restored index.
         """
+        if not model:
+            return None
         current_index = model.get_current_index()
         config = self._current_search_config
 

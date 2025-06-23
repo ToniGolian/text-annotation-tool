@@ -342,6 +342,8 @@ class Controller(IController):
         def wrapper(self, *args, **kwargs):
             result = method(self, *args, **kwargs)
             self._search_model_manager.invalidate_all()
+            if not self._current_search_model:
+                return result
             self._current_search_model = self._search_model_manager.update_model(
                 self._current_search_model)
             # Jump to next search result if the calling method is perform_add_tag
@@ -1205,7 +1207,11 @@ class Controller(IController):
         tag_highlights = [
             (color_scheme[tag], start, end) for tag, start, end in highlight_data
         ]
+        print(f"DEBUG {tag_highlights=}")
         self._highlight_model.add_tag_highlights(tag_highlights)
+
+        if not self._current_search_model:
+            return
 
         search_highlights = []
 

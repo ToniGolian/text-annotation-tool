@@ -326,11 +326,20 @@ class TagModel(ITagModel):
                 <tag_type attr1="value1" attr2="value2">text</tag_type>
         """
         attributes = self._tag_data.get("attributes", {})
-        attributes_str = (
-            f'{self._tag_data["id_name"]}="{attributes["id"]}"'if "id" in attributes else "")
-        attributes_str += " ".join(f'{key}="{value}"' for key,
-                                   value in attributes.items() if key != "id")
+        attributes_str = ""
+        if "id" in attributes:
+            attributes_str = f'{self._tag_data["id_name"]}="{attributes["id"]}"'
+            other_attrs = " ".join(
+                f'{key}="{value}"' for key, value in attributes.items() if key != "id"
+            )
+            if other_attrs:
+                attributes_str += " " + other_attrs
+        else:
+            attributes_str = " ".join(
+                f'{key}="{value}"' for key, value in attributes.items()
+            )
         print(f"DEBUG attributesstr: {attributes_str}")
-        print(f"DEBUG tag: {f'<{self._tag_data["tag_type"]} {attributes_str}>{self._tag_data["text"]}</{self._tag_data["tag_type"]}>'}")
+        print(
+            f'DEBUG tag: <{self._tag_data["tag_type"]} {attributes_str}>{self._tag_data["text"]}</{self._tag_data["tag_type"]}>')
 
         return f'<{self._tag_data["tag_type"]} {attributes_str}>{self._tag_data["text"]}</{self._tag_data["tag_type"]}>'

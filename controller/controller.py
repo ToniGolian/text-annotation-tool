@@ -30,7 +30,7 @@ import tkinter.messagebox as mbox
 
 
 class Controller(IController):
-    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, annotation_mode_model: IPublisher = None) -> None:
+    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None) -> None:
 
         # dependencies
         self._path_manager = PathManager()
@@ -69,6 +69,7 @@ class Controller(IController):
         self._comparison_model: IComparisonModel = comparison_model
         self._selection_model: ISelectionModel = selection_model
         self._annotation_mode_model: IPublisher = annotation_mode_model
+        self._highlight_model = highlight_model
         self._current_search_model: IPublisher = None
 
         # command pattern
@@ -252,8 +253,6 @@ class Controller(IController):
                             value = source.get_state().get(key)
                             if value is not None:
                                 state[key] = value
-        if publisher.__class__.__name__ == "SearchModel":
-            print(f"DEBUG: {state=}")
 
         return state
 
@@ -351,6 +350,25 @@ class Controller(IController):
             return result
         return wrapper
 
+    def with_highlight_update(method):
+        """
+        Decorator that ensures the highlight model is updated after the decorated method is executed.
+
+        This is useful for controller methods that modify search or tag data which affects highlighting.
+
+        Args:
+            method (Callable): The method to wrap.
+
+        Returns:
+            Callable: The wrapped method that updates the highlight model after execution.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            result = method(self, *args, **kwargs)
+            self._update_highlight_model()
+            return result
+        return wrapper
+
     # Perform methods
     def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:
         """
@@ -386,6 +404,7 @@ class Controller(IController):
         """
         self._search_model_manager.deactivate_active_manual_search_model()
 
+    @with_highlight_update
     def perform_start_db_annotation(self, tag_type: str, caller_id: str) -> None:
         """
         Starts the annotation mode for a specific tag type.
@@ -406,6 +425,7 @@ class Controller(IController):
             search_type=SearchType.DB,
             document_model=document_model
         )
+        # self._update_highlight_model()
         self._current_search_model.next_result()
         # Update the selection model with the current search result
         self._current_search_to_selection()
@@ -425,6 +445,7 @@ class Controller(IController):
         }
         self.perform_text_selected(current_selection)
 
+    @with_highlight_update
     def perform_end_db_annotation(self) -> None:
         """
         Ends the annotation mode for a specific tag type.
@@ -436,6 +457,7 @@ class Controller(IController):
         self._search_model_manager.deactivate_active_search_model()
         self._current_search_model = None
 
+    @with_highlight_update
     def perform_next_suggestion(self) -> None:
         """
         Moves to the next suggestion for the active search type.
@@ -448,6 +470,7 @@ class Controller(IController):
         self._current_search_model.next_result()
         self._current_search_to_selection()
 
+    @with_highlight_update
     def perform_previous_suggestion(self) -> None:
         """
         Moves to the previous suggestion for the active search type.
@@ -460,6 +483,7 @@ class Controller(IController):
         self._current_search_model.previous_result()
         self._current_search_to_selection()
 
+    @with_highlight_update
     def mark_wrong_db_suggestion(self, tag_type: str) -> None:
         """
         Marks the current suggestion as wrong for the specified tag type and deletes it from the search model.
@@ -558,6 +582,7 @@ class Controller(IController):
         target_model = self._document_source_mapping[self._active_view_id]
         self._tag_manager.set_meta_tags(tag_strings, target_model)
 
+    @with_highlight_update
     @invalidate_search_models
     def perform_add_tag(self, tag_data: Dict, caller_id: str) -> None:
         """
@@ -586,6 +611,7 @@ class Controller(IController):
             self._tag_manager, tag_data, target_model=target_model, caller_id=caller_id)
         self._execute_command(command=command, caller_id=caller_id)
 
+    @with_highlight_update
     @invalidate_search_models
     def perform_edit_tag(self, tag_id: str, tag_data: Dict, caller_id: str) -> None:
         """
@@ -604,6 +630,7 @@ class Controller(IController):
             self._tag_manager, tag_uuid, tag_data, target_model)
         self._execute_command(command=command, caller_id=caller_id)
 
+    @with_highlight_update
     @invalidate_search_models
     def perform_delete_tag(self, tag_id: str, caller_id: str) -> None:
         """
@@ -649,6 +676,7 @@ class Controller(IController):
             selected_text, document_model)
         self._selection_model.set_selected_text_data(selection_data)
 
+    @with_highlight_update
     def perform_open_file(self, file_paths: List[str]) -> None:
         """
         Handles the process of opening files and updating the appropriate document model based on the active view.
@@ -1166,6 +1194,44 @@ class Controller(IController):
             return highlight_data
 
         return []
+
+    def _update_highlight_model(self) -> None:
+        """
+        Updates the highlight model with tag and search highlights based on the current active view.
+        """
+        color_scheme = self._configuration_model.get_color_scheme()["tags"]
+        highlight_data = self._tag_manager.get_highlight_data(
+            self._document_source_mapping[self._active_view_id])
+        tag_highlights = [
+            (color_scheme[tag], start, end) for tag, start, end in highlight_data
+        ]
+        self._highlight_model.add_tag_highlights(tag_highlights)
+
+        search_highlights = []
+
+        current_search_color = self._configuration_model.get_color_scheme()[
+            "current_search"]["background_color"]
+        search_state = self._current_search_model.get_state()
+        current_search_result = search_state.get(
+            "current_search_result", None)
+
+        if self._configuration_model.are_all_search_results_highlighted():
+            search_color = self._configuration_model.get_color_scheme()[
+                "search"]["background_color"]
+            results = search_state.get("results", [])
+            search_highlights += [
+                (search_color, r.start, r.end)
+                for r in results
+                if r != current_search_result
+            ]
+
+        # Ensure current search result is always highlighted on top, with its specific color
+        if current_search_result:
+            search_highlights.append(
+                (current_search_color, current_search_result.start,
+                 current_search_result.end)
+            )
+        self._highlight_model.add_search_highlights(search_highlights)
 
     def get_tag_types(self) -> List[str]:
         """

@@ -1,5 +1,6 @@
 from typing import List, Tuple
 from controller.interfaces import IController
+from model.highlight_model import HighlightModel
 from observer.interfaces import IPublisher
 from view.text_display_frame import TextDisplayFrame
 import tkinter as tk
@@ -22,10 +23,11 @@ class AnnotationTextDisplayFrame(TextDisplayFrame):
         and applies the new highlights to the text.
         """
         super().update(publisher)
-        # use this controller method, because the publisher doesn't know the highlight data and doesn't need to
-        highlight_data = self._controller.get_highlight_data(publisher)
-        self.unhighlight_text()
-        self.highlight_text(highlight_data)
+        if isinstance(publisher, HighlightModel):
+            highlight_data = self._controller.get_observer_state(
+                self, publisher).get("highlight_data", [])
+            self.unhighlight_text()
+            self.highlight_text(highlight_data)
 
     def highlight_text(self, highlight_data: List[Tuple[str, int, int]]) -> None:
         """

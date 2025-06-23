@@ -20,9 +20,9 @@ class HighlightModel(IPublisher):
         """
         Initializes the HighlightModel with empty tag and search highlight lists.
         """
+        super().__init__()
         self._tag_highlights: List[Tuple[str, int, int]] = []
         self._search_highlights: List[Tuple[str, int, int]] = []
-        self._observers = []
 
     def add_tag_highlights(self, highlights: List[Tuple[str, int, int]]) -> None:
         """
@@ -33,7 +33,7 @@ class HighlightModel(IPublisher):
                 (color, start_position, end_position).
         """
         self._tag_highlights = highlights
-        self._notify_observers()
+        self.notify_observers()
 
     def add_search_highlights(self, highlights: List[Tuple[str, int, int]]) -> None:
         """
@@ -44,14 +44,14 @@ class HighlightModel(IPublisher):
                 (color, start_position, end_position).
         """
         self._search_highlights = highlights
-        self._notify_observers()
+        self.notify_observers()
 
     def clear_search_highlights(self) -> None:
         """
         Clears all search highlights and notifies observers.
         """
         self._search_highlights = []
-        self._notify_observers()
+        self.notify_observers()
 
     def get_state(self) -> List[Tuple[str, int, int]]:
         """
@@ -60,4 +60,4 @@ class HighlightModel(IPublisher):
         Returns:
             List[Tuple[str, int, int]]: A list of all current highlights.
         """
-        return self._tag_highlights + self._search_highlights
+        return {"highlight_data": self._tag_highlights + self._search_highlights}

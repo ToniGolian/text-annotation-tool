@@ -31,6 +31,14 @@
                     "current_search_result"
                 ]
             }
+        },
+        "HighlightModel": {
+            "finalize": false,
+            "source_keys": {
+                "highlight_model": [
+                    "highlight_data"
+                ]
+            }
         }
     },
     "MetaTagsFrame": {

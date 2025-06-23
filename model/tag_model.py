@@ -338,8 +338,5 @@ class TagModel(ITagModel):
             attributes_str = " ".join(
                 f'{key}="{value}"' for key, value in attributes.items()
             )
-        print(f"DEBUG attributesstr: {attributes_str}")
-        print(
-            f'DEBUG tag: <{self._tag_data["tag_type"]} {attributes_str}>{self._tag_data["text"]}</{self._tag_data["tag_type"]}>')
 
         return f'<{self._tag_data["tag_type"]} {attributes_str}>{self._tag_data["text"]}</{self._tag_data["tag_type"]}>'

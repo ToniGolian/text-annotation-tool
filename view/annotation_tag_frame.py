@@ -37,8 +37,12 @@ class AnnotationTagFrame(tk.Frame):
         self._selected_text_entry = None  # Entry for selected text
         self._output_widget = None
         self._display_widget = None
+        self._current_search_result: SearchResult = None
         self._tooltips = []
         self._render()
+        if self._display_widget:
+            self._display_widget.bind(
+                "<<ComboboxSelected>>", lambda event: self._update_output_widget())
 
     def _render(self) -> None:
         """
@@ -160,8 +164,8 @@ class AnnotationTagFrame(tk.Frame):
 
             if attribute_type == "ID":
                 attribute_name = "id"
-
-            self._data_widgets[attribute_name] = widget
+            if attribute_type != "DISPLAY":
+                self._data_widgets[attribute_name] = widget
             if attribute_type == "IDREF":
                 self._idref_attributes[attribute_name] = widget
                 self._idref_widgets.append(widget)
@@ -351,19 +355,21 @@ class AnnotationTagFrame(tk.Frame):
             else:
                 self._display_widget.set("")
             self._display_widget.config(state="readonly")
+            self._update_output_widget()
 
+    def _update_output_widget(self) -> None:
+        """
+        Updates the output widget based on the current display selection.
+        """
         # Update output field based on current display selection
         if self._output_widget:
             self._output_widget.config(state="normal")
             self._output_widget.delete(0, tk.END)
 
-            if display_values:
-                current_display = display_values[0]
-                output_value = search_result.get_output_for_display(
-                    current_display)
-                self._output_widget.insert(0, output_value)
-            else:
-                self._output_widget.insert(0, "")
+            output_value = self._current_search_result.get_output_for_display(
+                self._display_widget.get()) if self._current_search_result else None
+
+            self._output_widget.insert(0, output_value)
 
             self._output_widget.config(state="disabled")
 

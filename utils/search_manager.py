@@ -1,6 +1,6 @@
 import re
 from typing import Dict
-from data_classes.search_Result import SearchResult
+from data_classes.search_result import SearchResult
 from input_output.file_handler import FileHandler
 from model.interfaces import IDocumentModel
 from model.search_model import SearchModel
@@ -108,10 +108,13 @@ class SearchManager:
                 term=matched_str,
                 start=start_char,
                 end=end_char,
-                display=last_valid_data.get("display"),
-                output=last_valid_data.get("output"),
+                db_data=list(zip(
+                    last_valid_data.get("display", []),
+                    last_valid_data.get("output", [])
+                )),
                 tag_type=tag_type,
             )
+
             search_model.add_result(result)
 
             index = end_index

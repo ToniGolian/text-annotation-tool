@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Dict, List
 from controller.interfaces import IController
+from data_classes.search_result import SearchResult
 from view.tooltip import ToolTip
 
 
@@ -323,33 +324,34 @@ class AnnotationTagFrame(tk.Frame):
             if widget:
                 widget.insert(0, attribute_value)
 
-    def set_display(self, display: str) -> None:
+    def set_search_result(self, search_result: SearchResult) -> None:
         """
-        Sets the display value for the tag type.
+        Sets the search result for the tag type.
 
-        This method updates the display combobox with the provided display value,
+        This method updates the search result widget with the provided search result,
         ensuring that it reflects the current state of the tag type.
 
         Args:
-            display (str): The display value to set for the tag type.
+            search_result (SearchResult): The search result to set for the tag type.
         """
+        self._current_search_result = search_result
         if self._display_widget:
-            self._display_widget.set(display)
+            self._display_widget.config(state="normal")
+            self._display_widget.delete(0, tk.END)
+            if search_result and search_result.get_display_list():
+                self._display_widget.set(search_result.get_display_list()[0])
 
-    def set_output(self, output: str) -> None:
-        """
-        Sets the output value for the tag type.
-
-        This method updates the output entry with the provided output value,
-        ensuring that it reflects the current state of the tag type.
-
-        Args:
-            output (str): The output value to set for the tag type.
-        """
+            else:
+                self._display_widget.set("")
+            self._display_widget.config(state="readonly")
         if self._output_widget:
             self._output_widget.config(state="normal")
             self._output_widget.delete(0, tk.END)
-            self._output_widget.insert(0, output)
+            if search_result and search_result.get_display_list():
+                self._output_widget.insert(
+                    0, search_result.get_output_for_display(self._display_widget.get()))
+            else:
+                self._output_widget.set("")
             self._output_widget.config(state="disabled")
 
     def set_idref_list(self, idrefs: List[str]) -> None:

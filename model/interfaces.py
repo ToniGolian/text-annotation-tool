@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Union
-from data_classes.search_Result import SearchResult
+from data_classes.search_result import SearchResult
 from observer.interfaces import IObserver, IPublisher
 
 

@@ -152,21 +152,13 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
                                      if tag.get_tag_type() == tag_type]
                 tag_frame.set_idref_list(idref_list)
 
-        if "display" in state:
-            tag_type = state.get("tag_type")
-            print(f"DEBUG {tag_type=}")
-            print(f"DEBUG {self._tag_frames.keys()=}")
+        if "current_search_result" in state:
+            current_search_result = state["current_search_result"]
+            tag_type = getattr(
+                current_search_result, "tag_type", None)
             if tag_type in self._tag_frames:
                 tag_frame = self._tag_frames[tag_type]
-                tag_frame.set_display(state["display"])
-            else:
-                raise ValueError(
-                    f"Tag type '{tag_type}' not found in tag frames.")
-        if "output" in state:
-            tag_type = state.get("tag_type")
-            if tag_type in self._tag_frames:
-                tag_frame = self._tag_frames[tag_type]
-                tag_frame.set_output(state["output"])
+                tag_frame.set_search_result(current_search_result)
             else:
                 raise ValueError(
                     f"Tag type '{tag_type}' not found in tag frames.")

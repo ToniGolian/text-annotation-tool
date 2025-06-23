@@ -1,5 +1,5 @@
 from typing import List, Optional
-from data_classes.search_Result import SearchResult
+from data_classes.search_result import SearchResult
 from model.interfaces import ISearchModel
 
 

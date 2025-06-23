@@ -71,9 +71,18 @@ class CSVDBConverter:
                 lookahead_row = next(reader, None)  # get the next row
                 # gets the first word
                 current_word = row[self._key_column]
-                # creates dict with key as the first word + recursive call for the sub-dictionaries
+                # if key already exists, we need to update the existing dict
+                # if not, we create a new dict for the current word
+                existing_dict = our_dict.get(current_word, {
+                    "display": [],
+                    "output": [],
+                    "children": {}
+                })
+                # create the dict layer for the current word
+                # this will create a new dict for the current word if it does not exist, or update the existing dict
+                # with the current word and its children
                 our_dict[current_word] = self._create_dict_layer(
-                    {},
+                    existing_dict,
                     current_word,
                     row,
                     lookahead_row,

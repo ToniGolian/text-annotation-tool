@@ -155,7 +155,6 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
 
         if "current_search_result" in state:
             current_search_result = state["current_search_result"]
-            print(f"DEBUG {current_search_result=}")
             # Check if the search result is from the database
             if getattr(current_search_result, "search_type", None) == SearchType.DB:
 

@@ -1,14 +1,14 @@
 {
     "tags": {
-        "TIMEX3": "#ff4500",
-        "TLINK": "#ffa500",
-        "EVENT": "#ffcc00",
-        "MAKEINSTANCE": "#32cd32",
-        "ALINK": "#228b22",
-        "SLINK": "#ff6347",
-        "SIGNAL": "#ff1493",
-        "CONFIDENCE": "#8b0000",
-        "PLACE": "#1e90ff"
+        "TIMEX3": "#fde725",
+        "TLINK": "#d5e21a",
+        "EVENT": "#addc30",
+        "MAKEINSTANCE": "#5dc963",
+        "ALINK": "#3fbc73",
+        "SLINK": "#22a884",
+        "SIGNAL": "#33638d",
+        "CONFIDENCE": "#482878",
+        "PLACE": "#440154"
     },
     "search": {
         "font_color": "#000000",
@@ -16,6 +16,6 @@
     },
     "current_search": {
         "font_color": "#000000",
-        "background_color": "#cc0c12"
+        "background_color": "#ff3d00"
     }
 }

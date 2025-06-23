@@ -154,6 +154,8 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
 
         if "display" in state:
             tag_type = state.get("tag_type")
+            print(f"DEBUG {tag_type=}")
+            print(f"DEBUG {self._tag_frames.keys()=}")
             if tag_type in self._tag_frames:
                 tag_frame = self._tag_frames[tag_type]
                 tag_frame.set_display(state["display"])

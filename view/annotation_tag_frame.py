@@ -328,30 +328,43 @@ class AnnotationTagFrame(tk.Frame):
         """
         Sets the search result for the tag type.
 
-        This method updates the search result widget with the provided search result,
-        ensuring that it reflects the current state of the tag type.
+        Updates the display combobox and output widget based on the given search result.
+        The combobox will list all display options, and the output widget will reflect
+        the corresponding value for the currently selected display.
 
         Args:
-            search_result (SearchResult): The search result to set for the tag type.
+            search_result (SearchResult): The search result to display.
         """
         self._current_search_result = search_result
+
+        display_values = (
+            search_result.get_display_list()
+            if search_result else []
+        )
+
+        # Update display combobox
         if self._display_widget:
             self._display_widget.config(state="normal")
-            self._display_widget.delete(0, tk.END)
-            if search_result and search_result.get_display_list():
-                self._display_widget.set(search_result.get_display_list()[0])
-
+            self._display_widget["values"] = display_values
+            if display_values:
+                self._display_widget.set(display_values[0])
             else:
                 self._display_widget.set("")
             self._display_widget.config(state="readonly")
+
+        # Update output field based on current display selection
         if self._output_widget:
             self._output_widget.config(state="normal")
             self._output_widget.delete(0, tk.END)
-            if search_result and search_result.get_display_list():
-                self._output_widget.insert(
-                    0, search_result.get_output_for_display(self._display_widget.get()))
+
+            if display_values:
+                current_display = display_values[0]
+                output_value = search_result.get_output_for_display(
+                    current_display)
+                self._output_widget.insert(0, output_value)
             else:
-                self._output_widget.set("")
+                self._output_widget.insert(0, "")
+
             self._output_widget.config(state="disabled")
 
     def set_idref_list(self, idrefs: List[str]) -> None:

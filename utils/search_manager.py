@@ -63,7 +63,6 @@ class SearchManager:
                             current_dict = db_dict[stripped]
                             base_word = match_token
                             break
-
             if not current_dict:
                 next_token_pos = text.find(raw_token, char_pos)
                 char_pos = next_token_pos + len(raw_token)
@@ -77,35 +76,63 @@ class SearchManager:
             last_valid_data = match_data
             end_index = index + 1
 
-            for j in range(index + 1, len(tokens)):
-                next_raw = tokens[j]
-                next_clean = next_raw.rstrip(self._chars_to_strip)
-                candidate_tokens = [t.rstrip(self._chars_to_strip)
-                                    for t in tokens[index:j+1]]
-                candidate = " ".join(candidate_tokens)
+            # Check if the stripped token matches the expected length
+            if len(match_token) == len(stripped_token):
 
-                if candidate in match_data.get("children", {}):
-                    match_tokens.append(next_clean)
-                    match_data = match_data["children"][candidate]
-                    last_valid_data = match_data
-                    end_index = j + 1
-                else:
+                for j in range(index + 1, len(tokens)):
+                    end_traversal = False
+                    next_raw = tokens[j]
+                    next_clean = next_raw.rstrip(self._chars_to_strip)
+                    candidate_tokens = [t.rstrip(self._chars_to_strip)
+                                        for t in tokens[index:j+1]]
+                    candidate = " ".join(candidate_tokens)
+                    stripped_candidate = candidate.rstrip(self._chars_to_strip)
+                    if len(candidate) != len(stripped_candidate):
+                        # If there was stripping the traversal ends
+                        end_traversal = True
+                    candidate = stripped_candidate
+
+                    # candidate stripped of trailing special characters
+                    # is a direct match in children
+                    if candidate in match_data.get(
+                            "children", {}):
+                        match_tokens.append(next_clean)
+                        match_data = match_data["children"][candidate]
+                        last_valid_data = match_data
+                        end_index = j + 1
+                        continue
+
+                    suffix_free_candidate = candidate
                     for suffix in self._common_suffixes:
                         if candidate.endswith(suffix):
-                            stripped_candidate = candidate[:-len(suffix)]
-                            if stripped_candidate in match_data.get("children", {}):
-                                match_tokens.append(next_clean)
-                                match_data = match_data["children"][stripped_candidate]
-                                last_valid_data = match_data
-                                end_index = j + 1
-                                break
+                            suffix_free_candidate = candidate[:-len(suffix)]
+
+                    if suffix_free_candidate in match_data.get("children", {}):
+                        match_tokens.append(next_clean)
+                        match_data = match_data["children"][stripped_candidate]
+                        last_valid_data = match_data
+                        end_index = j + 1
+                        continue
+
+                    tmp_lookahead = " ".join(
+                        match_tokens + [next_clean])
+                    if any(key.startswith(tmp_lookahead) for key in match_data.get("children", {}).keys()):
+                        # If the next token is a valid continuation
+                        match_tokens.append(next_clean)
+                        end_index = j + 1
                     else:
+                        # If the next token does not match, we stop traversing
+                        end_traversal = True
+
+                    if end_traversal:
+                        # If we hit a token that does not match, we stop traversing
                         break
 
             matched_str_raw = " ".join(match_tokens)
             matched_str_clean = matched_str_raw.rstrip(self._chars_to_strip)
 
             start_char = text.find(matched_str_clean, char_pos)
+
             end_char = start_char + len(matched_str_clean)
 
             result = SearchResult(
@@ -126,6 +153,7 @@ class SearchManager:
             while char_pos < len(text) and text[char_pos].isspace():
                 char_pos += 1
 
+        print(f"DEBUG END SEARCH\n\n")
         return search_model
 
     def calculate_manual_search_model(self, options: Dict, document_model: IDocumentModel) -> SearchModel:

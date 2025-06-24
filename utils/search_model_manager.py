@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Dict, Optional, Tuple
 from enums.search_types import SearchType
 from model.interfaces import IDocumentModel
@@ -24,11 +25,13 @@ class SearchModelManager(IPublisher):
         """
         super().__init__()
         self._search_manager = search_manager
-        self._manual_models: Dict[str, SearchModel] = {}
         self._db_models: Dict[str, SearchModel] = {}
         self._active_key: Optional[str] = None
         self._active_type: Optional[SearchType] = None
         self._current_search_config = None
+        self._manual_models = OrderedDict()
+        # Limit for manual search models #todo load from settings
+        self._max_manual_search_dicts = 10
 
     def get_active_model(self, tag_type: str = None, search_type: SearchType = SearchType.DB,
                          document_model: IDocumentModel = None, options: Optional[Dict] = None) -> SearchModel:
@@ -71,8 +74,18 @@ class SearchModelManager(IPublisher):
 
             if needs_recalculation:
                 model = self._search_manager.calculate_manual_search_model(
-                    options=options, document_model=document_model)
+                    options=options,
+                    document_model=document_model
+                )
                 self._register_observers_to_search_model(model)
+
+                # Remove existing key to reinsert it at the end
+                if search_term in self._manual_models:
+                    del self._manual_models[search_term]
+                # If limit is reached, remove the oldest inserted item
+                elif len(self._manual_models) >= self._max_manual_search_dicts:
+                    self._manual_models.popitem(last=False)
+
                 self._manual_models[search_term] = model
             else:
                 model = existing_model
@@ -97,38 +110,6 @@ class SearchModelManager(IPublisher):
         self._active_type = search_type
 
         return model
-
-    # def add_model(self, tag_type: str, model: SearchModel) -> None:
-    #     """
-    #     Registers a new SearchModel under the given tag type.
-
-    #     This is typically called by the SearchManager after calculation.
-
-    #     Args:
-    #         tag_type (str): The tag type key.
-    #         model (SearchModel): The model instance to register.
-    #     """
-    #     self._db_models[tag_type] = model
-
-    # def add_db_model(self, tag_type: str, model: SearchModel) -> None:
-    #     """
-    #     Registers a new database-based SearchModel under the given tag type.
-
-    #     Args:
-    #         tag_type (str): The tag type key.
-    #         model (SearchModel): The model instance to register.
-    #     """
-    #     self._db_models[tag_type] = model
-
-    # def add_manual_model(self, search_term: str, model: SearchModel) -> None:
-    #     """
-    #     Registers a new manual SearchModel under the given search term.
-
-    #     Args:
-    #         search_term (str): The search term used as key.
-    #         model (SearchModel): The model instance to register.
-    #     """
-    #     self._manual_models[search_term] = model
 
     def invalidate_all(self) -> None:
         """

@@ -39,7 +39,6 @@ class SearchModel(ISearchModel):
 
         Wraps to the beginning when reaching the end of the list.
         """
-        print(f"DEBUG {self._current_index=}, {len(self._results)=}")
         if not self._results:
             return
         if self._current_index == -1 or self._current_index >= len(self._results) - 1:
@@ -54,7 +53,6 @@ class SearchModel(ISearchModel):
 
         Wraps to the end when at the beginning of the list.
         """
-        print(f"DEBUG {self._current_index=}, {len(self._results)=}")
         if not self._results:
             return
         if self._current_index <= 0:

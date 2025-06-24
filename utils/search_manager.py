@@ -72,6 +72,7 @@ class SearchManager:
                 continue
 
             match_tokens = [stripped_token]
+            last_valid_tokens = [stripped_token]
             match_data = current_dict
             last_valid_data = match_data
             end_index = index + 1
@@ -83,8 +84,7 @@ class SearchManager:
                     end_traversal = False
                     next_raw = tokens[j]
                     next_clean = next_raw.rstrip(self._chars_to_strip)
-                    candidate_tokens = [t.rstrip(self._chars_to_strip)
-                                        for t in tokens[index:j+1]]
+                    candidate_tokens = [token for token in tokens[index:j+1]]
                     candidate = " ".join(candidate_tokens)
                     stripped_candidate = candidate.rstrip(self._chars_to_strip)
                     if len(candidate) != len(stripped_candidate):
@@ -97,6 +97,7 @@ class SearchManager:
                     if candidate in match_data.get(
                             "children", {}):
                         match_tokens.append(next_clean)
+                        last_valid_tokens = match_tokens.copy()
                         match_data = match_data["children"][candidate]
                         last_valid_data = match_data
                         end_index = j + 1
@@ -107,9 +108,12 @@ class SearchManager:
                         if candidate.endswith(suffix):
                             suffix_free_candidate = candidate[:-len(suffix)]
 
+                    # If the candidate stripped of common suffixes is a direct match in children
+                    # we can continue traversing
                     if suffix_free_candidate in match_data.get("children", {}):
                         match_tokens.append(next_clean)
-                        match_data = match_data["children"][stripped_candidate]
+                        last_valid_tokens = match_tokens.copy()
+                        match_data = match_data["children"][suffix_free_candidate]
                         last_valid_data = match_data
                         end_index = j + 1
                         continue
@@ -125,10 +129,13 @@ class SearchManager:
                         end_traversal = True
 
                     if end_traversal:
+                        print(f"DEBUG {tmp_lookahead=}")
+                        print(f"DEBUG {last_valid_tokens=}")
+                        print(f"DEBUG {match_tokens=}")
                         # If we hit a token that does not match, we stop traversing
                         break
 
-            matched_str_raw = " ".join(match_tokens)
+            matched_str_raw = " ".join(last_valid_tokens)
             matched_str_clean = matched_str_raw.rstrip(self._chars_to_strip)
 
             start_char = text.find(matched_str_clean, char_pos)
@@ -146,6 +153,7 @@ class SearchManager:
                 tag_type=tag_type,
                 search_type=SearchType.DB,
             )
+            print(f"DEBUG {result=}\n\n")
             search_model.add_result(result)
 
             index = end_index

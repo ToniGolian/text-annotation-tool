@@ -4,14 +4,14 @@ import os
 import re
 from typing import List
 from PIL import Image
+from controller.interfaces import IController
 from pymupdf import Rect, IRect
 import pymupdf
 from pathlib import Path
-from utils.interfaces import IListManager
 
 
 class PDFExtractionManager:
-    def __init__(self, list_manager: IListManager, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, keep_headlines: bool = True):
+    def __init__(self, controller: IController, pdf_path: str = "", pages_margins: str = None, pages: str = None, consider_bg_colors: bool = False, ignore_tables: bool = True, keep_headlines: bool = True):
         """
         Initializes the PDFExtractor with the given PDF path and various processing options.
 
@@ -22,7 +22,7 @@ class PDFExtractionManager:
             keep_headlines (bool, optional): Whether to keep headlines when processing text. Default is False.
         """
 
-        self._list_manager = list_manager
+        self._controller = controller
 
         # Processing options
         # Whether to consider background colors in bounding box decisions
@@ -154,14 +154,10 @@ class PDFExtractionManager:
         return self._extracted_text
 
     def _update_abbreviations(self) -> None:
-        """        
-        Updates the internal abbreviations cache by fetching the latest data 
-        from the list_manager.
-
-        This method retrieves abbreviations using the list_manager's `get_abbreviations`
-        method and stores them in the `_abbreviations` attribute for internal use.
         """
-        self._abbreviations = self._list_manager.get_abbreviations()
+        Updates the abbreviations used for sentence splitting.
+        """
+        self._abbreviations = self._controller.get_abbreviations()
 
     def _extract_clean_toc(self) -> None:
         """

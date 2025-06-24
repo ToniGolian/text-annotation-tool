@@ -18,7 +18,6 @@ from typing import Callable, Dict, List, Optional, Tuple
 from utils.color_manager import ColorManager
 from utils.comparison_manager import ComparisonManager
 from utils.layout_configuration_manager import LayoutConfigurationManager
-from utils.list_manager import ListManager
 from utils.path_manager import PathManager
 from utils.pdf_extraction_manager import PDFExtractionManager
 from utils.search_manager import SearchManager
@@ -59,11 +58,7 @@ class Controller(IController):
         self._tag_processor = TagProcessor(self)
         self._tag_manager = TagManager(self, self._tag_processor)
         self._comparison_manager = ComparisonManager(self, self._tag_processor)
-        self._list_manager = ListManager(
-            self._file_handler, self._settings_manager)
-        self._pdf_extraction_manager = PDFExtractionManager(
-            list_manager=self._list_manager)
-
+        self._pdf_extraction_manager = PDFExtractionManager(controller=self)
         self._search_manager = SearchManager(file_handler=self._file_handler)
         self._search_model_manager = SearchModelManager(self._search_manager)
         self._color_manager = ColorManager(self._file_handler)
@@ -1370,3 +1365,18 @@ class Controller(IController):
             comparison_settings_path)
         align_option = comparison_settings["align_option"]
         return align_option
+
+    def get_abbreviations(self) -> set[str]:
+        """
+        Retrieves a set of abbreviations for the current languages from the settings manager.
+
+        This method loads the abbreviations from the project abbreviations file and combines
+        them into a single set based on the current languages specified in the settings manager.
+
+        Returns:
+            set[str]: A set containing all abbreviations for the specified languages.
+
+        Raises:
+            KeyError: If any of the provided keys are missing in the JSON file.
+        """
+        return self._settings_manager.get_abbreviations()

@@ -63,3 +63,20 @@ class SettingsManager:
         color_scheme_file_name = self._project_settings.get("color_scheme")
         return self._file_handler.read_file(
             "project_color_scheme_folder", color_scheme_file_name)
+
+    def get_abbreviations(self) -> dict:
+        """
+        Retrieves the abbreviations for the current languages from the settings file.
+
+        Returns:
+            dict: A dictionary containing abbreviations for each language.
+        """
+        abbreviations = self._file_handler.read_file("project_abbreviations")
+        print(f"DEBUG {abbreviations.keys()=}")
+        current_language = self._project_settings.get("current_language", [])
+        print(f"DEBUG {current_language=}")
+        language_specific_abbreviations = abbreviations.get(current_language)
+        if language_specific_abbreviations is None:
+            raise KeyError(
+                f"The key '{self._project_settings.get('current_language')}' is missing in the abbreviations file.")
+        return language_specific_abbreviations

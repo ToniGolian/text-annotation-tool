@@ -66,10 +66,10 @@ class ConfigurationManager:
 
         layout["template_groups"] = template_groups
         layout["tag_types"] = tag_types
+
         return {
             "layout": layout,
             "id_prefixes": id_prefixes,
             "id_names": id_names,
             "id_ref_attributes": id_ref_attributes,
-            "color_scheme": color_scheme
         }

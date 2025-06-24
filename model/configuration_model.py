@@ -34,7 +34,8 @@ class ConfigurationModel(IPublisher):
         Updates the model state from a preassembled configuration dictionary.
 
         This method expects the complete configuration dictionary to be passed in,
-        including the layout state, template definitions, tag metadata, and color scheme.
+        including the layout state, template definitions, tag metadata, color scheme,
+        and search normalization.
 
         Args:
             configuration (Dict): A dictionary containing all configuration components. Expected keys:
@@ -43,13 +44,11 @@ class ConfigurationModel(IPublisher):
                                 - "id_prefixes"
                                 - "id_names"
                                 - "id_ref_attributes"
-                                - "color_scheme"
         """
         self._layout = configuration.get("layout", {})
         self._id_prefixes = configuration.get("id_prefixes", {})
         self._id_names = configuration.get("id_names", {})
         self._id_ref_attributes = configuration.get("id_ref_attributes", {})
-        self._color_scheme = configuration.get("color_scheme", {})
 
         self.notify_observers()
 
@@ -64,15 +63,6 @@ class ConfigurationModel(IPublisher):
             Dict: The layout state dictionary.
         """
         return self._layout
-
-    def get_color_scheme(self) -> Dict:
-        """
-        Loads and returns the color scheme for the current project.
-
-        Returns:
-            Dict: Dictionary of UI color settings.
-        """
-        return self._color_scheme
 
     def get_tag_types(self) -> List[str]:
         """
@@ -120,20 +110,20 @@ class ConfigurationModel(IPublisher):
         """
         return self._id_ref_attributes.get(tag_type, [])
 
-    def are_all_search_results_highlighted(self) -> bool:
-        """
-        Checks if all search results are highlighted.
+    # def are_all_search_results_highlighted(self) -> bool:
+    #     """
+    #     Checks if all search results are highlighted.
 
-        Returns:
-            bool: True if all search results are highlighted, False otherwise.
-        """
-        return self._are_all_search_results_highlighted
+    #     Returns:
+    #         bool: True if all search results are highlighted, False otherwise.
+    #     """
+    #     return self._are_all_search_results_highlighted
 
-    def set_all_search_results_highlighted(self, highlighted: bool) -> None:
-        """
-        Sets the highlight state for all search results.
+    # def set_all_search_results_highlighted(self, highlighted: bool) -> None:
+    #     """
+    #     Sets the highlight state for all search results.
 
-        Args:
-            highlighted (bool): True to highlight all results, False to unhighlight.
-        """
-        self._are_all_search_results_highlighted = highlighted
+    #     Args:
+    #         highlighted (bool): True to highlight all results, False to unhighlight.
+    #     """
+    #     self._are_all_search_results_highlighted = highlighted

@@ -34,33 +34,6 @@ import tkinter.messagebox as mbox
 class Controller(IController):
     def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None) -> None:
 
-        # dependencies
-        self._path_manager = PathManager()
-        self._file_handler = FileHandler(path_manager=self._path_manager)
-        self._configuration_manager = ConfigurationManager(self._file_handler)
-        self._suggestion_manager = SuggestionManager(self, self._file_handler)
-        self._settings_manager = SettingsManager(self._file_handler)
-        self._tag_processor = TagProcessor(self)
-        self._tag_manager = TagManager(self, self._tag_processor)
-        self._comparison_manager = ComparisonManager(self, self._tag_processor)
-        self._list_manager = ListManager(
-            self._file_handler, self._settings_manager)
-        self._pdf_extraction_manager = PDFExtractionManager(
-            list_manager=self._list_manager)
-        self._search_manager = SearchManager(self._file_handler)
-        self._search_model_manager = SearchModelManager(self._search_manager)
-        self._color_manager = ColorManager(self._file_handler)
-
-        # config
-        # Load the source mapping once and store it in an instance variable
-        self._source_mapping = self._file_handler.read_file(
-            "source_mapping")
-
-        # views
-        self._comparison_view: IComparisonView = None
-        self._views_to_finalize: List = []
-        self._search_views: List = []
-
         # state
         self._dynamic_observer_index: int = 0
         self._observer_data_map: Dict[IObserver:Dict] = {}
@@ -75,6 +48,34 @@ class Controller(IController):
         self._annotation_mode_model: IPublisher = annotation_mode_model
         self._highlight_model = highlight_model
         self._current_search_model: IPublisher = None
+
+        # dependencies
+        self._path_manager = PathManager()
+        self._file_handler = FileHandler(path_manager=self._path_manager)
+        self._configuration_manager = ConfigurationManager(self._file_handler)
+        self._suggestion_manager = SuggestionManager(self, self._file_handler)
+        self._settings_manager = SettingsManager(self._file_handler)
+        self._tag_processor = TagProcessor(self)
+        self._tag_manager = TagManager(self, self._tag_processor)
+        self._comparison_manager = ComparisonManager(self, self._tag_processor)
+        self._list_manager = ListManager(
+            self._file_handler, self._settings_manager)
+        self._pdf_extraction_manager = PDFExtractionManager(
+            list_manager=self._list_manager)
+
+        self._search_manager = SearchManager(file_handler=self._file_handler)
+        self._search_model_manager = SearchModelManager(self._search_manager)
+        self._color_manager = ColorManager(self._file_handler)
+
+        # config
+        # Load the source mapping once and store it in an instance variable
+        self._source_mapping = self._file_handler.read_file(
+            "source_mapping")
+
+        # views
+        self._comparison_view: IComparisonView = None
+        self._views_to_finalize: List = []
+        self._search_views: List = []
 
         # command pattern
         self._active_view_id = None  # Track the currently active view
@@ -481,6 +482,8 @@ class Controller(IController):
         self._annotation_mode_model.set_manual_mode()
         self._search_model_manager.deactivate_active_search_model()
         self._highlight_model.clear_search_highlights()
+        if not self._current_search_model:
+            return
         self._current_search_model.previous_result()  # Reset to the last result
         self._current_search_model = None
 
@@ -1206,7 +1209,7 @@ class Controller(IController):
         """
 
         if isinstance(target_model, IDocumentModel):
-            color_scheme = self._configuration_model.get_color_scheme()["tags"]
+            color_scheme = self._settings_manager.get_color_scheme()["tags"]
             highlight_data = self._tag_manager.get_highlight_data(target_model)
             return [
                 (color_scheme[tag], start, end) for tag, start, end in highlight_data
@@ -1214,16 +1217,16 @@ class Controller(IController):
         # todo add search highlights
 
         elif isinstance(target_model, ISearchModel):
-            current_search_color = self._configuration_model.get_color_scheme()[
+            current_search_color = self._settings_manager.get_color_scheme()[
                 "current_search"]["background_color"]
             search_state = target_model.get_state()
             current_search_result = search_state.get(
                 "current_search_result", None)
             highlight_data = [
                 (current_search_color, current_search_result.start, current_search_result.end)]
-            if self._configuration_model.are_all_search_results_highlighted():
+            if self._settings_manager.are_all_search_results_highlighted():
                 # If all search results should be highlighted, add them to the highlight data
-                search_color = self._configuration_model.get_color_scheme()[
+                search_color = self._settings_manager.get_color_scheme()[
                     "search"]["background_color"]
                 highlight_data += [(search_color, result.start, result.end)
                                    for result in search_state.get("results", []) if result != current_search_result]
@@ -1231,7 +1234,7 @@ class Controller(IController):
                 document_model = self._annotation_document_model
             if self._active_view_id == "comparison":
                 document_model = self._comparison_model.get_raw_text_model()
-            color_scheme = self._configuration_model.get_color_scheme()["tags"]
+            color_scheme = self._settings_manager.get_color_scheme()["tags"]
             tag_data = self._tag_manager.get_highlight_data(
                 document_model)
             tag_highlights = [
@@ -1246,7 +1249,7 @@ class Controller(IController):
         """
         Updates the highlight model with tag and search highlights based on the current active view.
         """
-        color_scheme = self._configuration_model.get_color_scheme()
+        color_scheme = self._settings_manager.get_color_scheme()
         if self._active_view_id == "annotation":
             document_models = [
                 self._document_source_mapping[self._active_view_id]]
@@ -1275,7 +1278,7 @@ class Controller(IController):
         current_search_result = search_state.get(
             "current_search_result", None)
 
-        if self._configuration_model.are_all_search_results_highlighted():
+        if self._settings_manager.are_all_search_results_highlighted():
             search_bg_color = color_scheme["search"]["background_color"]
             search_font_color = color_scheme["search"]["font_color"]
             results = search_state.get("results", [])

@@ -1,5 +1,6 @@
 import re
-from typing import Dict
+from typing import Dict, List
+from controller.interfaces import IController
 from data_classes.search_result import SearchResult
 from enums.search_types import SearchType
 from input_output.file_handler import FileHandler
@@ -8,13 +9,13 @@ from model.search_model import SearchModel
 
 
 class SearchManager:
-    def __init__(self, file_handler: FileHandler = None) -> None:
+    def __init__(self, search_normalization: Dict = None, file_handler: FileHandler = None) -> None:
         """        Initializes the search manager with an optional file handler.
         Args:
             file_handler (FileHandler, optional): An instance of FileHandler for file operations.
         """
         self._file_handler = file_handler
-        self._common_suffixes = ["s"]  # todo load language dependet suffixes
+        self._common_suffixes = ["s"]  # todo load language dependent suffixes
         # Characters to strip from words during search
         self._chars_to_strip = ".,;:!?()[]{}\"'`~@#$%^&*_-+=|\\/<>"  # todo load from settings
 

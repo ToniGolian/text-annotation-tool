@@ -15,6 +15,7 @@
     "project_db_config_folder": "app_data/projects/<project>/project_config/db_config/",
     "project_db_dictionaries_folder": "app_data/projects/<project>/project_data/db_dictionaries/",
     "project_db_csv_folder": "app_data/projects/<project>/project_data/db_csv/",
+    "project_search_normalization": "app_data/projects/<project>/project_config/search_normalization_rules.json",
     "project_settings": "app_data/projects/<project>/project_config/project_settings.json",
     "project_abbreviations": "app_data/projects/<project>/project_data/abbreviations.json",
     "project_saved_layout": "app_data/projects/<project>/project_data/saved_layout.json",

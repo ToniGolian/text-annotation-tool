@@ -2,15 +2,15 @@
     "name": "time_ml",
     "color_scheme": "magma_comp_search_color_scheme.json",
     "tags": [
-        "alink",
-        "confidence",
-        "event",
-        "makeinstance",
-        "place",
-        "signal",
-        "slink",
-        "timex3",
-        "tlink"
+        "alink.json",
+        "confidence.json",
+        "event.json",
+        "makeinstance.json",
+        "place.json",
+        "signal.json",
+        "slink.json",
+        "timex3.json",
+        "tlink.json"
     ],
     "groups": "groups01.json",
     "db_config": [

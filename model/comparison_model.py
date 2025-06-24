@@ -1,5 +1,6 @@
 from typing import List, Tuple
 from typing import Dict, List, Tuple, Union
+from model.highlight_model import HighlightModel
 from model.interfaces import IComparisonModel, IDocumentModel, ITagModel
 from observer.interfaces import IObserver
 
@@ -12,6 +13,7 @@ class ComparisonModel(IComparisonModel):
     def __init__(self):
         super().__init__()
         self._document_models: List[IDocumentModel] = []
+        self._highlight_models: List[HighlightModel] = []
         self._file_names: List[str] = []
         self._merged_document: IDocumentModel = None
         self._comparison_sentences: List[List[str]] = []
@@ -19,7 +21,7 @@ class ComparisonModel(IComparisonModel):
         self._differing_to_global: List[int] = []
         self._current_index: int = 0
 
-    def set_documents(self, documents: List[IDocumentModel]) -> None:
+    def set_document_models(self, documents: List[IDocumentModel]) -> None:
         """
         Sets the list of documents and updates the file names.
 
@@ -31,6 +33,15 @@ class ComparisonModel(IComparisonModel):
         """
         self._document_models = documents
         self._file_names = [document.get_file_name() for document in documents]
+
+    def set_highlight_models(self, highlight_models: List[HighlightModel]) -> None:
+        """
+        Sets the list of highlight models for the comparison.
+
+        Args:
+            highlight_models (List[HighlightModel]): The list of highlight models.
+        """
+        self._highlight_models = highlight_models
 
     def register_comparison_displays(self, observers: List[IObserver]) -> None:
         """
@@ -50,6 +61,8 @@ class ComparisonModel(IComparisonModel):
                 f"Mismatch between number of documents ({len(self._document_models)}) and observers ({len(observers)})")
         for document_model, observer in zip(self._document_models, observers):
             document_model.add_observer(observer)
+        for highlight_model, observer in zip(self._highlight_models, observers):
+            highlight_model.add_observer(observer)
 
     def set_comparison_data(self, comparison_data: Dict[str, Union[str, List[Tuple[str, ...]], Dict[str, int]]]) -> None:
         """
@@ -382,3 +395,25 @@ class ComparisonModel(IComparisonModel):
             file_path (str): The file path to assign to the document.
         """
         self._document_models[0].set_file_path(file_path)
+
+    def get_document_models(self) -> List[IDocumentModel]:
+        """
+        Returns the list of document models associated with this comparison.
+
+        This includes all documents that are part of the comparison, not just the base document.
+
+        Returns:
+            List[IDocumentModel]: The list of document models.
+        """
+        return self._document_models
+
+    def get_highlight_models(self) -> List[HighlightModel]:
+        """
+        Returns the list of highlight models associated with this comparison.
+
+        This includes all highlights that are part of the comparison, not just the base document.
+
+        Returns:
+            List[IDocumentModel]: The list of document models.
+        """
+        return self._highlight_models

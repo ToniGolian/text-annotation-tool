@@ -9,6 +9,7 @@ from commands.interfaces import ICommand
 from enums.search_types import SearchType
 from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
+from model.highlight_model import HighlightModel
 from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISearchModel, ISelectionModel
 from model.tag_model import TagModel
 from model.undo_redo_model import UndoRedoModel
@@ -748,9 +749,11 @@ class Controller(IController):
 
         document_models = [AnnotationDocumentModel()]+[AnnotationDocumentModel(
             document) for document in documents]
+        highlight_models = [HighlightModel() for _ in document_models]
         for document_model in document_models:
             self._tag_manager.extract_tags_from_document(document_model)
-        self._comparison_model.set_documents(document_models)
+        self._comparison_model.set_document_models(document_models)
+        self._comparison_model.set_highlight_models(highlight_models)
         #! Don't change the order since the documents trigger the displaycreation
         comparison_displays = self._comparison_view.get_comparison_displays()
         self._comparison_model.register_comparison_displays(
@@ -787,7 +790,7 @@ class Controller(IController):
             self._tag_manager.extract_tags_from_document(model)
 
         # Step 4: Register documents in the comparison model
-        self._comparison_model.set_documents(document_models)
+        self._comparison_model.set_document_models(document_models)
 
         # Step 5: Register displays
         self._appearance_model.set_num_comparison_displays(
@@ -995,7 +998,7 @@ class Controller(IController):
         tag types specified in the current configuration.
         Args:
             colorset_name (str): The name of the color set to use. Defaults to "viridis".
-        Raises: 
+        Raises:
             ValueError: If the colorset_name is not recognized or supported.
         """
         self._color_manager.create_color_scheme(tag_keys=self._configuration_manager.load_configuration()['layout'][
@@ -1220,20 +1223,29 @@ class Controller(IController):
         """
         Updates the highlight model with tag and search highlights based on the current active view.
         """
-        color_scheme = self._configuration_model.get_color_scheme()["tags"]
-        highlight_data = self._tag_manager.get_highlight_data(
-            self._document_source_mapping[self._active_view_id])
-        tag_highlights = [
-            (color_scheme[tag]["background_color"], color_scheme[tag]["font_color"], start, end) for tag, start, end in highlight_data
-        ]
-        self._highlight_model.add_tag_highlights(tag_highlights)
+        color_scheme = self._configuration_model.get_color_scheme()
+        if self._active_view_id == "annotation":
+            document_models = [
+                self._document_source_mapping[self._active_view_id]]
+            highlight_models = [self._highlight_model]
+
+        if self._active_view_id == "comparison":
+            comparison_model = self._document_source_mapping[self._active_view_id]
+            document_models = comparison_model.get_document_models()
+            highlight_models = comparison_model.get_highlight_models()
+
+        for document_model, highlight_model in zip(document_models, highlight_models):
+            highlight_data = self._tag_manager.get_highlight_data(
+                document_model)
+            tag_highlights = [(color_scheme["tags"][tag]["background_color"], color_scheme["tags"][tag]["font_color"], start, end) for tag, start, end in highlight_data
+                              ]
+            highlight_model.add_tag_highlights(tag_highlights)
 
         if not self._current_search_model:
             return
 
         search_highlights = []
 
-        color_scheme = self._configuration_model.get_color_scheme()
         current_search_bg_color = color_scheme["current_search"]["background_color"]
         current_search_font_color = color_scheme["current_search"]["font_color"]
         search_state = self._current_search_model.get_state()

@@ -43,7 +43,6 @@ class HighlightModel(IPublisher):
             highlights (List[Tuple[str, int, int]]): A list of search highlights, each as a tuple of
                 (color, start_position, end_position).
         """
-        print(f"DEBUG {highlights=}")
         self._search_highlights = highlights
         self.notify_observers()
 

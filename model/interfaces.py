@@ -136,7 +136,7 @@ class IComparisonModel(IPublisher):
     and provides mechanisms for annotation adoption and merged document construction.
     """
 
-    def set_documents(self, documents: List[IDocumentModel]) -> None:
+    def set_document_models(self, documents: List[IDocumentModel]) -> None:
         """
         Sets the list of documents to be compared.
 

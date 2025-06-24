@@ -25,8 +25,7 @@ def main():
         preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, configuration_model=configuration_model, appearance_model=appearance_model, annotation_mode_model=annotation_mode_model, highlight_model=highlight_model)
     app_view = MainWindow(controller)
     controller.finalize_views()
-    controller.perform_create_color_scheme(
-        project="time_ml", colorset_name="viridis")
+    controller.perform_create_color_scheme(colorset_name="viridis")
     #!DEBUG
     # testdoc = ["data/annotation/test_doc.json"]
     # controller.perform_open_file(testdoc)

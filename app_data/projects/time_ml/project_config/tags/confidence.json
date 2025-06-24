@@ -1,6 +1,9 @@
 {
     "type": "CONFIDENCE",
     "attributes": {
+        "cid": {
+            "type": "ID"
+        },
         "tagType": {
             "type": "CDATA"
         },

@@ -988,10 +988,18 @@ class Controller(IController):
         self._execute_command(command=command, caller_id="comparison")
         self.perform_next_sentence()
 
-    def perform_create_color_scheme(self, project: str, colorset_name: str = "viridis") -> None:
-        # DEBUG
+    def perform_create_color_scheme(self, colorset_name: str = "viridis") -> None:
+        """
+        Creates a color scheme for the tag types defined in the configuration.
+        This method uses the color manager to generate a color scheme based on the
+        tag types specified in the current configuration.
+        Args:
+            colorset_name (str): The name of the color set to use. Defaults to "viridis".
+        Raises: 
+            ValueError: If the colorset_name is not recognized or supported.
+        """
         self._color_manager.create_color_scheme(tag_keys=self._configuration_manager.load_configuration()['layout'][
-            'tag_types'], colorset_name=colorset_name, project=project)
+            'tag_types'], colorset_name=colorset_name)
 
     # Helpers
 
@@ -1216,7 +1224,7 @@ class Controller(IController):
         highlight_data = self._tag_manager.get_highlight_data(
             self._document_source_mapping[self._active_view_id])
         tag_highlights = [
-            (color_scheme[tag], start, end) for tag, start, end in highlight_data
+            (color_scheme[tag]["background_color"], color_scheme[tag]["font_color"], start, end) for tag, start, end in highlight_data
         ]
         self._highlight_model.add_tag_highlights(tag_highlights)
 
@@ -1225,18 +1233,19 @@ class Controller(IController):
 
         search_highlights = []
 
-        current_search_color = self._configuration_model.get_color_scheme()[
-            "current_search"]["background_color"]
+        color_scheme = self._configuration_model.get_color_scheme()
+        current_search_bg_color = color_scheme["current_search"]["background_color"]
+        current_search_font_color = color_scheme["current_search"]["font_color"]
         search_state = self._current_search_model.get_state()
         current_search_result = search_state.get(
             "current_search_result", None)
 
         if self._configuration_model.are_all_search_results_highlighted():
-            search_color = self._configuration_model.get_color_scheme()[
-                "search"]["background_color"]
+            search_bg_color = color_scheme["search"]["background_color"]
+            search_font_color = color_scheme["search"]["font_color"]
             results = search_state.get("results", [])
             search_highlights += [
-                (search_color, r.start, r.end)
+                (search_bg_color, search_font_color, r.start, r.end)
                 for r in results
                 if r != current_search_result
             ]
@@ -1244,7 +1253,7 @@ class Controller(IController):
         # Ensure current search result is always highlighted on top, with its specific color
         if current_search_result:
             search_highlights.append(
-                (current_search_color, current_search_result.start,
+                (current_search_bg_color, current_search_font_color, current_search_result.start,
                  current_search_result.end)
             )
         self._highlight_model.add_search_highlights(search_highlights)

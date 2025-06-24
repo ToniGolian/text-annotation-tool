@@ -33,7 +33,10 @@ class ConfigurationManager:
                   ID prefixes, ID attributes, ID references, and color scheme.
         """
         layout = {}
-        color_scheme = self._file_handler.read_file("project_color_scheme")
+        project_settings = self._file_handler.read_file("project_settings")
+        color_scheme_file_name = project_settings.get("color_scheme") + ".json"
+        color_scheme = self._file_handler.read_file(
+            "project_color_scheme_folder", color_scheme_file_name)
 
         project_path = self._file_handler.resolve_path(
             "project_config")

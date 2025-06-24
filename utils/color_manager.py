@@ -32,7 +32,7 @@ class ColorManager:
         luminance = 0.299 * r + 0.587 * g + 0.114 * b
         return luminance < 128
 
-    def create_color_scheme(self, tag_keys: List[str], colorset_name: str, project: str) -> None:
+    def create_color_scheme(self, tag_keys: List[str], colorset_name: str) -> None:
         """
         Creates and stores a color scheme for a given project and color set.
 

@@ -41,13 +41,19 @@ class SearchManager:
 
         while index < len(tokens):
             raw_token = tokens[index]
+            print(f"DEBUG {raw_token=}")
 
-            # Remove XML tags if present
+            # Remove XML tags if present and split into individual words
             if re.match(r'^<[^>]+>.*</[^>]+>$', raw_token):
-                stripped_token = re.sub(r'^<[^>]+>', '', raw_token)
-                stripped_token = re.sub(r'</[^>]+>$', '', stripped_token)
+                stripped_content = re.sub(r'^<[^>]+>', '', raw_token)
+                stripped_content = re.sub(r'</[^>]+>$', '', stripped_content)
+                # Insert the stripped words back into tokens, replacing the original
+                stripped_words = stripped_content.split()
+                tokens[index:index+1] = stripped_words
+                continue  # Restart loop with new tokens
             else:
                 stripped_token = raw_token
+            print(f"DEBUG {stripped_token=}")
 
             match_token = stripped_token.rstrip(self._chars_to_strip)
             current_dict = None
@@ -129,9 +135,6 @@ class SearchManager:
                         end_traversal = True
 
                     if end_traversal:
-                        print(f"DEBUG {tmp_lookahead=}")
-                        print(f"DEBUG {last_valid_tokens=}")
-                        print(f"DEBUG {match_tokens=}")
                         # If we hit a token that does not match, we stop traversing
                         break
 
@@ -153,7 +156,6 @@ class SearchManager:
                 tag_type=tag_type,
                 search_type=SearchType.DB,
             )
-            print(f"DEBUG {result=}\n\n")
             search_model.add_result(result)
 
             index = end_index
@@ -161,7 +163,6 @@ class SearchManager:
             while char_pos < len(text) and text[char_pos].isspace():
                 char_pos += 1
 
-        print(f"DEBUG END SEARCH\n\n")
         return search_model
 
     def calculate_manual_search_model(self, options: Dict, document_model: IDocumentModel) -> SearchModel:

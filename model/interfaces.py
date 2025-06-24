@@ -290,7 +290,7 @@ class IComparisonModel(IPublisher):
 #         pass
 
 
-class IConfigurationModel(IPublisher):
+class ILayoutConfigurationModel(IPublisher):
     @abstractmethod
     def get_color_scheme(self) -> Dict[str, str]:
         """

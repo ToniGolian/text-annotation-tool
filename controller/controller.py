@@ -10,14 +10,14 @@ from enums.search_types import SearchType
 from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
 from model.highlight_model import HighlightModel
-from model.interfaces import IComparisonModel, IConfigurationModel, IDocumentModel, ISearchModel, ISelectionModel
+from model.interfaces import IComparisonModel, ILayoutConfigurationModel, IDocumentModel, ISearchModel, ISelectionModel
 from model.tag_model import TagModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
 from typing import Callable, Dict, List, Optional, Tuple
 from utils.color_manager import ColorManager
 from utils.comparison_manager import ComparisonManager
-from utils.configuration_manager import ConfigurationManager
+from utils.layout_configuration_manager import LayoutConfigurationManager
 from utils.list_manager import ListManager
 from utils.path_manager import PathManager
 from utils.pdf_extraction_manager import PDFExtractionManager
@@ -32,14 +32,14 @@ import tkinter.messagebox as mbox
 
 
 class Controller(IController):
-    def __init__(self, configuration_model: IConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None) -> None:
+    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None) -> None:
 
         # state
         self._dynamic_observer_index: int = 0
         self._observer_data_map: Dict[IObserver:Dict] = {}
         self._observer_layout_map: Dict[IObserver, Dict] = {}
 
-        self._configuration_model: IPublisher = configuration_model
+        self._layout_configuration_model: IPublisher = layout_configuration_model
         self._appearance_model: IPublisher = appearance_model
         self._extraction_document_model: IDocumentModel = preview_document_model
         self._annotation_document_model: IDocumentModel = annotation_document_model
@@ -52,7 +52,8 @@ class Controller(IController):
         # dependencies
         self._path_manager = PathManager()
         self._file_handler = FileHandler(path_manager=self._path_manager)
-        self._configuration_manager = ConfigurationManager(self._file_handler)
+        self._layout_configuration_manager = LayoutConfigurationManager(
+            self._file_handler)
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
         self._settings_manager = SettingsManager(self._file_handler)
         self._tag_processor = TagProcessor(self)
@@ -319,8 +320,8 @@ class Controller(IController):
             This method assumes that all views requiring finalization
             have already been registered with the controller.
         """
-        configuration = self._configuration_manager.load_configuration()
-        self._configuration_model.set_configuration(
+        configuration = self._layout_configuration_manager.load_configuration()
+        self._layout_configuration_model.set_configuration(
             configuration=configuration)
         for view in self._views_to_finalize:
             view.finalize_view()
@@ -636,7 +637,7 @@ class Controller(IController):
         """
 
         target_model = self._document_source_mapping[self._active_view_id]
-        tag_data["id_name"] = self._configuration_model.get_id_name(
+        tag_data["id_name"] = self._layout_configuration_model.get_id_name(
             tag_data.get("tag_type"))
         command = AddTagCommand(
             self._tag_manager, tag_data, target_model=target_model, caller_id=caller_id)
@@ -655,7 +656,7 @@ class Controller(IController):
             caller_id (str): The unique identifier of the view initiating this action.
         """
         target_model = self._document_source_mapping[self._active_view_id]
-        tag_data["id_name"] = self._configuration_model.get_id_name(
+        tag_data["id_name"] = self._layout_configuration_model.get_id_name(
             tag_data.get("tag_type"))
         tag_uuid = self._tag_manager.get_uuid_from_id(tag_id, target_model)
         command = EditTagCommand(
@@ -1027,7 +1028,7 @@ class Controller(IController):
         Raises:
             ValueError: If the colorset_name is not recognized or supported.
         """
-        self._color_manager.create_color_scheme(tag_keys=self._configuration_manager.load_configuration()['layout'][
+        self._color_manager.create_color_scheme(tag_keys=self._layout_configuration_manager.load_configuration()['layout'][
             'tag_types'], colorset_name=colorset_name, complementary_search_color=complementary_search_color)
 
     # Helpers
@@ -1306,7 +1307,7 @@ class Controller(IController):
         Returns:
             List[str]: A list of unique tag types used in the current project.
         """
-        return self._configuration_model.get_tag_types()
+        return self._layout_configuration_model.get_tag_types()
 
     def get_id_name(self, tag_type: str) -> str:
         """
@@ -1322,7 +1323,7 @@ class Controller(IController):
             str: The name of the ID attribute for the given tag type. Returns an empty string
                  if no ID attribute is defined for the tag type.
         """
-        return self._configuration_model.get_id_name(tag_type)
+        return self._layout_configuration_model.get_id_name(tag_type)
 
     def get_id_refs(self, tag_type: str) -> str:
         """
@@ -1337,7 +1338,7 @@ class Controller(IController):
         Returns:
             List[str]: A list of all attributes with an ID for the given tag type.
         """
-        return self._configuration_model.get_id_refs(tag_type)
+        return self._layout_configuration_model.get_id_refs(tag_type)
 
     def get_id_prefixes(self) -> Dict[str, str]:
         """
@@ -1346,7 +1347,7 @@ class Controller(IController):
         Returns:
             Dict[str,str]: A Dict which maps the tag types to the id prefixes.
         """
-        return self._configuration_model.get_id_prefixes()
+        return self._layout_configuration_model.get_id_prefixes()
 
     def get_align_option(self) -> str:
         """

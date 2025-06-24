@@ -1,8 +1,8 @@
 from typing import Dict
-from model.interfaces import IConfigurationModel
+from model.interfaces import ILayoutConfigurationModel
 
 
-class MockConfigurationModel(IConfigurationModel):
+class MockConfigurationModel(ILayoutConfigurationModel):
     def __init__(self):
         super().__init__()
         self.tag_types = ["TagType A", "TagType B", "TagType C"]

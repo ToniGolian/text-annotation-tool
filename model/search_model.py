@@ -161,6 +161,9 @@ class SearchModel(ISearchModel):
         Args:
             index (int): The new index to set.
         """
+        print(f"DEBUG {index=}")
+        print(f"DEBUG {self._current_index=}")
+        print(f"DEBUG {len(self._results)=}")
         if 0 <= index < len(self._results):
             self._current_index = index
             self.notify_observers()

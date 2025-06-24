@@ -18,6 +18,9 @@ class SearchFrame(tk.Frame):
         self._controller = controller
         self._root_view_id = root_view_id
 
+        self._view_id = f"{root_view_id}_search"
+        self._controller.register_view(self._view_id, self)
+
         self._label = ttk.Label(self, text="Search:")
 
         self._entry = ttk.Entry(self)
@@ -46,6 +49,13 @@ class SearchFrame(tk.Frame):
             self._button_frame, text="□*", variable=self._regex_var)
         ToolTip(self._regex_button,
                 text="Regex mode.\nInterpret search term as a regular expression.")
+
+        # Trigger search immediately when any checkbox changes
+        self._case_var.trace_add("write", lambda *args: self._trigger_search())
+        self._whole_word_var.trace_add(
+            "write", lambda *args: self._trigger_search())
+        self._regex_var.trace_add(
+            "write", lambda *args: self._trigger_search())
 
         self._next_prev_frame = ttk.Frame(self)
         self._prev_button = ttk.Button(
@@ -105,3 +115,12 @@ class SearchFrame(tk.Frame):
         }
         self._controller.perform_manual_search(
             search_options=options, caller_id=self._root_view_id)
+
+    def reset_entry(self) -> None:
+        """
+        Resets the search entry and all related options.
+        """
+        self._entry.delete(0, tk.END)
+        self._case_var.set(False)
+        self._whole_word_var.set(False)
+        self._regex_var.set(False)

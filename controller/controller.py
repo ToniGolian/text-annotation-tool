@@ -59,6 +59,7 @@ class Controller(IController):
         # views
         self._comparison_view: IComparisonView = None
         self._views_to_finalize: List = []
+        self._search_views: List = []
 
         # state
         self._dynamic_observer_index: int = 0
@@ -334,22 +335,32 @@ class Controller(IController):
         self._undo_redo_models[view_id] = UndoRedoModel()
         if view_id == "comparison":
             self._comparison_view = view
+        if view_id.endswith("_search"):
+            self._search_views.append(view)
 
     # decorators
     def invalidate_search_models(method):
-        """Decorator to invalidate search models before executing a method.
-        This decorator ensures that all search models are invalidated before the method is executed,
-        and the current search model is updated afterwards.
+        """
+        Decorator to invalidate all search models before executing a method.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            self._search_model_manager.invalidate_all()
+            return method(self, *args, **kwargs)
+        return wrapper
+
+    def update_current_search_model(method):
+        """
+        Decorator to update the current search model after method execution.
+        If the calling method is perform_add_tag, the search pointer moves to the next result.
         """
 
         def wrapper(self, *args, **kwargs):
             result = method(self, *args, **kwargs)
-            self._search_model_manager.invalidate_all()
             if not self._current_search_model:
                 return result
             self._current_search_model = self._search_model_manager.update_model(
                 self._current_search_model)
-            # Jump to next search result if the calling method is perform_add_tag
             if method.__name__ == "perform_add_tag":
                 self.perform_next_suggestion()
             return result
@@ -372,6 +383,22 @@ class Controller(IController):
             result = method(self, *args, **kwargs)
             self._update_highlight_model()
             return result
+        return wrapper
+
+    def reset_search(method):
+        """
+        Decorator to reset all search-related states before executing a method.
+        This includes switching to manual mode, resetting all search models,
+        and clearing the current active search model.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            self._annotation_mode_model.set_manual_mode()
+            self._search_model_manager.reset_models()
+            self._current_search_model = None
+            for search_view in self._search_views:
+                search_view.reset_entry()
+            return method(self, *args, **kwargs)
         return wrapper
 
     # Perform methods
@@ -403,13 +430,6 @@ class Controller(IController):
 
         # Update the selection model with the current search result
         self._current_search_to_selection()
-
-    # @with_highlight_update
-    # def perform_deactivate_manual_search_model(self) -> None:
-    #     """
-    #     Deactivates the currently active manual search model.
-    #     """
-    #     self._search_model_manager.deactivate_active_manual_search_model()
 
     @with_highlight_update
     def perform_start_db_search(self, tag_type: str, caller_id: str) -> None:
@@ -591,6 +611,7 @@ class Controller(IController):
 
     @with_highlight_update
     @invalidate_search_models
+    @update_current_search_model
     def perform_add_tag(self, tag_data: Dict, caller_id: str) -> None:
         """
         Creates and executes an AddTagCommand to add a new tag to the tag manager.
@@ -620,6 +641,7 @@ class Controller(IController):
 
     @with_highlight_update
     @invalidate_search_models
+    @update_current_search_model
     def perform_edit_tag(self, tag_id: str, tag_data: Dict, caller_id: str) -> None:
         """
         Creates and executes an EditTagCommand to modify an existing tag in the tag manager.
@@ -639,6 +661,7 @@ class Controller(IController):
 
     @with_highlight_update
     @invalidate_search_models
+    @update_current_search_model
     def perform_delete_tag(self, tag_id: str, caller_id: str) -> None:
         """
         Creates and executes a DeleteTagCommand to remove a tag from the tag manager.
@@ -684,7 +707,7 @@ class Controller(IController):
         self._selection_model.set_selected_text_data(selection_data)
 
     @with_highlight_update
-    @invalidate_search_models
+    @reset_search
     def perform_open_file(self, file_paths: List[str]) -> None:
         """
         Handles the process of opening files and updating the appropriate document model based on the active view.

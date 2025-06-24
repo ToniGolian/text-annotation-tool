@@ -144,8 +144,6 @@ class SearchManager:
         Returns:
             SearchModel: A populated SearchModel containing all matches.
         """
-        import re
-
         search_model = SearchModel()
         search_model.set_search_options(options)
 
@@ -156,6 +154,7 @@ class SearchManager:
 
         flags = 0 if options.get("case_sensitive") else re.IGNORECASE
         if options.get("regex"):
+            print(f"DEBUG regex mode checked{term=}")
             pattern = term
         else:
             pattern = re.escape(term)

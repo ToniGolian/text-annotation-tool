@@ -175,7 +175,7 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         """
         state = self._controller.get_observer_state(self)
         self._template_groups = state["template_groups"]
-        self._render()
+        self._ensure_layout()
 
     def finalize_observers(self) -> None:
         """

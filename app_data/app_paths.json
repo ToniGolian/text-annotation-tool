@@ -8,6 +8,7 @@
     "default_extraction_save_folder": "data/annotation/",
     "default_annotation_save_folder": "data/annotation/",
     "default_comparison_save_folder": "data/comparison/",
+    "color_sets": "app_data/color_sets.json",
     "project_data_folder": "app_data/projects/<project>/project_data/",
     "project_config_folder": "app_data/projects/<project>/project_config/",
     "project_db_config_folder": "app_data/projects/<project>/project_config/db_config/",

@@ -1,0 +1,19 @@
+{
+    "name": "time_ml",
+    "color_scheme": "viridis_color_scheme",
+    "tags": [
+        "alink",
+        "confidence",
+        "event",
+        "makeinstance",
+        "place",
+        "signal",
+        "slink",
+        "timex3",
+        "tlink"
+    ],
+    "groups": "groups",
+    "db_config": [
+        "place_config"
+    ]
+}

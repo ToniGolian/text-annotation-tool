@@ -14,6 +14,7 @@ from model.tag_model import TagModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
 from typing import Callable, Dict, List, Optional, Tuple
+from utils.color_manager import ColorManager
 from utils.comparison_manager import ComparisonManager
 from utils.configuration_manager import ConfigurationManager
 from utils.list_manager import ListManager
@@ -47,6 +48,7 @@ class Controller(IController):
             list_manager=self._list_manager)
         self._search_manager = SearchManager(self._file_handler)
         self._search_model_manager = SearchModelManager(self._search_manager)
+        self._color_manager = ColorManager(self._file_handler)
 
         # config
         # Load the source mapping once and store it in an instance variable
@@ -985,6 +987,12 @@ class Controller(IController):
         )
         self._execute_command(command=command, caller_id="comparison")
         self.perform_next_sentence()
+
+    def perform_create_color_scheme(self, project: str, colorset_name: str = "viridis") -> None:
+        # DEBUG
+        self._color_manager.create_color_scheme(tag_keys=self._configuration_manager.load_configuration()['layout'][
+            'tag_types'], colorset_name=colorset_name, project=project)
+
     # Helpers
 
     def _handle_failure(self, reason: FailureReason) -> None:

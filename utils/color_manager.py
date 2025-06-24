@@ -1,12 +1,14 @@
 from typing import List
 
+from input_output.file_handler import FileHandler
+
 
 class ColorManager:
     """
     Generates color schemes for tag-based applications using predefined color palettes.
     """
 
-    def __init__(self, file_handler):
+    def __init__(self, file_handler: FileHandler):
         """
         Initializes the generator with a file handler.
 
@@ -48,8 +50,13 @@ class ColorManager:
         full_keys = tag_keys + ["search", "current_search"]
         color_scheme = {}
 
+        palette_size = len(palette)
+        num_keys = len(full_keys)
+        step = max(palette_size // num_keys, 1)
+
         for idx, key in enumerate(full_keys):
-            background = palette[idx % len(palette)]
+            color_index = (idx * step) % palette_size
+            background = palette[color_index]
             font = "#ffffff" if self._is_dark(background) else "#000000"
             color_scheme[key] = {
                 "background_color": background,
@@ -63,6 +70,6 @@ class ColorManager:
             "current_search": color_scheme["current_search"]
         }
 
-        filename = f"{project}_{colorset_name}_color_scheme.json"
-        self._file_handler.write(
+        filename = f"{colorset_name}_color_scheme.json"
+        self._file_handler.write_file(
             "project_color_scheme_folder", output, filename)

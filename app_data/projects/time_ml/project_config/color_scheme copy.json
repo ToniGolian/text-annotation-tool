@@ -1,0 +1,21 @@
+{
+    "tags": {
+        "TIMEX3": "#ff4500",
+        "TLINK": "#ffa500",
+        "EVENT": "#ffcc00",
+        "MAKEINSTANCE": "#32cd32",
+        "ALINK": "#228b22",
+        "SLINK": "#ff6347",
+        "SIGNAL": "#ff1493",
+        "CONFIDENCE": "#8b0000",
+        "PLACE": "#1e90ff"
+    },
+    "search": {
+        "font_color": "#000000",
+        "background_color": "#ccf2f2"
+    },
+    "current_search": {
+        "font_color": "#000000",
+        "background_color": "#cc0c12"
+    }
+}

@@ -3,7 +3,6 @@
         "delimiter": " | ",
         "dict_delimiters": [
             "|",
-            "-",
             "/",
             ",",
             ";",

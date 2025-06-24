@@ -44,7 +44,8 @@ class CSVDBConverter:
 
         For each unique key (from the configured key column), this method accumulates
         all corresponding display and output variants and organizes sub-entries hierarchically
-        based on configured delimiters (e.g., whitespace or hyphens).
+        based on configured delimiters (e.g., whitespace or slashes). Entries that do not
+        start with a recognized parent plus delimiter are treated as top-level.
 
         Repeated keys are not overwritten but extended with all available data across the file.
 
@@ -63,37 +64,121 @@ class CSVDBConverter:
         with open(file_path, "r", encoding="utf-8") as file:
             reader = csv.reader(file)
 
-            # read header
+            # Skip header
             next(reader)
 
-            # prime lookahead
+            # Prime the lookahead
             lookahead_row = next(reader, None)
 
             while lookahead_row is not None:
                 row = lookahead_row
-                lookahead_row = next(reader, None)
                 current_word = row[self._key_column]
 
-                # get or create entry
+                # Get or create dictionary entry
                 existing_entry = our_dict.get(current_word, {
                     "display": [],
                     "output": [],
                     "children": {}
                 })
 
-                # update entry recursively
-                updated_entry = self._create_dict_layer(
+                # Process this entry and its children
+                updated_entry, lookahead_row = self._create_dict_layer(
                     existing_entry,
                     current_word,
                     row,
-                    lookahead_row,
-                    reader,
+                    next(reader, None),
+                    reader
                 )
 
-                # store updated result
                 our_dict[current_word] = updated_entry
 
         return our_dict
+
+    def _create_dict_layer(
+        self,
+        current_dict: dict,
+        current_word: str,
+        row: list[str],
+        lookahead_row: list[str] | None,
+        reader: csv.reader,
+    ) -> tuple[dict, list[str] | None]:
+        """
+        Recursively builds or extends a dictionary layer for a given word and its subentries.
+
+        This method handles the hierarchical construction of the dictionary:
+        - If a subsequent row has the same key, its display/output is appended.
+        - If the next row starts with the current word plus a delimiter from self._dict_delimiters,
+        it is treated as a child entry and processed recursively.
+        - If not, the next row is returned unchanged to the caller so it can be handled separately.
+
+        Display/output entries are deduplicated per key.
+        Children are collected into a nested "children" dictionary.
+
+        Args:
+            current_dict (dict): The current dictionary object for the given word.
+            current_word (str): The key of the current dictionary layer.
+            row (list[str]): The current row from the CSV being processed.
+            lookahead_row (list[str] | None): The next row from the CSV, or None if end of file is reached.
+            reader (csv.reader): The CSV reader instance for further rows.
+
+        Returns:
+            tuple[dict, list[str] | None]: The updated dictionary layer and the next unprocessed row.
+        """
+        current_dict.setdefault("display", [])
+        current_dict.setdefault("output", [])
+        current_dict.setdefault("children", {})
+
+        # Process display and output values for the current row
+        current_display = self._create_string(row, self._display_columns)
+        current_output = self._create_string(row, self._output_columns)
+
+        if current_display not in current_dict["display"]:
+            current_dict["display"].append(current_display)
+            current_dict["output"].append(current_output)
+
+        # Continue with lookahead row
+        next_row = lookahead_row
+
+        while next_row:
+            next_word = next_row[self._key_column]
+            if next_word == current_word:
+                # Additional row for the same key
+                next_display = self._create_string(
+                    next_row, self._display_columns)
+                next_output = self._create_string(
+                    next_row, self._output_columns)
+
+                if next_display not in current_dict["display"]:
+                    current_dict["display"].append(next_display)
+                    current_dict["output"].append(next_output)
+
+                next_row = next(reader, None)
+
+            elif self._starts_with_current_word(next_word, current_word):
+                # This is a child entry
+                child_dict = current_dict["children"].get(next_word, {
+                    "display": [],
+                    "output": [],
+                    "children": {}
+                })
+
+                # Recursively process child
+                next_lookahead = next(reader, None)
+                updated_child, next_row = self._create_dict_layer(
+                    child_dict,
+                    next_word,
+                    next_row,
+                    next_lookahead,
+                    reader,
+                )
+
+                current_dict["children"][next_word] = updated_child
+
+            else:
+                # This is not a child; break and return it to the caller
+                break
+
+        return current_dict, next_row
 
     def _initialize_config_fields(self, config: dict):
         """
@@ -136,99 +221,6 @@ class CSVDBConverter:
             raise ValueError(
                 "Configuration file malformatted. Please check the file format."
             )
-
-    def _create_dict_layer(
-        self,
-        current_dict: dict,
-        current_word: str,
-        row: list[str],
-        lookahead_row: list[str] | None,
-        reader: csv.reader,
-    ) -> dict:
-        """
-        Recursively builds or extends a dictionary layer for a given word and its subentries.
-
-        This method handles the hierarchical construction of the dictionary:
-        - If a subsequent row has the same key, its display/output is appended.
-        - If the next row starts with the current word plus a delimiter, it is treated as a child entry and processed recursively.
-
-        Display/output entries are deduplicated per key.
-        Children are collected into a nested "children" dictionary.
-
-        Args:
-            current_dict (dict): The current dictionary object for the given word.
-            current_word (str): The key of the current dictionary layer.
-            row (list[str]): The current row from the CSV being processed.
-            lookahead_row (list[str] | None): The next row from the CSV, or None if end of file is reached.
-            reader (csv.reader): The CSV reader instance for further rows.
-
-        Returns:
-            dict: The updated dictionary layer including display/output entries and any child entries.
-        """
-        # ensure structure exists
-        current_dict.setdefault("display", [])
-        current_dict.setdefault("output", [])
-        current_dict.setdefault("children", {})
-
-        # process current row's values
-        current_display = self._create_string(row, self._display_columns)
-        current_output = self._create_string(row, self._output_columns)
-
-        if current_display not in current_dict["display"]:
-            current_dict["display"].append(current_display)
-            current_dict["output"].append(current_output)
-
-        # continue with lookahead row
-        next_row = lookahead_row
-        if not next_row:
-            return current_dict
-
-        next_word = next_row[self._key_column]
-        starts_with_word = self._starts_with_current_word(
-            next_word, current_word)
-
-        while starts_with_word:
-            if next_word == current_word:
-                # another row for same word
-                next_display = self._create_string(
-                    next_row, self._display_columns)
-                next_output = self._create_string(
-                    next_row, self._output_columns)
-
-                if next_display not in current_dict["display"]:
-                    current_dict["display"].append(next_display)
-                    current_dict["output"].append(next_output)
-            else:
-                # next word is a child entry
-                child_dict = current_dict["children"].get(next_word, {
-                    "display": [],
-                    "output": [],
-                    "children": {}
-                })
-
-                # read next lookahead before recursing
-                lookahead_row = next(reader, None)
-
-                updated_child = self._create_dict_layer(
-                    child_dict,
-                    next_word,
-                    next_row,
-                    lookahead_row,
-                    reader,
-                )
-
-                current_dict["children"][next_word] = updated_child
-
-            # read next row
-            next_row = next(reader, None)
-            if not next_row:
-                break
-
-            next_word = next_row[self._key_column]
-            starts_with_word = self._starts_with_current_word(
-                next_word, current_word)
-
-        return current_dict
 
     def _strip_output_and_add_delimiter(self, col: int, entry: str) -> str:
         """

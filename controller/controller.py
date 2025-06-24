@@ -59,7 +59,9 @@ class Controller(IController):
         self._tag_manager = TagManager(self, self._tag_processor)
         self._comparison_manager = ComparisonManager(self, self._tag_processor)
         self._pdf_extraction_manager = PDFExtractionManager(controller=self)
-        self._search_manager = SearchManager(file_handler=self._file_handler)
+
+        self._search_manager = SearchManager(
+            search_normalization=self._settings_manager.get_search_normalization(), file_handler=self._file_handler)
         self._search_model_manager = SearchModelManager(self._search_manager)
         self._color_manager = ColorManager(self._file_handler)
 

@@ -72,11 +72,26 @@ class SettingsManager:
             dict: A dictionary containing abbreviations for each language.
         """
         abbreviations = self._file_handler.read_file("project_abbreviations")
-        print(f"DEBUG {abbreviations.keys()=}")
         current_language = self._project_settings.get("current_language", [])
-        print(f"DEBUG {current_language=}")
         language_specific_abbreviations = abbreviations.get(current_language)
         if language_specific_abbreviations is None:
             raise KeyError(
                 f"The key '{self._project_settings.get('current_language')}' is missing in the abbreviations file.")
         return language_specific_abbreviations
+
+    def get_search_normalization(self) -> dict:
+        """
+        Retrieves the search normalization settings from the settings file.
+
+        Returns:
+            dict: The search normalization settings.
+        """
+        current_language = self._project_settings.get("current_language", [])
+        search_normalization_rules = self._file_handler.read_file(
+            "project_search_normalization")
+        if not search_normalization_rules:
+            raise KeyError(
+                "The key 'project_search_normalization' is missing in the settings file.")
+        search_normalization_rules["common_suffixes"] = search_normalization_rules.get(
+            "common_suffixes", []).get(current_language, [])
+        return search_normalization_rules

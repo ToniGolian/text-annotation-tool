@@ -1,6 +1,6 @@
 {
     "name": "time_ml",
-    "color_scheme": "magma_color_scheme",
+    "color_scheme": "magma_comp_search_color_scheme.json",
     "tags": [
         "alink",
         "confidence",
@@ -12,8 +12,8 @@
         "timex3",
         "tlink"
     ],
-    "groups": "groups",
+    "groups": "groups01.json",
     "db_config": [
-        "place_config"
+        "place_config.json"
     ]
 }

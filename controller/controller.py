@@ -988,7 +988,7 @@ class Controller(IController):
         self._execute_command(command=command, caller_id="comparison")
         self.perform_next_sentence()
 
-    def perform_create_color_scheme(self, colorset_name: str = "viridis") -> None:
+    def perform_create_color_scheme(self, colorset_name: str = "viridis", complementary_search_color: bool = False) -> None:
         """
         Creates a color scheme for the tag types defined in the configuration.
         This method uses the color manager to generate a color scheme based on the
@@ -999,7 +999,7 @@ class Controller(IController):
             ValueError: If the colorset_name is not recognized or supported.
         """
         self._color_manager.create_color_scheme(tag_keys=self._configuration_manager.load_configuration()['layout'][
-            'tag_types'], colorset_name=colorset_name)
+            'tag_types'], colorset_name=colorset_name, complementary_search_color=complementary_search_color)
 
     # Helpers
 

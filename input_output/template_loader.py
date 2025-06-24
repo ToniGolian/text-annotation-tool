@@ -60,9 +60,10 @@ class TemplateLoader(ITemplateLoader):
             FileNotFoundError: If `groups.json` or a tag template file is not found.
             JSONDecodeError: If a file is not in valid JSON format.
         """
-        # project_path = os.path.join(project_path, "groups.json")
+        project_settings = self._file_handler.read_file("project_settings")
+        group_file_name = project_settings.get("groups", "default_groups")
         groups: Dict[str, List[str]
-                     ] = self._file_handler.read_file("project_groups")
+                     ] = self._file_handler.read_file("project_groups_folder", group_file_name)
         template_groups: List[Dict[str, List[Dict]]] = []
 
         for group_name, group_members in groups.items():

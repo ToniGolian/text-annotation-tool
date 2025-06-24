@@ -150,7 +150,6 @@ class TagProcessor(ITagProcessor):
 
             # Parse attributes into a dictionary
             attributes = dict(attribute_pattern.findall(attributes_raw))
-            print(f"DEBUG {attributes=}")
             attributes["id"] = attributes.pop(id_name)
 
             # Extract reference keys from controller

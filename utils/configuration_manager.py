@@ -34,7 +34,7 @@ class ConfigurationManager:
         """
         layout = {}
         project_settings = self._file_handler.read_file("project_settings")
-        color_scheme_file_name = project_settings.get("color_scheme") + ".json"
+        color_scheme_file_name = project_settings.get("color_scheme")
         color_scheme = self._file_handler.read_file(
             "project_color_scheme_folder", color_scheme_file_name)
 

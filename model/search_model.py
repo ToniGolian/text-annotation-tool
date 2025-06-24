@@ -20,6 +20,7 @@ class SearchModel(ISearchModel):
         self._current_index: int = -1
         self._valid: bool = True
         self._is_active: bool = False
+        self._search_options = {}
 
     def add_result(self, search_result: SearchResult) -> None:
         """
@@ -165,3 +166,21 @@ class SearchModel(ISearchModel):
             self.notify_observers()
         else:
             raise IndexError("Index out of bounds for search results.")
+
+    def get_search_options(self) -> dict:
+        """
+        Returns the current search options.
+
+        Returns:
+            dict: The search options used for the current search.
+        """
+        return self._search_options
+
+    def set_search_options(self, options: dict) -> None:
+        """
+        Sets the search options for the current search.
+
+        Args:
+            options (dict): A dictionary of search options.
+        """
+        self._search_options = options

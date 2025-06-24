@@ -61,12 +61,22 @@ class SearchModelManager(IPublisher):
 
         if search_type == SearchType.MANUAL:
             search_term = options.get("search_term", "")
-            model = self._manual_models.get(search_term)
-            if model is None or not model.is_valid():
+            existing_model = self._manual_models.get(search_term)
+
+            needs_recalculation = (
+                existing_model is None
+                or not existing_model.is_valid()
+                or existing_model.get_search_options() != options
+            )
+
+            if needs_recalculation:
                 model = self._search_manager.calculate_manual_search_model(
                     options=options, document_model=document_model)
                 self._register_observers_to_search_model(model)
                 self._manual_models[search_term] = model
+            else:
+                model = existing_model
+
             key = search_term
 
         elif search_type == SearchType.DB:

@@ -147,6 +147,8 @@ class SearchManager:
         import re
 
         search_model = SearchModel()
+        search_model.set_search_options(options)
+
         text = document_model.get_text()
         term = options.get("search_term", "")
         if not term:

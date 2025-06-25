@@ -41,7 +41,6 @@ class SearchManager:
 
         while index < len(tokens):
             raw_token = tokens[index]
-            print(f"DEBUG {raw_token=}")
 
             # Remove XML tags if present and split into individual words
             if re.match(r'^<[^>]+>.*</[^>]+>$', raw_token):
@@ -53,7 +52,6 @@ class SearchManager:
                 continue  # Restart loop with new tokens
             else:
                 stripped_token = raw_token
-            print(f"DEBUG {stripped_token=}")
 
             match_token = stripped_token.rstrip(self._chars_to_strip)
             current_dict = None

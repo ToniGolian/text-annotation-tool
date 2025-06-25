@@ -166,3 +166,17 @@ class FileHandler:
             str: File name without extension.
         """
         return os.path.splitext(os.path.basename(file_path))[0]
+
+    def check_overwriting(self, file_path: str) -> bool:
+        """
+        Checks whether the given file path already exists.
+
+        Args:
+            file_path (str): The path to check.
+
+        Returns:
+            bool: True if the file exists, False otherwise.
+        """
+        if os.path.exists(file_path):
+            return True
+        return False

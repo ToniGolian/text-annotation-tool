@@ -1,6 +1,9 @@
 import platform
 import tkinter as tk
 from tkinter import ttk
+from tkinter import filedialog
+from tkinter import messagebox
+from typing import Optional
 from observer.interfaces import IObserver, IPublisher
 from view.extraction_view import ExtractionView
 from view.annotation_view import AnnotationView
@@ -14,6 +17,7 @@ class MainWindow(tk.Tk, IObserver):
 
         self.DEFAULT_NOTEBOOK_INDEX = 0
         self._controller = controller
+        self._controller.register_view("main_window", self)
 
         self._annotation_view = None
         self._extraction_view = None
@@ -143,3 +147,32 @@ class MainWindow(tk.Tk, IObserver):
             self._notebook.select(state["active_notebook_index"])
             if state["active_notebook_index"] == 1:
                 self._annotation_view.focus_set()
+
+    def ask_user_for_save_path(self) -> Optional[str]:
+        """
+        Opens a file dialog to let the user choose a file path for saving.
+
+        Returns:
+            Optional[str]: The selected file path as a string, or None if the dialog was cancelled.
+        """
+        return filedialog.asksaveasfilename(
+            title="Save As",
+            defaultextension=".json",
+            filetypes=[("Project files", "*.json"), ("All files", "*.*")],
+            initialdir="."  # Can be adjusted or dynamically set
+        )
+
+    def ask_user_for_overwrite_confirmation(self, path: str) -> bool:
+        """
+        Opens a confirmation dialog asking the user whether to overwrite an existing file.
+
+        Args:
+            path (str): The file path that would be overwritten.
+
+        Returns:
+            bool: True if the user confirms overwriting, False otherwise.
+        """
+        return messagebox.askyesno(
+            title="Overwrite File?",
+            message=f"The file '{path}' already exists.\nDo you want to overwrite it?"
+        )

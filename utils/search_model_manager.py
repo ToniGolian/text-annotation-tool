@@ -168,6 +168,8 @@ class SearchModelManager(IPublisher):
             model (SearchModel): The model instance to which observers should be added.
         """
         for observer in self._observers:
+            print(
+                f"Registering observer {observer.__class__.__name__} to model {model.__class__.__name__}")
             model.add_observer(observer)
 
     def get_state(self):

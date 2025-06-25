@@ -1,10 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
 from controller.interfaces import IController
+from observer.interfaces import IObserver, IPublisher
 from view.tooltip import ToolTip
 
 
-class SearchFrame(tk.Frame):
+class SearchFrame(tk.Frame, IObserver):
     def __init__(self, parent: tk.Widget, controller: IController, root_view_id: str) -> None:
         """
         Initializes the SearchFrame with a search entry and option buttons.
@@ -19,6 +20,7 @@ class SearchFrame(tk.Frame):
         self._root_view_id = root_view_id
 
         self._view_id = f"{root_view_id}_search"
+        self._controller.add_observer(self)
         self._controller.register_view(self._view_id, self)
 
         self._label = ttk.Label(self, text="Search:")
@@ -57,6 +59,25 @@ class SearchFrame(tk.Frame):
         self._regex_var.trace_add(
             "write", lambda *args: self._trigger_search())
 
+        # Variables for search result info
+        self._index_var = tk.IntVar(value=0)
+        self._num_var = tk.IntVar(value=0)
+
+        # Info frame between search options and navigation
+        self._info_frame = ttk.Frame(self)
+        self._info_text_var = tk.StringVar()
+        self._info_label = ttk.Label(
+            self._info_frame, textvariable=self._info_text_var)
+        self._info_label.pack(side=tk.LEFT, padx=2)
+
+        # Automatically update info text when variables change
+        self._index_var.trace_add(
+            "write", lambda *args: self._update_info_label())
+        self._num_var.trace_add(
+            "write", lambda *args: self._update_info_label())
+        self._update_info_label()
+
+        # Navigation buttons
         self._next_prev_frame = ttk.Frame(self)
         self._prev_button = ttk.Button(
             self._next_prev_frame, text="<", command=lambda: self._controller.perform_previous_suggestion())
@@ -66,8 +87,6 @@ class SearchFrame(tk.Frame):
         self._next_button.pack(side=tk.LEFT, padx=2)
         ToolTip(self._prev_button, text="Go to previous search result.")
         ToolTip(self._next_button, text="Go to next search result.")
-        self._next_prev_frame.grid(
-            row=0, column=3, padx=(2, 5), pady=5, sticky="e")
 
         self._render()
 
@@ -79,13 +98,16 @@ class SearchFrame(tk.Frame):
 
         self._label.grid(row=0, column=0, padx=(5, 2), pady=5, sticky="w")
         self._entry.grid(row=0, column=1, padx=2, pady=5, sticky="ew")
+
         self._button_frame.grid(
             row=0, column=2, padx=(2, 5), pady=5, sticky="e")
-
-        # Style buttons small and compact
         for i, button in enumerate([self._case_button, self._whole_word_button, self._regex_button]):
             button.grid(row=0, column=i, padx=1)
             button.configure(width=3)
+
+        self._info_frame.grid(row=0, column=3, padx=(2, 5), pady=5, sticky="e")
+        self._next_prev_frame.grid(
+            row=0, column=4, padx=(2, 5), pady=5, sticky="e")
 
     def _on_key_pressed(self, event) -> None:
         """
@@ -108,7 +130,7 @@ class SearchFrame(tk.Frame):
             self._controller.perform_end_search()
             return
         options = {
-            "search_term": self._entry.get(),
+            "search_term": search_term,
             "case_sensitive": self._case_var.get(),
             "whole_word": self._whole_word_var.get(),
             "regex": self._regex_var.get()
@@ -124,3 +146,24 @@ class SearchFrame(tk.Frame):
         self._case_var.set(False)
         self._whole_word_var.set(False)
         self._regex_var.set(False)
+        self._index_var.set(0)
+        self._num_var.set(0)
+
+    def update(self, publisher: IPublisher) -> None:
+        """
+        Updates the search frame with the current observer state from the controller.
+        """
+        state = self._controller.get_observer_state(
+            observer=self, publisher=publisher)
+        index = state.get("index", 0)
+        num_results = state.get("num_results", 0)
+        self._index_var.set(index+1)
+        self._num_var.set(num_results)
+        self._update_info_label
+
+    def _update_info_label(self) -> None:
+        """
+        Updates the text of the info label to show current index/total.
+        """
+        self._info_text_var.set(
+            f"{self._index_var.get()}/{self._num_var.get()}")

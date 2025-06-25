@@ -41,6 +41,23 @@
             }
         }
     },
+    "SearchFrame": {
+        "SearchModelManager": {
+            "finalize": false,
+            "source_keys": {
+                "search_model_manager": []
+            }
+        },
+        "SearchModel": {
+            "finalize": false,
+            "source_keys": {
+                "current_search_model": [
+                    "index",
+                    "num_results"
+                ]
+            }
+        }
+    },
     "MetaTagsFrame": {
         "AnnotationDocumentModel": {
             "finalize": true,

@@ -133,7 +133,9 @@ class SearchModel(ISearchModel):
         )
         return {
             "current_search_result": current_result,
-            "results": self._results
+            "results": self._results,
+            "index": self._current_index,
+            "num_results": len(self._results)
         }
 
     def reset(self) -> None:

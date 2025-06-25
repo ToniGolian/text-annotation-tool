@@ -103,7 +103,7 @@ class SearchFrame(tk.Frame, IObserver):
             row=0, column=2, padx=(2, 5), pady=5, sticky="e")
         for i, button in enumerate([self._case_button, self._whole_word_button, self._regex_button]):
             button.grid(row=0, column=i, padx=1)
-            button.configure(width=3)
+            # button.configure(width=4)
 
         self._info_frame.grid(row=0, column=3, padx=(2, 5), pady=5, sticky="e")
         self._next_prev_frame.grid(

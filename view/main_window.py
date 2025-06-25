@@ -91,6 +91,7 @@ class MainWindow(tk.Tk, IObserver):
         if file_paths:
             self._controller.perform_open_file(file_paths)
 
+    #!DEPRECATED
     def _on_save_as(self):
         if self._controller.get_active_view() == "comparison":
             self._controller.perform_save_as(None)
@@ -122,6 +123,13 @@ class MainWindow(tk.Tk, IObserver):
             self._controller.perform_save_as(file_path)
         else:
             self._on_save_as()
+            #!END DEPRECATED
+
+    def _on_save(self) -> None:
+        self._controller.perform_save()
+
+    def _on_save_as(self) -> None:
+        self._controller.perform_save_as()
 
     def _on_preferences(self):
         print("Preferences dialog not implemented yet.")

@@ -547,9 +547,12 @@ class Controller(IController):
         pdf_path = extraction_data["pdf_path"]
         file_name = self._file_handler.derive_file_name(pdf_path)
 
+        print(
+            f"Extracted text from {pdf_path} with {len(extracted_text)} characters.")
+        print(f"File name derived: {file_name}")
         document = {
             "file_name": file_name,
-            "file_path": pdf_path,
+            "file_path": "",  # no path settet until save
             "document_type": "extraction",
             "meta_tags": {},
             "text": extracted_text
@@ -768,6 +771,96 @@ class Controller(IController):
             else:
                 self._setup_comparison_model(documents)
 
+    #!DEPRECATED
+    def perform_save_as(self, file_path: Optional[str] = None):
+        """
+        Saves the current document to the specified file path.
+
+        For comparison views, saves the merged document into the annotation folder
+        and the comparison metadata into the comparison folder.
+        """
+        data_source = self.get_save_as_config()["data_source"]
+        document = data_source.get_state()
+
+        if self._active_view_id == "comparison":
+            # Construct merged file name and paths
+            base_name = self._file_handler.derive_file_name(
+                document["source_file_paths"][0])
+            merged_file_name = f"{base_name}_merged.json"
+
+            annotation_folder = self._file_handler.resolve_path(
+                "default_annotation_save_folder")
+            comparison_folder = self._file_handler.resolve_path(
+                "default_comparison_save_folder")
+
+            # Final full paths
+            annotation_file_path = os.path.join(
+                annotation_folder, merged_file_name)
+            comparison_info_path = os.path.join(
+                comparison_folder, f"{base_name}_comparison.json")
+
+            # Prepare document for saving
+            clean_document = {
+                "file_path": annotation_file_path,
+                "file_name": base_name + "_merged",
+                "document_type": "annotation",
+                "meta_tags": {
+                    tag_type: [", ".join(str(tag) for tag in tags)]
+                    for tag_type, tags in document.get("meta_tags", {}).items()
+                },
+                "text": document["text"]
+            }
+
+            # Save merged annotation document
+            self._file_handler.write_file(file_path, clean_document)
+
+            # Save comparison metadata
+            comparison_info = {
+                "document_type": "comparison",
+                "source_paths": document["source_file_paths"],
+                "document_path": file_path,
+                "file_names": document.get("file_names", []),
+                "num_sentences": document.get("num_sentences", 0),
+                "current_sentence_index": document.get("current_sentence_index", 0),
+                "comparison_sentences": document.get("comparison_sentences", []),
+                "adopted_flags": document.get("adopted_flags", []),
+                "differing_to_global": document.get("differing_to_global", []),
+            }
+            self._file_handler.write_file(
+                comparison_info_path, comparison_info)
+
+        else:
+            # Normal annotation/extraction mode
+            document["file_path"] = file_path
+            document["file_name"] = self._file_handler.derive_file_name(
+                file_path)
+            document["document_type"] = self._active_view_id
+            meta_tag_strings = {
+                tag_type: [", ".join(str(tag) for tag in tags)]
+                for tag_type, tags in document.get("meta_tags", {}).items()
+            }
+            document["meta_tags"] = meta_tag_strings
+            document.pop("tags", None)
+
+            self._file_handler.write_file(file_path, document)
+    #!END DEPRECATED
+
+    def perform_save(self) -> None:
+        if self._active_view_id == "extraction":
+            file_path = self._extraction_document_model.get_file_path()
+        elif self._active_view_id == "annotation":
+            file_path = self._annotation_document_model.get_file_path()
+        elif self._active_view_id == "comparison":
+            file_path = self._comparison_model.get_file_path()
+        if not file_path:
+            self.perform_save_as()
+        else:
+            self._file_handler.write_file()
+
+    def perform_save_as(self) -> None:
+        # todo store file_path to document
+        raise NotImplementedError()
+
     def _setup_comparison_model(self, documents) -> None:
         self._appearance_model.set_num_comparison_displays(len(documents)+1)
 
@@ -883,78 +976,6 @@ class Controller(IController):
                          for document_sentences in documents_sentences]
             self._tag_manager.find_equivalent_tags(
                 sentences=sentences, common_sentence=merged_sentence, documents_tags=documents_tags, merged_tags=merged_document_tags)
-
-    def perform_save_as(self, file_path: Optional[str] = None):
-        """
-        Saves the current document to the specified file path.
-
-        For comparison views, saves the merged document into the annotation folder
-        and the comparison metadata into the comparison folder.
-        """
-        data_source = self.get_save_as_config()["data_source"]
-        document = data_source.get_state()
-
-        if self._active_view_id == "comparison":
-            # Construct merged file name and paths
-            base_name = self._file_handler.derive_file_name(
-                document["source_file_paths"][0])
-            merged_file_name = f"{base_name}_merged.json"
-
-            annotation_folder = self._file_handler.resolve_path(
-                "default_annotation_save_folder")
-            comparison_folder = self._file_handler.resolve_path(
-                "default_comparison_save_folder")
-
-            # Final full paths
-            annotation_file_path = os.path.join(
-                annotation_folder, merged_file_name)
-            comparison_info_path = os.path.join(
-                comparison_folder, f"{base_name}_comparison.json")
-
-            # Prepare document for saving
-            clean_document = {
-                "file_path": annotation_file_path,
-                "file_name": base_name + "_merged",
-                "document_type": "annotation",
-                "meta_tags": {
-                    tag_type: [", ".join(str(tag) for tag in tags)]
-                    for tag_type, tags in document.get("meta_tags", {}).items()
-                },
-                "text": document["text"]
-            }
-
-            # Save merged annotation document
-            self._file_handler.write_file(file_path, clean_document)
-
-            # Save comparison metadata
-            comparison_info = {
-                "document_type": "comparison",
-                "source_paths": document["source_file_paths"],
-                "document_path": file_path,
-                "file_names": document.get("file_names", []),
-                "num_sentences": document.get("num_sentences", 0),
-                "current_sentence_index": document.get("current_sentence_index", 0),
-                "comparison_sentences": document.get("comparison_sentences", []),
-                "adopted_flags": document.get("adopted_flags", []),
-                "differing_to_global": document.get("differing_to_global", []),
-            }
-            self._file_handler.write_file(
-                comparison_info_path, comparison_info)
-
-        else:
-            # Normal annotation/extraction mode
-            document["file_path"] = file_path
-            document["file_name"] = self._file_handler.derive_file_name(
-                file_path)
-            document["document_type"] = self._active_view_id
-            meta_tag_strings = {
-                tag_type: [", ".join(str(tag) for tag in tags)]
-                for tag_type, tags in document.get("meta_tags", {}).items()
-            }
-            document["meta_tags"] = meta_tag_strings
-            document.pop("tags", None)
-
-            self._file_handler.write_file(file_path, document)
 
     def perform_prev_sentence(self) -> None:
         """
@@ -1148,6 +1169,7 @@ class Controller(IController):
             "multiselect": multiselect
         }
 
+    #!DEPRECATED
     def get_save_as_config(self) -> dict:
         """
         Returns configuration for the save-as dialog and the associated data source.
@@ -1178,6 +1200,7 @@ class Controller(IController):
             "title": "Save File As",
             "data_source": data_source
         }
+    #!END DEPRECATED
 
     def get_file_path(self) -> str:
         """

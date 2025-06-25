@@ -96,37 +96,37 @@ class MainWindow(tk.Tk, IObserver):
             self._controller.perform_open_file(file_paths)
 
     #!DEPRECATED
-    def _on_save_as(self):
-        if self._controller.get_active_view() == "comparison":
-            self._controller.perform_save_as(None)
-            return
+    # def _on_save_as(self):
+    #     if self._controller.get_active_view() == "comparison":
+    #         self._controller.perform_save_as(None)
+    #         return
 
-        try:
-            config = self._controller.get_save_as_config()
-            initial_dir = config.get("initial_dir", ".")
-            filetypes = config.get("filetypes", [("All Files", "*.*")])
-            defaultextension = config.get("defaultextension", "")
-            title = config.get("title", "Save File As")
+    #     try:
+    #         config = self._controller.get_save_as_config()
+    #         initial_dir = config.get("initial_dir", ".")
+    #         filetypes = config.get("filetypes", [("All Files", "*.*")])
+    #         defaultextension = config.get("defaultextension", "")
+    #         title = config.get("title", "Save File As")
 
-            file_path = tk.filedialog.asksaveasfilename(
-                initialdir=initial_dir,
-                filetypes=filetypes,
-                defaultextension=defaultextension,
-                title=title
-            )
+    #         file_path = tk.filedialog.asksaveasfilename(
+    #             initialdir=initial_dir,
+    #             filetypes=filetypes,
+    #             defaultextension=defaultextension,
+    #             title=title
+    #         )
 
-            if file_path:
-                self._controller.perform_save_as(file_path)
+    #         if file_path:
+    #             self._controller.perform_save_as(file_path)
 
-        except Exception as e:
-            print(f"Error during save as file dialog: {e}")
+    #     except Exception as e:
+    #         print(f"Error during save as file dialog: {e}")
 
-    def _on_save(self) -> None:
-        file_path = self._controller.get_file_path()
-        if file_path:
-            self._controller.perform_save_as(file_path)
-        else:
-            self._on_save_as()
+    # def _on_save(self) -> None:
+    #     file_path = self._controller.get_file_path()
+    #     if file_path:
+    #         self._controller.perform_save_as(file_path)
+    #     else:
+    #         self._on_save_as()
             #!END DEPRECATED
 
     def _on_save(self) -> None:
@@ -139,6 +139,7 @@ class MainWindow(tk.Tk, IObserver):
         print("Preferences dialog not implemented yet.")
 
     def _on_closing(self):
+        self._controller.check_for_saving()
         self.destroy()
 
     def update(self, publisher: IPublisher) -> None:
@@ -176,3 +177,19 @@ class MainWindow(tk.Tk, IObserver):
             title="Overwrite File?",
             message=f"The file '{path}' already exists.\nDo you want to overwrite it?"
         )
+
+    def prompt_save(self, view_id: str) -> bool:
+        """
+        Prompts the user with a dialog asking whether to save changes for a specific view.
+
+        Args:
+            view_id (str): The identifier of the view with unsaved changes.
+
+        Returns:
+            bool: True if the user chooses to save, False otherwise.
+        """
+        from tkinter import messagebox
+
+        view_name = view_id.capitalize().replace("_", " ")
+        message = f"The document in view '{view_name}' has unsaved changes.\nDo you want to save it?"
+        return messagebox.askyesno("Unsaved Changes", message)

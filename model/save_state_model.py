@@ -1,66 +1,68 @@
-from typing import Dict, List
-
-
 class SaveStateModel:
     """
-    Tracks the dirty (unsaved) state of multiple views or modes by key.
-    Used to determine whether a save prompt is required before critical actions.
+    Tracks the save state of multiple document modes using a change counter.
+
+    This model allows tracking whether the current state of a document mode
+    has unsaved changes by counting how many modifications have been made
+    since the last save. A mode is considered 'clean' if its counter is zero.
+
+    This supports undo/redo logic: each executed or redone command increments
+    the counter, while each undo decrements it, without going below zero.
     """
 
     def __init__(self) -> None:
-        """Initializes the internal dictionary to track dirty flags per key."""
-        self._dirty_flags: Dict[str, bool] = {}
-
-    def set_dirty(self, key: str) -> None:
         """
-        Marks the given key (e.g., view or mode) as dirty (unsaved changes exist).
-
-        Args:
-            key (str): Identifier for the view or mode.
+        Initializes the SaveStateModel with an empty dictionary of change counters.
         """
-        self._dirty_flags[key] = True
+        self._change_counts: dict[str, int] = {}
 
-    def set_clean(self, key: str) -> None:
+    def reset(self, key: str) -> None:
         """
-        Marks the given key as clean (no unsaved changes).
+        Marks the state of the given key (mode) as clean by resetting its counter.
 
         Args:
-            key (str): Identifier for the view or mode.
+            key (str): The identifier of the document mode.
         """
-        self._dirty_flags[key] = False
+        self._change_counts[key] = 0
+
+    def increment(self, key: str) -> None:
+        """
+        Increments the change counter for the given key (used on execute/redo).
+
+        Args:
+            key (str): The identifier of the document mode.
+        """
+        self._change_counts[key] = self._change_counts.get(key, 0) + 1
+
+    def decrement(self, key: str) -> None:
+        """
+        Decrements the change counter for the given key (used on undo).
+        The counter will never go below zero.
+
+        Args:
+            key (str): The identifier of the document mode.
+        """
+        self._change_counts[key] = max(0, self._change_counts.get(key, 0) - 1)
 
     def is_dirty(self, key: str) -> bool:
         """
-        Checks whether the given key is currently marked as dirty.
+        Returns whether the state for the given key has unsaved changes.
+
+        A mode is considered dirty if its change counter is greater than zero.
 
         Args:
-            key (str): Identifier for the view or mode.
+            key (str): The identifier of the document mode.
 
         Returns:
-            bool: True if dirty, False if clean or unknown.
+            bool: True if there are unsaved changes, False otherwise.
         """
-        return self._dirty_flags.get(key, False)
+        return self._change_counts.get(key, 0) > 0
 
-    def any_dirty(self) -> bool:
+    def get_dirty_keys(self) -> list[str]:
         """
-        Checks whether any key is currently dirty.
-
-        Returns:
-            bool: True if at least one key is dirty, False otherwise.
-        """
-        return any(self._dirty_flags.values())
-
-    def get_all_dirty_keys(self) -> List[str]:
-        """
-        Returns a list of all keys that are currently marked as dirty.
+        Returns a list of keys (document modes) that have unsaved changes.
 
         Returns:
-            List[str]: List of keys with unsaved changes.
+            list[str]: A list of identifiers for modes that are dirty.
         """
-        return [key for key, dirty in self._dirty_flags.items() if dirty]
-
-    def reset_all(self) -> None:
-        """
-        Clears all dirty flags, marking all keys as clean.
-        """
-        self._dirty_flags.clear()
+        return [key for key, count in self._change_counts.items() if count > 0]

@@ -10,6 +10,7 @@ from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
 from model.highlight_model import HighlightModel
 from model.interfaces import IComparisonModel, ILayoutConfigurationModel, IDocumentModel, ISearchModel, ISelectionModel
+from model.save_state_model import SaveStateModel
 from model.tag_model import TagModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
@@ -32,7 +33,7 @@ from view.main_window import MainWindow
 
 
 class Controller(IController):
-    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None) -> None:
+    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: SaveStateModel = None) -> None:
 
         # state
         self._dynamic_observer_index: int = 0
@@ -48,6 +49,7 @@ class Controller(IController):
         self._annotation_mode_model: IPublisher = annotation_mode_model
         self._highlight_model = highlight_model
         self._current_search_model: IPublisher = None
+        self._save_state_model: SaveStateModel = save_state_model
 
         # dependencies
         self._path_manager = PathManager()
@@ -86,8 +88,117 @@ class Controller(IController):
                                          "annotation": self._annotation_document_model,
                                          "comparison": self._comparison_model}
 
-    # command pattern
+    # decorators
+    def invalidate_search_models(method):
+        """
+        Decorator to invalidate all search models before executing a method.
+        """
 
+        def wrapper(self, *args, **kwargs):
+            self._search_model_manager.invalidate_all()
+            return method(self, *args, **kwargs)
+        return wrapper
+
+    def update_current_search_model(method):
+        """
+        Decorator to update the current search model after method execution.
+        If the calling method is perform_add_tag, the search pointer moves to the next result.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            result = method(self, *args, **kwargs)
+            if not self._current_search_model:
+                return result
+            self._current_search_model = self._search_model_manager.update_model(
+                self._current_search_model)
+            if method.__name__ == "perform_add_tag":
+                self.perform_next_suggestion()
+            return result
+        return wrapper
+
+    def with_highlight_update(method):
+        """
+        Decorator that ensures the highlight model is updated after the decorated method is executed.
+
+        This is useful for controller methods that modify search or tag data which affects highlighting.
+
+        Args:
+            method (Callable): The method to wrap.
+
+        Returns:
+            Callable: The wrapped method that updates the highlight model after execution.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            result = method(self, *args, **kwargs)
+            self._update_highlight_model()
+            return result
+        return wrapper
+
+    def reset_search(method):
+        """
+        Decorator to reset all search-related states before executing a method.
+        This includes switching to manual mode, resetting all search models,
+        and clearing the current active search model.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            self._annotation_mode_model.set_manual_mode()
+            self._search_model_manager.reset_models()
+            self._current_search_model = None
+            for search_view in self._search_views:
+                search_view.reset_entry()
+            return method(self, *args, **kwargs)
+        return wrapper
+
+    def track_save_state(method):
+        """
+        Decorator that adjusts the SaveStateModel based on the type of command action.
+
+        This decorator should be applied to controller methods that manage commands,
+        such as execute, undo, and redo. It automatically updates the change counter
+        for the active view in the SaveStateModel:
+
+        - Calls to 'execute' and 'redo' will increment the counter (marking the view dirty).
+        - Calls to 'undo' will decrement the counter (potentially marking it clean again).
+
+        Needs to be the most inner decorator to ensure it wraps around the command execution logic.
+
+        """
+
+        def wrapped(self, *args, **kwargs):
+            result = method(self, *args, **kwargs)
+
+            name = method.__name__.lower()
+            key = self._active_view_id
+            if "undo" in name:
+                self._save_state_model.decrement(key)
+            elif "_execute" in name or "redo" in name:
+                self._save_state_model.increment(key)
+
+            return result
+
+        return wrapped
+
+    def check_for_saving_before(method):
+        """
+        Decorator that ensures unsaved changes are handled before executing the decorated method.
+
+        Calls `self.check_for_saving()` to prompt the user for saving any dirty views
+        before proceeding with the decorated operation.
+
+        """
+
+        def wrapped(self, *args, **kwargs):
+            self.check_for_saving()
+            return method(self, *args, **kwargs)
+
+        return wrapped
+
+    # command pattern
+    @invalidate_search_models
+    @update_current_search_model
+    @track_save_state  # ! needs to be the most inner decorator!
     def _execute_command(self, command: ICommand, caller_id: str) -> None:
         """
         Executes a command, adds it to the undo stack of the corresponding view,
@@ -103,6 +214,9 @@ class Controller(IController):
             model.execute_command(command)
             command.execute()
 
+    @invalidate_search_models
+    @update_current_search_model
+    @track_save_state
     def undo_command(self, caller_id: str = None) -> None:
         """
         Undoes the last command for the specified or active view by moving it from the undo stack
@@ -120,6 +234,9 @@ class Controller(IController):
             if command:
                 command.undo()
 
+    @invalidate_search_models
+    @update_current_search_model
+    @track_save_state
     def redo_command(self, caller_id: str = None) -> None:
         """
         Redoes the last undone command for the specified or active view by moving it from the redo stack
@@ -345,70 +462,8 @@ class Controller(IController):
         if view_id == "comparison":
             self._comparison_view = view
 
-    # decorators
-    def invalidate_search_models(method):
-        """
-        Decorator to invalidate all search models before executing a method.
-        """
-
-        def wrapper(self, *args, **kwargs):
-            self._search_model_manager.invalidate_all()
-            return method(self, *args, **kwargs)
-        return wrapper
-
-    def update_current_search_model(method):
-        """
-        Decorator to update the current search model after method execution.
-        If the calling method is perform_add_tag, the search pointer moves to the next result.
-        """
-
-        def wrapper(self, *args, **kwargs):
-            result = method(self, *args, **kwargs)
-            if not self._current_search_model:
-                return result
-            self._current_search_model = self._search_model_manager.update_model(
-                self._current_search_model)
-            if method.__name__ == "perform_add_tag":
-                self.perform_next_suggestion()
-            return result
-        return wrapper
-
-    def with_highlight_update(method):
-        """
-        Decorator that ensures the highlight model is updated after the decorated method is executed.
-
-        This is useful for controller methods that modify search or tag data which affects highlighting.
-
-        Args:
-            method (Callable): The method to wrap.
-
-        Returns:
-            Callable: The wrapped method that updates the highlight model after execution.
-        """
-
-        def wrapper(self, *args, **kwargs):
-            result = method(self, *args, **kwargs)
-            self._update_highlight_model()
-            return result
-        return wrapper
-
-    def reset_search(method):
-        """
-        Decorator to reset all search-related states before executing a method.
-        This includes switching to manual mode, resetting all search models,
-        and clearing the current active search model.
-        """
-
-        def wrapper(self, *args, **kwargs):
-            self._annotation_mode_model.set_manual_mode()
-            self._search_model_manager.reset_models()
-            self._current_search_model = None
-            for search_view in self._search_views:
-                search_view.reset_entry()
-            return method(self, *args, **kwargs)
-        return wrapper
-
     # Perform methods
+
     @with_highlight_update
     def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:
         """
@@ -614,8 +669,6 @@ class Controller(IController):
         self._tag_manager.set_meta_tags(tag_strings, target_model)
 
     @with_highlight_update
-    @invalidate_search_models
-    @update_current_search_model
     def perform_add_tag(self, tag_data: Dict, caller_id: str) -> None:
         """
         Creates and executes an AddTagCommand to add a new tag to the tag manager.
@@ -643,8 +696,6 @@ class Controller(IController):
         self._execute_command(command=command, caller_id=caller_id)
 
     @with_highlight_update
-    @invalidate_search_models
-    @update_current_search_model
     def perform_edit_tag(self, tag_id: str, tag_data: Dict, caller_id: str) -> None:
         """
         Creates and executes an EditTagCommand to modify an existing tag in the tag manager.
@@ -663,8 +714,6 @@ class Controller(IController):
         self._execute_command(command=command, caller_id=caller_id)
 
     @with_highlight_update
-    @invalidate_search_models
-    @update_current_search_model
     def perform_delete_tag(self, tag_id: str, caller_id: str) -> None:
         """
         Creates and executes a DeleteTagCommand to remove a tag from the tag manager.
@@ -709,6 +758,7 @@ class Controller(IController):
             selected_text, document_model)
         self._selection_model.set_selected_text_data(selection_data)
 
+    @check_for_saving_before
     @with_highlight_update
     @reset_search
     def perform_open_file(self, file_paths: List[str]) -> None:
@@ -770,82 +820,9 @@ class Controller(IController):
             else:
                 self._setup_comparison_model(documents)
 
-    #!DEPRECATED
-    # def perform_save_as(self, file_path: Optional[str] = None):
-    #     """
-    #     Saves the current document to the specified file path.
-
-    #     For comparison views, saves the merged document into the annotation folder
-    #     and the comparison metadata into the comparison folder.
-    #     """
-    #     data_source = self.get_save_as_config()["data_source"]
-    #     document = data_source.get_state()
-
-    #     if self._active_view_id == "comparison":
-    #         # Construct merged file name and paths
-    #         base_name = self._file_handler.derive_file_name(
-    #             document["source_file_paths"][0])
-    #         merged_file_name = f"{base_name}_merged.json"
-
-    #         annotation_folder = self._file_handler.resolve_path(
-    #             "default_annotation_save_folder")
-    #         comparison_folder = self._file_handler.resolve_path(
-    #             "default_comparison_save_folder")
-
-    #         # Final full paths
-    #         annotation_file_path = os.path.join(
-    #             annotation_folder, merged_file_name)
-    #         comparison_info_path = os.path.join(
-    #             comparison_folder, f"{base_name}_comparison.json")
-
-    #         # Prepare document for saving
-    #         clean_document = {
-    #             "file_path": annotation_file_path,
-    #             "file_name": base_name + "_merged",
-    #             "document_type": "annotation",
-    #             "meta_tags": {
-    #                 tag_type: [", ".join(str(tag) for tag in tags)]
-    #                 for tag_type, tags in document.get("meta_tags", {}).items()
-    #             },
-    #             "text": document["text"]
-    #         }
-
-    #         # Save merged annotation document
-    #         self._file_handler.write_file(file_path, clean_document)
-
-    #         # Save comparison metadata
-    #         comparison_info = {
-    #             "document_type": "comparison",
-    #             "source_paths": document["source_file_paths"],
-    #             "document_path": file_path,
-    #             "file_names": document.get("file_names", []),
-    #             "num_sentences": document.get("num_sentences", 0),
-    #             "current_sentence_index": document.get("current_sentence_index", 0),
-    #             "comparison_sentences": document.get("comparison_sentences", []),
-    #             "adopted_flags": document.get("adopted_flags", []),
-    #             "differing_to_global": document.get("differing_to_global", []),
-    #         }
-    #         self._file_handler.write_file(
-    #             comparison_info_path, comparison_info)
-
-    #     else:
-    #         # Normal annotation/extraction mode
-    #         document["file_path"] = file_path
-    #         document["file_name"] = self._file_handler.derive_file_name(
-    #             file_path)
-    #         document["document_type"] = self._active_view_id
-    #         meta_tag_strings = {
-    #             tag_type: [", ".join(str(tag) for tag in tags)]
-    #             for tag_type, tags in document.get("meta_tags", {}).items()
-    #         }
-    #         document["meta_tags"] = meta_tag_strings
-    #         document.pop("tags", None)
-
-    #         self._file_handler.write_file(file_path, document)
-    #!END DEPRECATED
-
-    def perform_save(self, file_path: str = None) -> None:
-        source_model = self._document_source_mapping[self._active_view_id]
+    def perform_save(self, file_path: str = None, view_id: str = None) -> None:
+        view_id = view_id or self._active_view_id
+        source_model = self._document_source_mapping[view_id]
         document = source_model.get_state()
 
         # Try user-specified file_path, otherwise use document's path
@@ -861,8 +838,8 @@ class Controller(IController):
                 return
 
         # prepare data for saving
-        if not self._active_view_id == "comparison":
-            document_data = {"document_type": self._active_view_id,
+        if not view_id == "comparison":
+            document_data = {"document_type": view_id,
                              "file_path": file_path,
                              "file_name": self._file_handler.derive_file_name(file_path),
                              "meta_tags": {
@@ -905,7 +882,26 @@ class Controller(IController):
         """
         file_path = self._main_window.ask_user_for_save_path()
         if file_path:
-            self.perform_save(file_path)
+            self.perform_save(file_path=file_path)
+
+    def check_for_saving(self) -> None:
+        """
+        Checks the SaveStateModel for any dirty (unsaved) views and prompts the user
+        via the main window whether they want to save each of them.
+
+        If the user chooses to save, the corresponding document is saved using
+        `perform_save(view_id)`.
+
+        Assumes:
+            - self._save_state_model provides get_dirty_keys()
+            - self._main_window has method prompt_save(view_id: str) -> bool
+            - self.perform_save(view_id: str) exists and handles saving
+        """
+        dirty_keys = self._save_state_model.get_dirty_keys()
+        for view_id in dirty_keys:
+            should_save = self._main_window.prompt_save(view_id)
+            if should_save:
+                self.perform_save(view_id=view_id)
 
     def perform_export(self) -> None:
         """

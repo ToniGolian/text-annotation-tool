@@ -5,6 +5,7 @@ from tkinter import filedialog
 from tkinter import messagebox
 from typing import Optional
 from observer.interfaces import IObserver, IPublisher
+from pyparsing import Dict
 from view.extraction_view import ExtractionView
 from view.annotation_view import AnnotationView
 from view.comparison_view import ComparisonView
@@ -75,59 +76,7 @@ class MainWindow(tk.Tk, IObserver):
             active_views[self.DEFAULT_NOTEBOOK_INDEX])
 
     def _on_open(self):
-        config = self._controller.get_open_file_config()
-        initial_dir = config.get("initial_dir", ".")
-        filetypes = config.get("filetypes", [("All Files", "*.*")])
-        title = config.get("title", "Open File")
-        multi_select = config.get("multiselect", False)
-
-        try:
-            if multi_select:
-                file_paths = tk.filedialog.askopenfilenames(
-                    initialdir=initial_dir, filetypes=filetypes, title=title)
-            else:
-                file_paths = [tk.filedialog.askopenfilename(
-                    initialdir=initial_dir, filetypes=filetypes, title=title)]
-
-            file_paths = [path for path in file_paths if path]
-        except Exception as e:
-            print(f"Error during open file dialog: {e}")
-        if file_paths:
-            self._controller.perform_open_file(file_paths)
-
-    #!DEPRECATED
-    # def _on_save_as(self):
-    #     if self._controller.get_active_view() == "comparison":
-    #         self._controller.perform_save_as(None)
-    #         return
-
-    #     try:
-    #         config = self._controller.get_save_as_config()
-    #         initial_dir = config.get("initial_dir", ".")
-    #         filetypes = config.get("filetypes", [("All Files", "*.*")])
-    #         defaultextension = config.get("defaultextension", "")
-    #         title = config.get("title", "Save File As")
-
-    #         file_path = tk.filedialog.asksaveasfilename(
-    #             initialdir=initial_dir,
-    #             filetypes=filetypes,
-    #             defaultextension=defaultextension,
-    #             title=title
-    #         )
-
-    #         if file_path:
-    #             self._controller.perform_save_as(file_path)
-
-    #     except Exception as e:
-    #         print(f"Error during save as file dialog: {e}")
-
-    # def _on_save(self) -> None:
-    #     file_path = self._controller.get_file_path()
-    #     if file_path:
-    #         self._controller.perform_save_as(file_path)
-    #     else:
-    #         self._on_save_as()
-            #!END DEPRECATED
+        self._controller.perform_open_file()
 
     def _on_save(self) -> None:
         self._controller.perform_save()
@@ -162,6 +111,30 @@ class MainWindow(tk.Tk, IObserver):
             filetypes=[("Project files", "*.json"), ("All files", "*.*")],
             initialdir="."  # Can be adjusted or dynamically set
         )
+
+    def ask_user_for_file_paths(self, load_config: Dict = None) -> list[str]:
+        """
+        Opens a file dialog to let the user select one or multiple JSON files.
+
+        Args:
+            load_config (Dict): Configuration dictionary that specifies the mode and dialog options.
+
+        Returns:
+            list[str]: A list of selected file paths. If no files are selected, returns an empty list.
+
+        Raises:
+            ValueError: If the load_config does not specify a valid mode.
+        """
+        if load_config.get("mode") == "single":
+            # Allow selection of a single JSON file
+            path = filedialog.askopenfilename(**load_config.get("config"))
+            return [path] if path else []
+        elif load_config.get("mode") == "multiple":
+            # Allow selection of multiple JSON files
+            paths = filedialog.askopenfilenames(**load_config.get("config"))
+            return list(paths)  # always returns a list
+        else:
+            raise ValueError("Invalid load configuration.")
 
     def ask_user_for_overwrite_confirmation(self, path: str) -> bool:
         """

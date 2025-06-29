@@ -761,7 +761,7 @@ class Controller(IController):
     @check_for_saving_before
     @with_highlight_update
     @reset_search
-    def perform_open_file(self, file_paths: List[str]) -> None:
+    def perform_open_file(self) -> None:
         """
         Handles the process of opening files and updating the appropriate document model based on the active view.
 
@@ -788,8 +788,45 @@ class Controller(IController):
         Raises:
             ValueError: If `file_paths` is empty or the active view ID is invalid.
         """
+
         # Reset old state
         self._reset_undo_redo()
+
+        # Determine the load configuration based on the active view
+        if self._active_view_id == "extraction":
+            load_config = {
+                "config": {
+                    "initialdir": self._file_handler.resolve_path("default_extraction_load_folder"),
+                    "filetypes": [("PDF Files", "*.pdf")],
+                    "title": "Open PDF for Extraction"
+                },
+                "mode": "single"}
+        elif self._active_view_id == "annotation":
+            load_config = {
+                "config": {
+                    "initialdir": self._file_handler.resolve_path("default_annotation_load_folder"),
+                    "filetypes": [("JSON Files", "*.json")],
+                    "title": "Open JSON for Annotation"
+                },
+                "mode": "single"
+            }
+        elif self._active_view_id == "comparison":
+            load_config = {
+                "config": {
+                    "initialdir": self._file_handler.resolve_path("default_comparison_load_folder"),
+                    "filetypes": [("JSON Files", "*.json")],
+                    "title": "Open JSON for Comparison"
+                },
+                "mode": "multiple"
+            }
+        else:
+            raise ValueError(f"Invalid active view ID: {self._active_view_id}")
+
+        file_paths = self._main_window.ask_user_for_file_paths(
+            load_config=load_config)
+
+        if not file_paths:
+            raise ValueError("No file paths provided for opening files.")
 
         # load document
         file_path = file_paths[0]
@@ -802,11 +839,11 @@ class Controller(IController):
         for document, path in zip(documents, file_paths):
             document["file_path"] = path
 
-        if len(documents) == 1:
-            document = documents[0]
-
         if self._active_view_id == "annotation":
-            self._annotation_document_model.set_document(document)
+            if len(documents) != 1:
+                raise ValueError(
+                    "Too many files selected: Only one file path is allowed when loading a predefined annotation model.")
+            self._annotation_document_model.set_document(documents[0])
             self._tag_manager.extract_tags_from_document(
                 self._annotation_document_model)
 
@@ -816,9 +853,10 @@ class Controller(IController):
                 if len(documents) > 1:
                     raise ValueError(
                         "Too many files selected: Only one file path is allowed when loading a predefined comparison model.")
-                self._load_comparison_model(document)
+                self._load_comparison_model(documents[0])
             else:
                 self._setup_comparison_model(documents)
+        self._save_state_model.set_clean(self._active_view_id)
 
     def perform_save(self, file_path: str = None, view_id: str = None) -> None:
         view_id = view_id or self._active_view_id
@@ -1045,7 +1083,7 @@ class Controller(IController):
         for document in documents:
             self._tag_manager.extract_tags_from_document(document)
 
-    # todo remove
+    #! DEPRECATED
     def find_equivalent_tags(self, documents: List[IDocumentModel], merged_document: IDocumentModel) -> None:
         """
         Identifies and marks equivalent tags across multiple document versions.
@@ -1075,6 +1113,7 @@ class Controller(IController):
                          for document_sentences in documents_sentences]
             self._tag_manager.find_equivalent_tags(
                 sentences=sentences, common_sentence=merged_sentence, documents_tags=documents_tags, merged_tags=merged_document_tags)
+    #! END DEPRECATED
 
     def perform_prev_sentence(self) -> None:
         """
@@ -1233,8 +1272,9 @@ class Controller(IController):
         index = index_mapping.get(view_id)
         if index is not None:
             self._appearance_model.set_active_notebook_index(index)
+    #!DEPRECATED
 
-    def get_open_file_config(self) -> dict:
+    # def get_open_file_config(self) -> dict:
         """
         Returns the configuration for the open file dialog.
 
@@ -1268,8 +1308,7 @@ class Controller(IController):
             "multiselect": multiselect
         }
 
-    #!DEPRECATED
-    def get_save_as_config(self) -> dict:
+    # def get_save_as_config(self) -> dict:
         """
         Returns configuration for the save-as dialog and the associated data source.
 

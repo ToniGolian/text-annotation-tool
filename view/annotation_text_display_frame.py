@@ -23,9 +23,11 @@ class AnnotationTextDisplayFrame(TextDisplayFrame):
         and applies the new highlights to the text.
         """
         super().update(publisher)
+        print(f"DEBUG update {self.__class__.__name__} {publisher}")
         if isinstance(publisher, HighlightModel):
             highlight_data = self._controller.get_observer_state(
                 self, publisher).get("highlight_data", [])
+            print(f"DEBUG {highlight_data=}")
             self.unhighlight_text()
             self.highlight_text(highlight_data)
 

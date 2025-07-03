@@ -227,9 +227,7 @@ class ComparisonModel(IComparisonModel):
         }
 
         if self._merged_document:
-            state["file_path"] = self._merged_document.get_file_path()
-            state["meta_tags"] = self._merged_document.get_meta_tags()
-            state["text"] = self._merged_document.get_text()
+            state["merged_document"] = self._merged_document
 
         if self._document_models:
             state["source_file_paths"] = [doc.get_file_path()
@@ -417,3 +415,29 @@ class ComparisonModel(IComparisonModel):
             List[IDocumentModel]: The list of document models.
         """
         return self._highlight_models
+
+    def set_merged_document_file_path(self, file_path: str) -> None:
+        """
+        Sets the file path for the merged document.
+
+        This method updates the file path in the merged document model, which is used
+        to save or export the merged comparison text.
+
+        Args:
+            file_path (str): The file path to assign to the merged document.
+        """
+        if self._merged_document:
+            self._merged_document.set_file_path(file_path)
+
+    def set_merged_document_file_name(self, file_name: str) -> None:
+        """
+        Sets the file name for the merged document.
+
+        This method updates the file name in the merged document model, which is used
+        to save or export the merged comparison text.
+
+        Args:
+            file_name (str): The file name to assign to the merged document.
+        """
+        if self._merged_document:
+            self._merged_document.set_file_name(file_name)

@@ -128,6 +128,7 @@ class Controller(IController):
         Returns:
             Callable: The wrapped method that updates the highlight model after execution.
         """
+        print(f"DEBUG: Applying with_highlight_update")
 
         def wrapper(self, *args, **kwargs):
             result = method(self, *args, **kwargs)
@@ -631,14 +632,6 @@ class Controller(IController):
         self.set_active_view("annotation")
         self._appearance_model.set_active_notebook_index(1)
 
-    def perform_comparison_export(self) -> None:
-        """
-        Exports the merged document from comparison.
-        """
-        self.perform_export()
-        self.set_active_view("annotation")
-        self._appearance_model.set_active_notebook_index(1)
-
     def perform_update_preview_text(self, text: str) -> None:
         """
         Updates the text content of the preview document model.
@@ -887,6 +880,7 @@ class Controller(IController):
                              },
                              "text": document["text"]}
         else:
+            merged_document = document.get("merged_document", {})
             # prepare data for comparison view
             document_data = {
                 "document_type": "comparison",
@@ -900,11 +894,13 @@ class Controller(IController):
                 "differing_to_global": document.get("differing_to_global", []),
                 "document_data": {
                     "document_type": "annotation",
+                    "file_name": merged_document.get_file_name(),
+                    "file_path": merged_document.get_file_path(),
                     "meta_tags": {
                         tag_type: [", ".join(str(tag) for tag in tags)]
-                        for tag_type, tags in document.get("meta_tags", {}).items()
+                        for tag_type, tags in merged_document.get_meta_tags().items()
                     },
-                    "text": document["text"]
+                    "text": merged_document.get_text(),
                 }
             }
 
@@ -918,7 +914,10 @@ class Controller(IController):
         """
         Opens a save-as dialog to let the user choose a file path, then saves the current document.
         """
-        file_path = self._main_window.ask_user_for_save_path()
+        initial_dir = self._file_handler.resolve_path(
+            f"default_{self._active_view_id}_save_folder")
+        file_path = self._main_window.ask_user_for_save_path(
+            initial_dir=initial_dir)
         if file_path:
             self.perform_save(file_path=file_path)
 
@@ -945,46 +944,83 @@ class Controller(IController):
         """
         Exports the current document based on the active view.
 
+        Raises:
+            ValueError: If the active view ID is not supported for export.
+
         """
-        document = self._document_source_mapping[self._active_view_id].get_state(
-        )
+        state = self._document_source_mapping[self._active_view_id].get_state()
         if self._active_view_id == "extraction":
-            file_name = document.get("file_name", "")
-            file_path = self._file_handler.resolve_path(
-                "default_extraction_save_folder", file_name + ".json")
-            file_path = self._solve_overwriting(file_path)
-            save_document = {
-                "document_type": "annotation",
-                "file_name": file_name,
-                "file_path": file_path,
-                "meta_tags": document.get("meta_tags", {}),
-                "text": document.get("text", ""),
-            }
-            self._annotation_document_model.set_document(save_document)
-            self._file_handler.write_file(file_path, save_document)
-            return
+            self._export_extracted_document(state)
 
         elif self._active_view_id == "comparison":
-            file_name = document.get("file_name", "") + "_merged"
-            file_path = self._file_handler.resolve_path(
-                "default_merge_save_folder", file_name + ".json")
-            file_path = self._solve_overwriting(file_path)
-            save_document = {
-                "document_type": "annotation",
-                "file_name": file_name,
-                "file_path": file_path,
-                "meta_tags": {
-                    tag_type: [", ".join(str(tag) for tag in tags)]
-                    for tag_type, tags in document.get("meta_tags", {}).items()
-                },
-                "text": document.get("text", ""),
-            }
-            self._file_handler.write_export(file_path, save_document)
-            return
-
+            self._export_comparison_document(state)
         else:
             raise ValueError(
                 f"Export is not supported in view mode '{self._active_view_id}'.")
+
+    def _export_extracted_document(self, state: dict) -> None:
+        """
+        Exports the extracted document from the extraction view.
+
+        Args:
+            state (dict): The current state of the extraction document model.
+        """
+        document = state
+        file_name = document.get("file_name", "")
+        file_path = self._file_handler.resolve_path(
+            "default_extraction_save_folder", file_name + ".json")
+        file_path = self._solve_overwriting(file_path)
+        save_document = {
+            "document_type": "annotation",
+            "file_name": file_name,
+            "file_path": file_path,
+            "meta_tags": document.get("meta_tags", {}),
+            "text": document.get("text", ""),
+        }
+        self._annotation_document_model.set_document(save_document)
+        self._file_handler.write_file(file_path, save_document)
+        return
+
+    def _export_comparison_document(self, state: dict) -> None:
+        """
+        Exports the merged document from the comparison view.
+
+        Args:
+            state (dict): The current state of the comparison model containing the merged document.
+
+        Raises:
+            ValueError: If no merged document is found in the comparison state or if the file path 
+        """
+        merged_document = state.get("merged_document")
+        if not merged_document:
+            raise ValueError(
+                "No merged document found in the comparison state. Cannot export.")
+        file_path = merged_document.get_file_path()
+        if not file_path:
+            initial_dir = self._file_handler.resolve_path(
+                f"default_merged_save_folder")
+            file_path = self._main_window.ask_user_for_save_path(
+                initial_dir=initial_dir)
+            file_name = self._file_handler.derive_file_name(
+                file_path)
+            self._comparison_model.set_merged_document_file_name(file_name)
+            self._comparison_model.set_merged_document_file_path(file_path)
+        file_path = self._solve_overwriting(file_path)
+        file_name = self._file_handler.derive_file_name(
+            file_path)
+        save_document = {
+            "document_type": "annotation",
+            "file_name": file_name,
+            "file_path": file_path,
+            "meta_tags": {
+                tag_type: [", ".join(str(tag) for tag in tags)]
+                for tag_type, tags in merged_document.get_meta_tags().items()
+            },
+            "text": merged_document.get_text(),
+        }
+        print(f"DEBUG {file_path=}")
+        self._file_handler.write_file(file_path, save_document)
+        return
 
     def _solve_overwriting(self, file_path) -> str:
         """
@@ -995,7 +1031,10 @@ class Controller(IController):
         """
         if self._file_handler.check_overwriting(file_path):
             if not self._main_window.ask_user_for_overwrite_confirmation(file_path):
-                file_path = self._main_window.ask_user_for_save_path()
+                initial_dir = self._file_handler.resolve_path(
+                    f"default_{self._active_view_id}_save_folder")
+                file_path = self._main_window.ask_user_for_save_path(
+                    initial_dir=initial_dir)
         return file_path
 
     def _setup_comparison_model(self, documents) -> None:
@@ -1041,12 +1080,11 @@ class Controller(IController):
             data) for data in source_documents_data]
         document_models = [raw_model] + annotator_models
 
-        # Step 2: Extract tags from all source models (not raw)
-        for model in document_models:
-            self._tag_manager.extract_tags_from_document(model)
-
-        # Step 3: Set document models in comparison model
+        highlight_models = [HighlightModel() for _ in document_models]
+        for document_model in document_models:
+            self._tag_manager.extract_tags_from_document(document_model)
         self._comparison_model.set_document_models(document_models)
+        self._comparison_model.set_highlight_models(highlight_models)
 
         # Step 4: Setup displays
         self._appearance_model.set_num_comparison_displays(
@@ -1091,6 +1129,7 @@ class Controller(IController):
             self._tag_manager.extract_tags_from_document(document)
 
     #! DEPRECATED
+
     def find_equivalent_tags(self, documents: List[IDocumentModel], merged_document: IDocumentModel) -> None:
         """
         Identifies and marks equivalent tags across multiple document versions.
@@ -1122,16 +1161,20 @@ class Controller(IController):
                 sentences=sentences, common_sentence=merged_sentence, documents_tags=documents_tags, merged_tags=merged_document_tags)
     #! END DEPRECATED
 
+    @with_highlight_update
     def perform_prev_sentence(self) -> None:
         """
         Moves the comparison model to the previous sentence and updates documents.
         """
+        print("DEBUG: perform_prev_sentence called")
         self._shift_and_update(self._comparison_model.previous_sentences)
 
+    @with_highlight_update
     def perform_next_sentence(self) -> None:
         """
         Moves the comparison model to the next sentence and updates documents.
         """
+        print("DEBUG: perform_next_sentence called")
         self._shift_and_update(self._comparison_model.next_sentences)
 
     def _shift_and_update(self, sentence_func: Callable[[], List[str]]) -> None:
@@ -1160,9 +1203,9 @@ class Controller(IController):
         # check if sentences is already adopted
         if adoption_data["is_adopted"]:
             self._handle_failure(FailureReason.IS_ALREADY_ADOPTED)
-            comparison_state = self._comparison_model.get_adoption_data(
-                adoption_index)
-            current_index = self._comparison_model._current_index
+            # comparison_state = self._comparison_model.get_adoption_data(
+            #     adoption_index)
+            # current_index = self._comparison_model._current_index
             return
 
         # check if sentence contains references, since it is not possible to resolve references yet.
@@ -1415,6 +1458,7 @@ class Controller(IController):
         """
         Updates the highlight model with tag and search highlights based on the current active view.
         """
+        print("DEBUG: _update_highlight_model called")
         color_scheme = self._settings_manager.get_color_scheme()
         if self._active_view_id == "annotation":
             document_models = [
@@ -1422,15 +1466,24 @@ class Controller(IController):
             highlight_models = [self._highlight_model]
 
         if self._active_view_id == "comparison":
+            print("DEBUG: _update_highlight_model for comparison")
             comparison_model = self._document_source_mapping[self._active_view_id]
             document_models = comparison_model.get_document_models()
             highlight_models = comparison_model.get_highlight_models()
+            print(
+                f"DEBUG: comparison_model for comparison: {comparison_model}")
+            print(f"DEBUG: document_models for comparison: {document_models}")
+            print(
+                f"DEBUG: highlight_models for comparison: {highlight_models}")
 
         for document_model, highlight_model in zip(document_models, highlight_models):
             highlight_data = self._tag_manager.get_highlight_data(
                 document_model)
+            print(
+                f"DEBUG: highlight_data for {document_model}: {highlight_data}")
             tag_highlights = [(color_scheme["tags"][tag]["background_color"], color_scheme["tags"][tag]["font_color"], start, end) for tag, start, end in highlight_data
                               ]
+            print(f"DEBUG: tag_highlights: {tag_highlights}")
             highlight_model.add_tag_highlights(tag_highlights)
 
         if not self._current_search_model:

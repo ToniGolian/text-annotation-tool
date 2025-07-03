@@ -98,9 +98,13 @@ class MainWindow(tk.Tk, IObserver):
             if state["active_notebook_index"] == 1:
                 self._annotation_view.focus_set()
 
-    def ask_user_for_save_path(self) -> Optional[str]:
+    def ask_user_for_save_path(self, initial_dir: str = None) -> Optional[str]:
         """
         Opens a file dialog to let the user choose a file path for saving.
+
+        Args:
+            initial_dir (str): The initial directory to open the dialog in.
+            If None, the dialog will open in the current working directory.
 
         Returns:
             Optional[str]: The selected file path as a string, or None if the dialog was cancelled.
@@ -109,7 +113,7 @@ class MainWindow(tk.Tk, IObserver):
             title="Save As",
             defaultextension=".json",
             filetypes=[("Project files", "*.json"), ("All files", "*.*")],
-            initialdir="."  # Can be adjusted or dynamically set
+            initialdir=initial_dir if initial_dir else ".",
         )
 
     def ask_user_for_file_paths(self, load_config: Dict = None) -> list[str]:

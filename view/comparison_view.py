@@ -58,7 +58,7 @@ class ComparisonView(View, IComparisonView):
             self.export_frame,
             text="Export Merged Document",
             # replace with your actual method
-            command=self._controller.perform_export_merged_document
+            command=self._controller.perform_export
         )
         self.export_button.pack(side=tk.LEFT)
 

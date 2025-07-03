@@ -52,15 +52,10 @@ class ComparisonManager:
 
         self._extract_differing_tagged_sentences(
             raw_text, aligned_tagged)
-        file_path = documents[0].get_file_path()
 
         start_sentences, start_tags = self.get_start_data(0)
-        # start_sentences = [
-        #     sentences[0] for sentences in self._comparison_sentences]
-        # start_tags = [[TagModel(tag_data) for tag_data in self._tag_processor.extract_tags_from_text(
-        #     sentence)] for sentence in start_sentences]
 
-        merged_document = self._create_merge_document(file_path)
+        merged_document = self._create_merge_document()
 
         #! remove
         self._controller.find_equivalent_tags(
@@ -240,17 +235,17 @@ class ComparisonManager:
 
         return aligned_texts, aligned_clean_texts
 
-    def _create_merge_document(self, file_path) -> AnnotationDocumentModel:
-        file_name_merged = os.path.splitext(
-            os.path.basename(file_path))[0] + "_merged"
-        merged_path = os.path.join(
-            os.path.dirname(file_path), file_name_merged)
-
+    def _create_merge_document(self) -> AnnotationDocumentModel:
+        """
+        Creates a merged annotation document from the current comparison data.
+        This method constructs a new `AnnotationDocumentModel` instance that contains
+        the merged text from all compared documents, along with metadata tags.
+        """
         text = "\n\n".join(self._common_text)
         merge_document_data = {
             "document_type": "comparison",
-            "file_path": merged_path,  # plain string path
-            "file_name": file_name_merged,
+            "file_path": "",
+            "file_name": "",
             "meta_tags": {},
             "text": text,
         }

@@ -1,4 +1,3 @@
-import os
 from commands.add_tag_command import AddTagCommand
 from commands.adopt_annotation_command import AdoptAnnotationCommand
 from commands.delete_tag_command import DeleteTagCommand
@@ -11,6 +10,7 @@ from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
 from model.highlight_model import HighlightModel
 from model.interfaces import IComparisonModel, ILayoutConfigurationModel, IDocumentModel, ISearchModel, ISelectionModel
+from model.save_state_model import SaveStateModel
 from model.tag_model import TagModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
@@ -29,9 +29,11 @@ from utils.tag_processor import TagProcessor
 from view.interfaces import IComparisonView, IView
 import tkinter.messagebox as mbox
 
+from view.main_window import MainWindow
+
 
 class Controller(IController):
-    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None) -> None:
+    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: SaveStateModel = None) -> None:
 
         # state
         self._dynamic_observer_index: int = 0
@@ -47,6 +49,7 @@ class Controller(IController):
         self._annotation_mode_model: IPublisher = annotation_mode_model
         self._highlight_model = highlight_model
         self._current_search_model: IPublisher = None
+        self._save_state_model: SaveStateModel = save_state_model
 
         # dependencies
         self._path_manager = PathManager()
@@ -71,6 +74,7 @@ class Controller(IController):
             "source_mapping")
 
         # views
+        self._main_window: MainWindow = None
         self._comparison_view: IComparisonView = None
         self._views_to_finalize: List = []
         self._search_views: List = []
@@ -84,8 +88,118 @@ class Controller(IController):
                                          "annotation": self._annotation_document_model,
                                          "comparison": self._comparison_model}
 
-    # command pattern
+    # decorators
+    def invalidate_search_models(method):
+        """
+        Decorator to invalidate all search models before executing a method.
+        """
 
+        def wrapper(self, *args, **kwargs):
+            self._search_model_manager.invalidate_all()
+            return method(self, *args, **kwargs)
+        return wrapper
+
+    def update_current_search_model(method):
+        """
+        Decorator to update the current search model after method execution.
+        If the calling method is perform_add_tag, the search pointer moves to the next result.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            result = method(self, *args, **kwargs)
+            if not self._current_search_model:
+                return result
+            self._current_search_model = self._search_model_manager.update_model(
+                self._current_search_model)
+            if method.__name__ == "perform_add_tag":
+                self.perform_next_suggestion()
+            return result
+        return wrapper
+
+    def with_highlight_update(method):
+        """
+        Decorator that ensures the highlight model is updated after the decorated method is executed.
+
+        This is useful for controller methods that modify search or tag data which affects highlighting.
+
+        Args:
+            method (Callable): The method to wrap.
+
+        Returns:
+            Callable: The wrapped method that updates the highlight model after execution.
+        """
+        print(f"DEBUG: Applying with_highlight_update")
+
+        def wrapper(self, *args, **kwargs):
+            result = method(self, *args, **kwargs)
+            self._update_highlight_model()
+            return result
+        return wrapper
+
+    def reset_search(method):
+        """
+        Decorator to reset all search-related states before executing a method.
+        This includes switching to manual mode, resetting all search models,
+        and clearing the current active search model.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            self._annotation_mode_model.set_manual_mode()
+            self._search_model_manager.reset_models()
+            self._current_search_model = None
+            for search_view in self._search_views:
+                search_view.reset_entry()
+            return method(self, *args, **kwargs)
+        return wrapper
+
+    def track_save_state(method):
+        """
+        Decorator that adjusts the SaveStateModel based on the type of command action.
+
+        This decorator should be applied to controller methods that manage commands,
+        such as execute, undo, and redo. It automatically updates the change counter
+        for the active view in the SaveStateModel:
+
+        - Calls to 'execute' and 'redo' will increment the counter (marking the view dirty).
+        - Calls to 'undo' will decrement the counter (potentially marking it clean again).
+
+        Needs to be the most inner decorator to ensure it wraps around the command execution logic.
+
+        """
+
+        def wrapped(self, *args, **kwargs):
+            result = method(self, *args, **kwargs)
+
+            name = method.__name__.lower()
+            key = self._active_view_id
+            if "undo" in name:
+                self._save_state_model.decrement(key)
+            elif "_execute" in name or "redo" in name:
+                self._save_state_model.increment(key)
+
+            return result
+
+        return wrapped
+
+    def check_for_saving_before(method):
+        """
+        Decorator that ensures unsaved changes are handled before executing the decorated method.
+
+        Calls `self.check_for_saving()` to prompt the user for saving any dirty views
+        before proceeding with the decorated operation.
+
+        """
+
+        def wrapped(self, *args, **kwargs):
+            self.check_for_saving()
+            return method(self, *args, **kwargs)
+
+        return wrapped
+
+    # command pattern
+    @invalidate_search_models
+    @update_current_search_model
+    @track_save_state  # ! needs to be the most inner decorator!
     def _execute_command(self, command: ICommand, caller_id: str) -> None:
         """
         Executes a command, adds it to the undo stack of the corresponding view,
@@ -96,10 +210,14 @@ class Controller(IController):
             caller_id (str): The unique identifier for the view initiating the command.
         """
         if caller_id in self._undo_redo_models:
+
             model = self._undo_redo_models[caller_id]
             model.execute_command(command)
             command.execute()
 
+    @invalidate_search_models
+    @update_current_search_model
+    @track_save_state
     def undo_command(self, caller_id: str = None) -> None:
         """
         Undoes the last command for the specified or active view by moving it from the undo stack
@@ -117,6 +235,9 @@ class Controller(IController):
             if command:
                 command.undo()
 
+    @invalidate_search_models
+    @update_current_search_model
+    @track_save_state
     def redo_command(self, caller_id: str = None) -> None:
         """
         Redoes the last undone command for the specified or active view by moving it from the redo stack
@@ -331,76 +452,19 @@ class Controller(IController):
             view_id (str): The unique identifier for the view for which the
                            Undo/Redo model is being set up.
         """
+        if view_id.endswith("_search"):
+            self._search_views.append(view)
+            return
+        if view_id == "main_window":
+            self._main_window = view
+            return
+
         self._undo_redo_models[view_id] = UndoRedoModel()
         if view_id == "comparison":
             self._comparison_view = view
-        if view_id.endswith("_search"):
-            self._search_views.append(view)
-
-    # decorators
-    def invalidate_search_models(method):
-        """
-        Decorator to invalidate all search models before executing a method.
-        """
-
-        def wrapper(self, *args, **kwargs):
-            self._search_model_manager.invalidate_all()
-            return method(self, *args, **kwargs)
-        return wrapper
-
-    def update_current_search_model(method):
-        """
-        Decorator to update the current search model after method execution.
-        If the calling method is perform_add_tag, the search pointer moves to the next result.
-        """
-
-        def wrapper(self, *args, **kwargs):
-            result = method(self, *args, **kwargs)
-            if not self._current_search_model:
-                return result
-            self._current_search_model = self._search_model_manager.update_model(
-                self._current_search_model)
-            if method.__name__ == "perform_add_tag":
-                self.perform_next_suggestion()
-            return result
-        return wrapper
-
-    def with_highlight_update(method):
-        """
-        Decorator that ensures the highlight model is updated after the decorated method is executed.
-
-        This is useful for controller methods that modify search or tag data which affects highlighting.
-
-        Args:
-            method (Callable): The method to wrap.
-
-        Returns:
-            Callable: The wrapped method that updates the highlight model after execution.
-        """
-
-        def wrapper(self, *args, **kwargs):
-            result = method(self, *args, **kwargs)
-            self._update_highlight_model()
-            return result
-        return wrapper
-
-    def reset_search(method):
-        """
-        Decorator to reset all search-related states before executing a method.
-        This includes switching to manual mode, resetting all search models,
-        and clearing the current active search model.
-        """
-
-        def wrapper(self, *args, **kwargs):
-            self._annotation_mode_model.set_manual_mode()
-            self._search_model_manager.reset_models()
-            self._current_search_model = None
-            for search_view in self._search_views:
-                search_view.reset_entry()
-            return method(self, *args, **kwargs)
-        return wrapper
 
     # Perform methods
+
     @with_highlight_update
     def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:
         """
@@ -547,9 +611,12 @@ class Controller(IController):
         pdf_path = extraction_data["pdf_path"]
         file_name = self._file_handler.derive_file_name(pdf_path)
 
+        print(
+            f"Extracted text from {pdf_path} with {len(extracted_text)} characters.")
+        print(f"File name derived: {file_name}")
         document = {
             "file_name": file_name,
-            "file_path": pdf_path,
+            "file_path": "",  # no path settet until save
             "document_type": "extraction",
             "meta_tags": {},
             "text": extracted_text
@@ -559,26 +626,10 @@ class Controller(IController):
 
     def perform_text_adoption(self) -> None:
         """
-        Adopts the current preview document's data into the annotation document model.
-
-        Converts the extraction document into an annotation document, updates the path,
-        and stores the result in the annotation model.
+        Initiates the text adoption after extraction.
         """
-        document = self._extraction_document_model.get_state()
-        document["document_type"] = "annotation"
-
-        file_name = self._file_handler.derive_file_name(
-            document.get("file_path", "unnamed"))
-        save_dir = self._file_handler.resolve_path(
-            "default_extraction_save_folder")
-        save_path = os.path.join(save_dir, f"{file_name}.json")
-        document["file_path"] = save_path
-
-        self._annotation_document_model.set_document(document)
-
+        self.perform_export()
         self.set_active_view("annotation")
-        self.perform_save_as(save_path)
-        self.perform_open_file([save_path])
         self._appearance_model.set_active_notebook_index(1)
 
     def perform_update_preview_text(self, text: str) -> None:
@@ -611,8 +662,6 @@ class Controller(IController):
         self._tag_manager.set_meta_tags(tag_strings, target_model)
 
     @with_highlight_update
-    @invalidate_search_models
-    @update_current_search_model
     def perform_add_tag(self, tag_data: Dict, caller_id: str) -> None:
         """
         Creates and executes an AddTagCommand to add a new tag to the tag manager.
@@ -632,7 +681,6 @@ class Controller(IController):
                 - "uuid" (str): Optional UUID (generated if missing).
             caller_id (str): The unique identifier of the view initiating the action.
         """
-
         target_model = self._document_source_mapping[self._active_view_id]
         tag_data["id_name"] = self._layout_configuration_model.get_id_name(
             tag_data.get("tag_type"))
@@ -641,8 +689,6 @@ class Controller(IController):
         self._execute_command(command=command, caller_id=caller_id)
 
     @with_highlight_update
-    @invalidate_search_models
-    @update_current_search_model
     def perform_edit_tag(self, tag_id: str, tag_data: Dict, caller_id: str) -> None:
         """
         Creates and executes an EditTagCommand to modify an existing tag in the tag manager.
@@ -661,8 +707,6 @@ class Controller(IController):
         self._execute_command(command=command, caller_id=caller_id)
 
     @with_highlight_update
-    @invalidate_search_models
-    @update_current_search_model
     def perform_delete_tag(self, tag_id: str, caller_id: str) -> None:
         """
         Creates and executes a DeleteTagCommand to remove a tag from the tag manager.
@@ -707,9 +751,10 @@ class Controller(IController):
             selected_text, document_model)
         self._selection_model.set_selected_text_data(selection_data)
 
+    @check_for_saving_before
     @with_highlight_update
     @reset_search
-    def perform_open_file(self, file_paths: List[str]) -> None:
+    def perform_open_file(self) -> None:
         """
         Handles the process of opening files and updating the appropriate document model based on the active view.
 
@@ -736,8 +781,45 @@ class Controller(IController):
         Raises:
             ValueError: If `file_paths` is empty or the active view ID is invalid.
         """
+
         # Reset old state
         self._reset_undo_redo()
+
+        # Determine the load configuration based on the active view
+        if self._active_view_id == "extraction":
+            load_config = {
+                "config": {
+                    "initialdir": self._file_handler.resolve_path("default_extraction_load_folder"),
+                    "filetypes": [("PDF Files", "*.pdf")],
+                    "title": "Open PDF for Extraction"
+                },
+                "mode": "single"}
+        elif self._active_view_id == "annotation":
+            load_config = {
+                "config": {
+                    "initialdir": self._file_handler.resolve_path("default_annotation_load_folder"),
+                    "filetypes": [("JSON Files", "*.json")],
+                    "title": "Open JSON for Annotation"
+                },
+                "mode": "single"
+            }
+        elif self._active_view_id == "comparison":
+            load_config = {
+                "config": {
+                    "initialdir": self._file_handler.resolve_path("default_comparison_load_folder"),
+                    "filetypes": [("JSON Files", "*.json")],
+                    "title": "Open JSON for Comparison"
+                },
+                "mode": "multiple"
+            }
+        else:
+            raise ValueError(f"Invalid active view ID: {self._active_view_id}")
+
+        file_paths = self._main_window.ask_user_for_file_paths(
+            load_config=load_config)
+
+        if not file_paths:
+            raise ValueError("No file paths provided for opening files.")
 
         # load document
         file_path = file_paths[0]
@@ -750,11 +832,11 @@ class Controller(IController):
         for document, path in zip(documents, file_paths):
             document["file_path"] = path
 
-        if len(documents) == 1:
-            document = documents[0]
-
         if self._active_view_id == "annotation":
-            self._annotation_document_model.set_document(document)
+            if len(documents) != 1:
+                raise ValueError(
+                    "Too many files selected: Only one file path is allowed when loading a predefined annotation model.")
+            self._annotation_document_model.set_document(documents[0])
             self._tag_manager.extract_tags_from_document(
                 self._annotation_document_model)
 
@@ -764,9 +846,196 @@ class Controller(IController):
                 if len(documents) > 1:
                     raise ValueError(
                         "Too many files selected: Only one file path is allowed when loading a predefined comparison model.")
-                self._load_comparison_model(document)
+                self._load_comparison_model(documents[0])
             else:
                 self._setup_comparison_model(documents)
+        self._save_state_model.reset(self._active_view_id)
+
+    def perform_save(self, file_path: str = None, view_id: str = None) -> None:
+        view_id = view_id or self._active_view_id
+        source_model = self._document_source_mapping[view_id]
+        document = source_model.get_state()
+
+        # Try user-specified file_path, otherwise use document's path
+        file_path = file_path or document.get("file_path")
+
+        if not file_path:
+            self.perform_save_as()
+            return
+
+        if self._file_handler.check_overwriting(file_path):
+            if not self._main_window.ask_user_for_overwrite_confirmation(file_path):
+                self.perform_save_as()
+                return
+
+        # prepare data for saving
+        if not view_id == "comparison":
+            document_data = {"document_type": view_id,
+                             "file_path": file_path,
+                             "file_name": self._file_handler.derive_file_name(file_path),
+                             "meta_tags": {
+                                 tag_type: [
+                                     ", ".join(str(tag) for tag in tags)]
+                                 for tag_type, tags in document.get("meta_tags", {}).items()
+                             },
+                             "text": document["text"]}
+        else:
+            merged_document = document.get("merged_document", {})
+            # prepare data for comparison view
+            document_data = {
+                "document_type": "comparison",
+                "source_paths": document["source_file_paths"],
+                "source_file_names": document.get("file_names", []),
+                "file_path": file_path,
+                "num_sentences": document.get("num_sentences", 0),
+                "current_sentence_index": document.get("current_sentence_index", 0),
+                "comparison_sentences": document.get("comparison_sentences", []),
+                "adopted_flags": document.get("adopted_flags", []),
+                "differing_to_global": document.get("differing_to_global", []),
+                "document_data": {
+                    "document_type": "annotation",
+                    "file_name": merged_document.get_file_name(),
+                    "file_path": merged_document.get_file_path(),
+                    "meta_tags": {
+                        tag_type: [", ".join(str(tag) for tag in tags)]
+                        for tag_type, tags in merged_document.get_meta_tags().items()
+                    },
+                    "text": merged_document.get_text(),
+                }
+            }
+
+        if document_data:
+            self._file_handler.write_file(file_path, document_data)
+        else:
+            raise ValueError(
+                "No valid document data found for saving. Ensure the active view is set correctly.")
+
+    def perform_save_as(self) -> None:
+        """
+        Opens a save-as dialog to let the user choose a file path, then saves the current document.
+        """
+        initial_dir = self._file_handler.resolve_path(
+            f"default_{self._active_view_id}_save_folder")
+        file_path = self._main_window.ask_user_for_save_path(
+            initial_dir=initial_dir)
+        if file_path:
+            self.perform_save(file_path=file_path)
+
+    def check_for_saving(self) -> None:
+        """
+        Checks the SaveStateModel for any dirty (unsaved) views and prompts the user
+        via the main window whether they want to save each of them.
+
+        If the user chooses to save, the corresponding document is saved using
+        `perform_save(view_id)`.
+
+        Assumes:
+            - self._save_state_model provides get_dirty_keys()
+            - self._main_window has method prompt_save(view_id: str) -> bool
+            - self.perform_save(view_id: str) exists and handles saving
+        """
+        dirty_keys = self._save_state_model.get_dirty_keys()
+        for view_id in dirty_keys:
+            should_save = self._main_window.prompt_save(view_id)
+            if should_save:
+                self.perform_save(view_id=view_id)
+
+    def perform_export(self) -> None:
+        """
+        Exports the current document based on the active view.
+
+        Raises:
+            ValueError: If the active view ID is not supported for export.
+
+        """
+        state = self._document_source_mapping[self._active_view_id].get_state()
+        if self._active_view_id == "extraction":
+            self._export_extracted_document(state)
+
+        elif self._active_view_id == "comparison":
+            self._export_comparison_document(state)
+        else:
+            raise ValueError(
+                f"Export is not supported in view mode '{self._active_view_id}'.")
+
+    def _export_extracted_document(self, state: dict) -> None:
+        """
+        Exports the extracted document from the extraction view.
+
+        Args:
+            state (dict): The current state of the extraction document model.
+        """
+        document = state
+        file_name = document.get("file_name", "")
+        file_path = self._file_handler.resolve_path(
+            "default_extraction_save_folder", file_name + ".json")
+        file_path = self._solve_overwriting(file_path)
+        save_document = {
+            "document_type": "annotation",
+            "file_name": file_name,
+            "file_path": file_path,
+            "meta_tags": document.get("meta_tags", {}),
+            "text": document.get("text", ""),
+        }
+        self._annotation_document_model.set_document(save_document)
+        self._file_handler.write_file(file_path, save_document)
+        return
+
+    def _export_comparison_document(self, state: dict) -> None:
+        """
+        Exports the merged document from the comparison view.
+
+        Args:
+            state (dict): The current state of the comparison model containing the merged document.
+
+        Raises:
+            ValueError: If no merged document is found in the comparison state or if the file path 
+        """
+        merged_document = state.get("merged_document")
+        if not merged_document:
+            raise ValueError(
+                "No merged document found in the comparison state. Cannot export.")
+        file_path = merged_document.get_file_path()
+        if not file_path:
+            initial_dir = self._file_handler.resolve_path(
+                f"default_merged_save_folder")
+            file_path = self._main_window.ask_user_for_save_path(
+                initial_dir=initial_dir)
+            file_name = self._file_handler.derive_file_name(
+                file_path)
+            self._comparison_model.set_merged_document_file_name(file_name)
+            self._comparison_model.set_merged_document_file_path(file_path)
+        file_path = self._solve_overwriting(file_path)
+        file_name = self._file_handler.derive_file_name(
+            file_path)
+        save_document = {
+            "document_type": "annotation",
+            "file_name": file_name,
+            "file_path": file_path,
+            "meta_tags": {
+                tag_type: [", ".join(str(tag) for tag in tags)]
+                for tag_type, tags in merged_document.get_meta_tags().items()
+            },
+            "text": merged_document.get_text(),
+        }
+        print(f"DEBUG {file_path=}")
+        self._file_handler.write_file(file_path, save_document)
+        return
+
+    def _solve_overwriting(self, file_path) -> str:
+        """
+        Checks if the current file path is valid for overwriting.
+
+        Returns:
+            str: The resolved file path, which may be updated based on user input.
+        """
+        if self._file_handler.check_overwriting(file_path):
+            if not self._main_window.ask_user_for_overwrite_confirmation(file_path):
+                initial_dir = self._file_handler.resolve_path(
+                    f"default_{self._active_view_id}_save_folder")
+                file_path = self._main_window.ask_user_for_save_path(
+                    initial_dir=initial_dir)
+        return file_path
 
     def _setup_comparison_model(self, documents) -> None:
         self._appearance_model.set_num_comparison_displays(len(documents)+1)
@@ -790,57 +1059,63 @@ class Controller(IController):
 
     def _load_comparison_model(self, document: dict) -> None:
         """
-        Reconstructs the comparison model from a previously saved comparison metadata file.
+        Reconstructs the comparison model from a previously saved file.
 
-        This matches exactly the structure used in `perform_save_as` for comparison view.
+        Loads source documents and the merged document (annotation), restores the internal
+        comparison model state, and sets up the displays and tag data.
+
+        Args:
+            document (dict): The loaded comparison document data from file.
         """
-        # Step 0: Deregister old display observers
-        # self._comparison_model.clear_all_observers()
+        # Step 0: Reset old state
+        self._reset_undo_redo()
 
-        # Step 1: Load merged and source documents
-        merged_document_data = self._file_handler.read_file(
-            document["document_path"])
-        source_documents_data = [self._file_handler.read_file(
-            path) for path in document["source_paths"]]
+        # Step 1: Load document models from stored paths
+        source_paths = document["source_paths"]
+        source_documents_data = [
+            self._file_handler.read_file(path) for path in source_paths]
 
-        # Step 2: Build document models
         raw_model = AnnotationDocumentModel()
         annotator_models = [AnnotationDocumentModel(
             data) for data in source_documents_data]
         document_models = [raw_model] + annotator_models
 
-        # Step 3: Extract tags from all source models (not raw)
-        for model in document_models:
-            self._tag_manager.extract_tags_from_document(model)
-
-        # Step 4: Register documents in the comparison model
+        highlight_models = [HighlightModel() for _ in document_models]
+        for document_model in document_models:
+            self._tag_manager.extract_tags_from_document(document_model)
         self._comparison_model.set_document_models(document_models)
+        self._comparison_model.set_highlight_models(highlight_models)
 
-        # Step 5: Register displays
+        # Step 4: Setup displays
         self._appearance_model.set_num_comparison_displays(
             len(document_models))
         displays = self._comparison_view.get_comparison_displays()
         self._comparison_model.register_comparison_displays(displays)
 
-        # Step 6: Construct merged model from saved merged document file
+        # Step 5: Load merged model from inlined `document_data`
+        merged_document_data = document["document_data"]
         merged_model = AnnotationDocumentModel(merged_document_data)
 
-        # Step 7: Prepare and set comparison data
-        start_data = self._comparison_manager.get_start_data(sentence_index=document.get(
-            "current_sentence_index", 0), comparison_sentences=document.get("comparison_sentencess"))
+        # Step 6: Prepare and set comparison data
+        comparison_sentences = document.get("comparison_sentences", [])
+        current_index = document.get("current_sentence_index", 0)
+        start_data = self._comparison_manager.get_start_data(
+            sentence_index=current_index,
+            comparison_sentences=comparison_sentences
+        )
+
         comparison_data = {
             "merged_document": merged_model,
-            "comparison_sentences": document["comparison_sentences"],
-            "differing_to_global": document["differing_to_global"],
+            "comparison_sentences": comparison_sentences,
+            "differing_to_global": document.get("differing_to_global", []),
             "start_data": start_data,
         }
         self._comparison_model.set_comparison_data(comparison_data)
 
-        # Step 8: Restore internal state
-        self._comparison_model._current_index = document.get(
-            "current_sentence_index", 0)
+        # Step 7: Restore internal flags and index
+        self._comparison_model._current_index = current_index
         self._comparison_model._adopted_flags = document.get(
-            "adopted_flags", [False] * len(document["comparison_sentences"])
+            "adopted_flags", [False] * len(comparison_sentences)
         )
 
     def extract_tags_from_document(self, documents) -> None:
@@ -853,7 +1128,8 @@ class Controller(IController):
         for document in documents:
             self._tag_manager.extract_tags_from_document(document)
 
-    # todo remove
+    #! DEPRECATED
+
     def find_equivalent_tags(self, documents: List[IDocumentModel], merged_document: IDocumentModel) -> None:
         """
         Identifies and marks equivalent tags across multiple document versions.
@@ -883,89 +1159,22 @@ class Controller(IController):
                          for document_sentences in documents_sentences]
             self._tag_manager.find_equivalent_tags(
                 sentences=sentences, common_sentence=merged_sentence, documents_tags=documents_tags, merged_tags=merged_document_tags)
+    #! END DEPRECATED
 
-    def perform_save_as(self, file_path: Optional[str] = None):
-        """
-        Saves the current document to the specified file path.
-
-        For comparison views, saves the merged document into the annotation folder
-        and the comparison metadata into the comparison folder.
-        """
-        data_source = self.get_save_as_config()["data_source"]
-        document = data_source.get_state()
-
-        if self._active_view_id == "comparison":
-            # Construct merged file name and paths
-            base_name = self._file_handler.derive_file_name(
-                document["source_file_paths"][0])
-            merged_file_name = f"{base_name}_merged.json"
-
-            annotation_folder = self._file_handler.resolve_path(
-                "default_annotation_save_folder")
-            comparison_folder = self._file_handler.resolve_path(
-                "default_comparison_save_folder")
-
-            # Final full paths
-            annotation_file_path = os.path.join(
-                annotation_folder, merged_file_name)
-            comparison_info_path = os.path.join(
-                comparison_folder, f"{base_name}_comparison.json")
-
-            # Prepare document for saving
-            clean_document = {
-                "file_path": annotation_file_path,
-                "file_name": base_name + "_merged",
-                "document_type": "annotation",
-                "meta_tags": {
-                    tag_type: [", ".join(str(tag) for tag in tags)]
-                    for tag_type, tags in document.get("meta_tags", {}).items()
-                },
-                "text": document["text"]
-            }
-
-            # Save merged annotation document
-            self._file_handler.write_file(file_path, clean_document)
-
-            # Save comparison metadata
-            comparison_info = {
-                "document_type": "comparison",
-                "source_paths": document["source_file_paths"],
-                "document_path": file_path,
-                "file_names": document.get("file_names", []),
-                "num_sentences": document.get("num_sentences", 0),
-                "current_sentence_index": document.get("current_sentence_index", 0),
-                "comparison_sentences": document.get("comparison_sentences", []),
-                "adopted_flags": document.get("adopted_flags", []),
-                "differing_to_global": document.get("differing_to_global", []),
-            }
-            self._file_handler.write_file(
-                comparison_info_path, comparison_info)
-
-        else:
-            # Normal annotation/extraction mode
-            document["file_path"] = file_path
-            document["file_name"] = self._file_handler.derive_file_name(
-                file_path)
-            document["document_type"] = self._active_view_id
-            meta_tag_strings = {
-                tag_type: [", ".join(str(tag) for tag in tags)]
-                for tag_type, tags in document.get("meta_tags", {}).items()
-            }
-            document["meta_tags"] = meta_tag_strings
-            document.pop("tags", None)
-
-            self._file_handler.write_file(file_path, document)
-
+    @with_highlight_update
     def perform_prev_sentence(self) -> None:
         """
         Moves the comparison model to the previous sentence and updates documents.
         """
+        print("DEBUG: perform_prev_sentence called")
         self._shift_and_update(self._comparison_model.previous_sentences)
 
+    @with_highlight_update
     def perform_next_sentence(self) -> None:
         """
         Moves the comparison model to the next sentence and updates documents.
         """
+        print("DEBUG: perform_next_sentence called")
         self._shift_and_update(self._comparison_model.next_sentences)
 
     def _shift_and_update(self, sentence_func: Callable[[], List[str]]) -> None:
@@ -994,9 +1203,9 @@ class Controller(IController):
         # check if sentences is already adopted
         if adoption_data["is_adopted"]:
             self._handle_failure(FailureReason.IS_ALREADY_ADOPTED)
-            comparison_state = self._comparison_model.get_adoption_data(
-                adoption_index)
-            current_index = self._comparison_model._current_index
+            # comparison_state = self._comparison_model.get_adoption_data(
+            #     adoption_index)
+            # current_index = self._comparison_model._current_index
             return
 
         # check if sentence contains references, since it is not possible to resolve references yet.
@@ -1113,8 +1322,9 @@ class Controller(IController):
         index = index_mapping.get(view_id)
         if index is not None:
             self._appearance_model.set_active_notebook_index(index)
+    #!DEPRECATED
 
-    def get_open_file_config(self) -> dict:
+    # def get_open_file_config(self) -> dict:
         """
         Returns the configuration for the open file dialog.
 
@@ -1148,7 +1358,7 @@ class Controller(IController):
             "multiselect": multiselect
         }
 
-    def get_save_as_config(self) -> dict:
+    # def get_save_as_config(self) -> dict:
         """
         Returns configuration for the save-as dialog and the associated data source.
 
@@ -1178,6 +1388,7 @@ class Controller(IController):
             "title": "Save File As",
             "data_source": data_source
         }
+    #!END DEPRECATED
 
     def get_file_path(self) -> str:
         """
@@ -1247,6 +1458,7 @@ class Controller(IController):
         """
         Updates the highlight model with tag and search highlights based on the current active view.
         """
+        print("DEBUG: _update_highlight_model called")
         color_scheme = self._settings_manager.get_color_scheme()
         if self._active_view_id == "annotation":
             document_models = [
@@ -1254,15 +1466,24 @@ class Controller(IController):
             highlight_models = [self._highlight_model]
 
         if self._active_view_id == "comparison":
+            print("DEBUG: _update_highlight_model for comparison")
             comparison_model = self._document_source_mapping[self._active_view_id]
             document_models = comparison_model.get_document_models()
             highlight_models = comparison_model.get_highlight_models()
+            print(
+                f"DEBUG: comparison_model for comparison: {comparison_model}")
+            print(f"DEBUG: document_models for comparison: {document_models}")
+            print(
+                f"DEBUG: highlight_models for comparison: {highlight_models}")
 
         for document_model, highlight_model in zip(document_models, highlight_models):
             highlight_data = self._tag_manager.get_highlight_data(
                 document_model)
+            print(
+                f"DEBUG: highlight_data for {document_model}: {highlight_data}")
             tag_highlights = [(color_scheme["tags"][tag]["background_color"], color_scheme["tags"][tag]["font_color"], start, end) for tag, start, end in highlight_data
                               ]
+            print(f"DEBUG: tag_highlights: {tag_highlights}")
             highlight_model.add_tag_highlights(tag_highlights)
 
         if not self._current_search_model:

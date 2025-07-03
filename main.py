@@ -6,6 +6,7 @@ from model.comparison_model import ComparisonModel
 from model.layout_configuration_model import LayoutConfigurationModel
 from model.extraction_document_model import ExtractionDocumentModel
 from model.highlight_model import HighlightModel
+from model.save_state_model import SaveStateModel
 from model.selection_model import SelectionModel
 from view.main_window import MainWindow
 
@@ -20,9 +21,10 @@ def main():
     appearance_model = AppearanceModel()
     annotation_mode_model = AnnotationModeModel()
     highlight_model = HighlightModel()
+    save_state_model = SaveStateModel()
 
     controller = Controller(
-        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, layout_configuration_model=configuration_model, appearance_model=appearance_model, annotation_mode_model=annotation_mode_model, highlight_model=highlight_model)
+        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, layout_configuration_model=configuration_model, appearance_model=appearance_model, annotation_mode_model=annotation_mode_model, highlight_model=highlight_model, save_state_model=save_state_model)
     app_view = MainWindow(controller)
     controller.finalize_views()
     # controller.perform_create_color_scheme(

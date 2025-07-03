@@ -49,10 +49,18 @@ class ComparisonView(View, IComparisonView):
         self._text_displays.pack(side=tk.TOP, fill=tk.BOTH,
                                  expand=True, padx=10, pady=5)
 
-        # Search frame for text input
-        self.search_frame = SearchFrame(
-            self.left_frame, controller=self._controller, root_view_id=self._view_id)
-        self.search_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
+        # Frame containing the export button
+        self.export_frame = tk.Frame(self.left_frame)
+        self.export_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
+
+        # Export button placed on the left side
+        self.export_button = tk.Button(
+            self.export_frame,
+            text="Export Merged Document",
+            # replace with your actual method
+            command=self._controller.perform_export
+        )
+        self.export_button.pack(side=tk.LEFT)
 
         # Now pack left_frame itself in the paned_window
         self.left_frame.pack(fill="both", expand=True)

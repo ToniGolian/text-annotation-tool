@@ -14,7 +14,7 @@ from model.save_state_model import SaveStateModel
 from model.tag_model import TagModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List,  Tuple
 from utils.color_manager import ColorManager
 from utils.comparison_manager import ComparisonManager
 from utils.layout_configuration_manager import LayoutConfigurationManager
@@ -128,7 +128,6 @@ class Controller(IController):
         Returns:
             Callable: The wrapped method that updates the highlight model after execution.
         """
-        print(f"DEBUG: Applying with_highlight_update")
 
         def wrapper(self, *args, **kwargs):
             result = method(self, *args, **kwargs)
@@ -197,6 +196,7 @@ class Controller(IController):
         return wrapped
 
     # command pattern
+    @with_highlight_update
     @invalidate_search_models
     @update_current_search_model
     @track_save_state  # ! needs to be the most inner decorator!
@@ -215,6 +215,7 @@ class Controller(IController):
             model.execute_command(command)
             command.execute()
 
+    @with_highlight_update
     @invalidate_search_models
     @update_current_search_model
     @track_save_state
@@ -235,6 +236,7 @@ class Controller(IController):
             if command:
                 command.undo()
 
+    @with_highlight_update
     @invalidate_search_models
     @update_current_search_model
     @track_save_state
@@ -783,7 +785,7 @@ class Controller(IController):
         """
 
         # Reset old state
-        self._reset_undo_redo()
+        self._reset_undo_redo(self._active_view_id)
 
         # Determine the load configuration based on the active view
         if self._active_view_id == "extraction":
@@ -1018,7 +1020,6 @@ class Controller(IController):
             },
             "text": merged_document.get_text(),
         }
-        print(f"DEBUG {file_path=}")
         self._file_handler.write_file(file_path, save_document)
         return
 
@@ -1068,7 +1069,7 @@ class Controller(IController):
             document (dict): The loaded comparison document data from file.
         """
         # Step 0: Reset old state
-        self._reset_undo_redo()
+        self._reset_undo_redo("comparison")
 
         # Step 1: Load document models from stored paths
         source_paths = document["source_paths"]
@@ -1266,15 +1267,17 @@ class Controller(IController):
                              "These Sentence is already adopted.")
         # add more cases as needed
 
-    def _reset_undo_redo(self) -> None:
+    def _reset_undo_redo(self, view_id) -> None:
         """
         Clears both the undo and redo stacks.
 
         This method resets the state by removing all stored undo and redo actions,
         effectively discarding any command history.
+
+        Args:
+            view_id (str): The unique identifier of the view for which the undo/redo stacks should be reset.
         """
-        for undo_redo_model in self._undo_redo_models.values():
-            undo_redo_model.reset()
+        self._undo_redo_models[view_id].reset()
 # Getters/setters
 
     def get_selected_text_data(self) -> Dict:
@@ -1322,73 +1325,6 @@ class Controller(IController):
         index = index_mapping.get(view_id)
         if index is not None:
             self._appearance_model.set_active_notebook_index(index)
-    #!DEPRECATED
-
-    # def get_open_file_config(self) -> dict:
-        """
-        Returns the configuration for the open file dialog.
-
-        This method constructs the configuration based on the active view and
-        determines the initial directory, file types, and dialog title.
-
-        Returns:
-            dict: A dictionary containing the configuration for the open file dialog.
-                - "initial_dir" (str): The initial directory for the file dialog.
-                - "filetypes" (list of tuples): The allowed file types.
-                - "title" (str): The title of the dialog.
-        """
-        # Determine the file extension and default path based on the active view
-        if self._active_view_id == "extraction":
-            file_extension = "pdf"
-        else:
-            file_extension = "json"
-        if self._active_view_id == "comparison":
-            multiselect = True
-        else:
-            multiselect = False
-
-        key = f"default_{self._active_view_id}_load_folder"
-        initial_dir = self._file_handler.resolve_path(key)
-
-        # Construct the dialog configuration
-        return {
-            "initial_dir": initial_dir,
-            "filetypes": [(f"{file_extension.upper()} Files", f"*.{file_extension}"), ("All Files", "*.*")],
-            "title": "Open File",
-            "multiselect": multiselect
-        }
-
-    # def get_save_as_config(self) -> dict:
-        """
-        Returns configuration for the save-as dialog and the associated data source.
-
-        Includes dialog metadata used in the view and the current document model
-        used by the controller to save the file content.
-
-        Returns:
-            dict: A dictionary with:
-                - "initial_dir" (str): Start directory for the dialog.
-                - "filetypes" (list of tuples): Allowed file types.
-                - "defaultextension" (str): Default file extension.
-                - "title" (str): Dialog window title.
-                - "data_source" (IDocumentModel): The current model to be saved.
-        """
-
-        # Determine the file extension and default path based on the active view
-        file_extension = "json"
-        data_source = self._document_source_mapping[self._active_view_id]
-        key = f"default_{self._active_view_id}_save_folder"
-        initial_dir = self._file_handler.resolve_path(key)
-
-        # Construct the dialog configuration
-        return {
-            "initial_dir": initial_dir,
-            "filetypes": [(f"{file_extension.upper()} Files", f"*.{file_extension}"), ("All Files", "*.*")],
-            "defaultextension": f".{file_extension}",
-            "title": "Save File As",
-            "data_source": data_source
-        }
-    #!END DEPRECATED
 
     def get_file_path(self) -> str:
         """
@@ -1458,7 +1394,6 @@ class Controller(IController):
         """
         Updates the highlight model with tag and search highlights based on the current active view.
         """
-        print("DEBUG: _update_highlight_model called")
         color_scheme = self._settings_manager.get_color_scheme()
         if self._active_view_id == "annotation":
             document_models = [
@@ -1466,27 +1401,19 @@ class Controller(IController):
             highlight_models = [self._highlight_model]
 
         if self._active_view_id == "comparison":
-            print("DEBUG: _update_highlight_model for comparison")
             comparison_model = self._document_source_mapping[self._active_view_id]
             document_models = comparison_model.get_document_models()
             highlight_models = comparison_model.get_highlight_models()
-            print(
-                f"DEBUG: comparison_model for comparison: {comparison_model}")
-            print(f"DEBUG: document_models for comparison: {document_models}")
-            print(
-                f"DEBUG: highlight_models for comparison: {highlight_models}")
 
         for document_model, highlight_model in zip(document_models, highlight_models):
             highlight_data = self._tag_manager.get_highlight_data(
                 document_model)
-            print(
-                f"DEBUG: highlight_data for {document_model}: {highlight_data}")
             tag_highlights = [(color_scheme["tags"][tag]["background_color"], color_scheme["tags"][tag]["font_color"], start, end) for tag, start, end in highlight_data
                               ]
-            print(f"DEBUG: tag_highlights: {tag_highlights}")
             highlight_model.add_tag_highlights(tag_highlights)
 
         if not self._current_search_model:
+            print(f"DEBUG: No current search model available")
             return
 
         search_highlights = []

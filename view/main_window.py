@@ -88,7 +88,7 @@ class MainWindow(tk.Tk, IObserver):
         print("Preferences dialog not implemented yet.")
 
     def _on_closing(self):
-        self._controller.check_for_saving()
+        self._controller.check_for_saving(enforce_check=True)
         self.destroy()
 
     def update(self, publisher: IPublisher) -> None:

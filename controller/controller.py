@@ -923,7 +923,7 @@ class Controller(IController):
         if file_path:
             self.perform_save(file_path=file_path)
 
-    def check_for_saving(self) -> None:
+    def check_for_saving(self, enforce_check: bool = False) -> None:
         """
         Checks the SaveStateModel for any dirty (unsaved) views and prompts the user
         via the main window whether they want to save each of them.
@@ -937,6 +937,8 @@ class Controller(IController):
             - self.perform_save(view_id: str) exists and handles saving
         """
         dirty_keys = self._save_state_model.get_dirty_keys()
+        if not enforce_check and self._active_view_id not in dirty_keys:
+            return
         for view_id in dirty_keys:
             should_save = self._main_window.prompt_save(view_id)
             if should_save:

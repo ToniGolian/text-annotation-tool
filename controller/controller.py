@@ -1169,7 +1169,6 @@ class Controller(IController):
         """
         Moves the comparison model to the previous sentence and updates documents.
         """
-        print("DEBUG: perform_prev_sentence called")
         self._shift_and_update(self._comparison_model.previous_sentences)
 
     @with_highlight_update
@@ -1177,7 +1176,6 @@ class Controller(IController):
         """
         Moves the comparison model to the next sentence and updates documents.
         """
-        print("DEBUG: perform_next_sentence called")
         self._shift_and_update(self._comparison_model.next_sentences)
 
     def _shift_and_update(self, sentence_func: Callable[[], List[str]]) -> None:
@@ -1415,7 +1413,6 @@ class Controller(IController):
             highlight_model.add_tag_highlights(tag_highlights)
 
         if not self._current_search_model:
-            print(f"DEBUG: No current search model available")
             return
 
         search_highlights = []
@@ -1442,7 +1439,7 @@ class Controller(IController):
                 (current_search_bg_color, current_search_font_color, current_search_result.start,
                  current_search_result.end)
             )
-        self._highlight_model.add_search_highlights(search_highlights)
+        highlight_models[0].add_search_highlights(search_highlights)
 
     def get_tag_types(self) -> List[str]:
         """

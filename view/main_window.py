@@ -49,9 +49,9 @@ class MainWindow(tk.Tk, IObserver):
         # Create File, Project, Settings, and Help menus
         # File menu
         file_menu = tk.Menu(menu_bar, tearoff=0)
-        file_menu.add_command(label="Open", command=self._on_open)
-        file_menu.add_command(label="Save", command=self._on_save)
-        file_menu.add_command(label="Save as", command=self._on_save_as)
+        file_menu.add_command(label="Open File", command=self._on_open)
+        file_menu.add_command(label="Save File", command=self._on_save)
+        file_menu.add_command(label="Save as...", command=self._on_save_as)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self._on_closing)
         menu_bar.add_cascade(label="File", menu=file_menu)
@@ -203,14 +203,11 @@ class MainWindow(tk.Tk, IObserver):
         Args:
             tab (str): The tab to open in the tag editor. One of 'new' or 'edit'.
         """
-        from view.tag_editor_window import TagEditorWindow
-
         if not self._tag_editor_window or not self._tag_editor_window.winfo_exists():
             self._tag_editor_window = TagEditorWindow(self)
 
         self._tag_editor_window.deiconify()
         self._tag_editor_window.lift()
-
         self._tag_editor_window.select_tab(tab)
 
     # popup dialogs

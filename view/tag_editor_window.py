@@ -38,3 +38,17 @@ class TagEditorWindow(tk.Toplevel):
 
         # Placeholder content for 'Edit Tag' tab
         ttk.Label(edit_tag_frame, text="Tag editing UI goes here.").pack(pady=20)
+
+    def select_tab(self, name: str) -> None:
+        """
+        Programmatically selects a tab by name.
+
+        Args:
+            name (str): One of "new", "edit", or "settings".
+        """
+        name = name.lower()
+        tab_index = {"new": 0, "edit": 1}.get(name)
+        if tab_index is not None:
+            self._notebook.select(tab_index)
+        else:
+            raise ValueError(f"Unknown tab name: {name}")

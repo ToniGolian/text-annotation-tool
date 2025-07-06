@@ -10,6 +10,7 @@ from view.extraction_view import ExtractionView
 from view.annotation_view import AnnotationView
 from view.comparison_view import ComparisonView
 from controller.interfaces import IController
+from view.project_window import ProjectWindow
 
 
 class MainWindow(tk.Tk, IObserver):
@@ -23,6 +24,8 @@ class MainWindow(tk.Tk, IObserver):
         self._annotation_view = None
         self._extraction_view = None
         self._comparison_view = None
+
+        self._project_window: Optional[ProjectWindow] = None
 
         if platform.system() == "Windows":
             self.state('zoomed')
@@ -40,6 +43,8 @@ class MainWindow(tk.Tk, IObserver):
         menu_bar = tk.Menu(self)
         self._notebook = ttk.Notebook(self)
 
+        # Create File, Project, Settings, and Help menus
+        # File menu
         file_menu = tk.Menu(menu_bar, tearoff=0)
         file_menu.add_command(label="Open", command=self._on_open)
         file_menu.add_command(label="Save", command=self._on_save)
@@ -48,10 +53,39 @@ class MainWindow(tk.Tk, IObserver):
         file_menu.add_command(label="Exit", command=self._on_closing)
         menu_bar.add_cascade(label="File", menu=file_menu)
 
+        # Project menu
+        project_menu = tk.Menu(menu_bar, tearoff=0)
+        project_menu.add_command(
+            label="New Project", command=self._on_new_project)
+        project_menu.add_command(label="Open Project",
+                                 command=self._on_open_project)
+        project_menu.add_separator()
+        project_menu.add_command(label="Save Project",
+                                 command=self._on_save_project)
+        project_menu.add_command(label="Save Project As",
+                                 command=self._on_save_project_as)
+        project_menu.add_separator()
+        project_menu.add_command(label="Edit Project",
+                                 command=self._on_edit_project)
+        project_menu.add_command(label="Project Settings",
+                                 command=self._on_project_settings)
+        menu_bar.add_cascade(label="Project", menu=project_menu)
+
+        # Settings menu
         settings_menu = tk.Menu(menu_bar, tearoff=0)
         settings_menu.add_command(
-            label="Preferences", command=self._on_preferences)
+            label="Global Settings", command=self._on_settings)
+        settings_menu.add_command(label="Project Settings",
+                                  command=self._on_project_settings)
         menu_bar.add_cascade(label="Settings", menu=settings_menu)
+
+        # Help menu
+        help_menu = tk.Menu(menu_bar, tearoff=0)
+        help_menu.add_command(
+            label="About", command=self._on_about)
+        help_menu.add_separator()
+        help_menu.add_command(label="Help", command=self._on_help)
+        menu_bar.add_cascade(label="Help", menu=help_menu)
 
         self.config(menu=menu_bar)
 
@@ -75,6 +109,8 @@ class MainWindow(tk.Tk, IObserver):
         self._controller.set_active_view(
             active_views[self.DEFAULT_NOTEBOOK_INDEX])
 
+    # Menu actions
+    # File actions
     def _on_open(self):
         self._controller.perform_open_file()
 
@@ -84,13 +120,43 @@ class MainWindow(tk.Tk, IObserver):
     def _on_save_as(self) -> None:
         self._controller.perform_save_as()
 
-    def _on_preferences(self):
-        print("Preferences dialog not implemented yet.")
+    # Project actions
+    def _on_new_project(self):
+        self._open_project_window(tab="new")
 
+    def _on_edit_project(self):
+        self._open_project_window(tab="edit")
+
+    def _on_project_settings(self):
+        self._open_project_window(tab="settings")
+
+    def _on_save_project(self):
+        raise NotImplementedError("Save project dialog not implemented yet.")
+
+    def _on_save_project_as(self):
+        raise NotImplementedError(
+            "Save project as dialog not implemented yet.")
+
+    def _on_open_project(self):
+        raise NotImplementedError("Open project dialog not implemented yet.")
+
+    # Settings actions
+    def _on_settings(self):
+        raise NotImplementedError("Settings dialog not implemented yet.")
+
+    # Help actions
+    def _on_help(self):
+        raise NotImplementedError("Help dialog not implemented yet.")
+
+    def _on_about(self):
+        raise NotImplementedError("About dialog not implemented yet.")
+
+    # Window close action
     def _on_closing(self):
         self._controller.check_for_saving(enforce_check=True)
         self.destroy()
 
+    # Observer pattern methods
     def update(self, publisher: IPublisher) -> None:
         state = self._controller.get_observer_state(self, publisher)
         if "active_notebook_index" in state:
@@ -98,6 +164,26 @@ class MainWindow(tk.Tk, IObserver):
             if state["active_notebook_index"] == 1:
                 self._annotation_view.focus_set()
 
+    # Helpers
+    def _open_project_window(self, tab: str = "new") -> None:
+        """
+        Opens the project window and focuses the requested tab.
+
+        Args:
+            tab (str): The tab to activate upon opening. One of 'new', 'edit', 'settings'.
+        """
+        # Create the project window if it doesn't exist or was closed
+        if not self._project_window or not self._project_window.winfo_exists():
+            self._project_window = ProjectWindow(self)
+
+        # Show and focus the window
+        self._project_window.deiconify()
+        self._project_window.lift()
+
+        # Switch to the specified tab
+        self._project_window.select_tab(tab)
+
+    # popup dialogs
     def ask_user_for_save_path(self, initial_dir: str = None) -> Optional[str]:
         """
         Opens a file dialog to let the user choose a file path for saving.

@@ -747,6 +747,8 @@ class Controller(IController):
             - `suggestions` contains attribute and ID recommendations based on the selected text
               and existing IDs in the document.
         """
+        if self._active_view_id == "extraction":
+            return
         selected_text = selection_data["selected_text"]
         document_model = self._document_source_mapping[self._active_view_id]
         selection_data["suggestions"] = self._suggestion_manager.get_suggestions(

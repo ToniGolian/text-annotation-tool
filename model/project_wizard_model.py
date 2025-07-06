@@ -1,3 +1,4 @@
+from typing import Dict, List
 from observer.interfaces import IPublisher
 
 
@@ -15,8 +16,9 @@ class ProjectWizardModel(IPublisher):
         """
         super().__init__()
         self._project_name: str = ""
-        self._available_tags: list[str] = []
-        self._selected_tags: list[str] = []
+        # maps display name to file path
+        self._available_tags: List[dict[str, str]] = []
+        self._selected_tags: List[dict[str, str]] = []
         self._tag_group_file_name: str = ""
         self._tag_groups: dict[str, list[str]] = {}
 
@@ -71,3 +73,72 @@ class ProjectWizardModel(IPublisher):
         if group_name in self._tag_groups:
             del self._tag_groups[group_name]
             self.notify_observers()
+
+    def get_project_build_data(self) -> dict:
+        """
+        Constructs a dictionary containing all relevant data for building the project.
+
+        Returns:
+            dict: A dictionary with the following structure:
+                {
+                    "project_name": str,
+                    "tag_group_file_name": str,
+                    "groups": dict[str, list[str]],
+                    "selected_tags": list[dict[str, str]]
+                }
+        """
+        return {
+            "project_name": self._project_name,
+            "tag_group_file_name": self._tag_group_file_name,
+            "groups": self._tag_groups,
+            "selected_tags": self._selected_tags,
+            "cleaned_selected_tags": [
+                {"name": self._clean_name(
+                    name), "path": self._available_tags[name]}
+                for name in self._selected_tags
+            ]
+        }
+
+    def _clean_name(self, name: str) -> str:
+        """
+        Cleans the tag name by removing any text in parentheses and converting to uppercase.
+        Leading and trailing whitespace is also removed.
+
+        Args:
+            name (str): The tag name to clean.
+
+        Returns:
+            str: The cleaned and normalized tag name.
+        """
+        if not name:
+            return ""
+        cleaned = name.split("(")[0].strip()
+        return cleaned.upper()
+
+    def set_project_name(self, name: str) -> None:
+        """
+        Sets the project name and notifies observers.
+
+        Args:
+            name (str): The new project name.
+        """
+        self._project_name = name.strip()
+
+    def set_tag_group_file_name(self, file_name: str) -> None:
+        """
+        Sets the tag group file name and notifies observers.
+
+        Args:
+            file_name (str): The new tag group file name.
+        """
+        self._tag_group_file_name = file_name.strip()
+
+    def add_selected_tags(self, tags: list[Dict[str, str]]) -> None:
+        """
+        Sets the selected tags and notifies observers.
+
+        Args:
+            tags (list[Dict[str, str]]): List of tag dictionaries to set as selected.
+        """
+        self._selected_tags.extend(tags)
+        self.notify_observers()

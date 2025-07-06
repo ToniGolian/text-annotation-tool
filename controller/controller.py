@@ -34,7 +34,7 @@ from view.main_window import MainWindow
 
 
 class Controller(IController):
-    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: SaveStateModel = None, project_wizard_model: ProjectWizardModel = None) -> None:
+    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: SaveStateModel = None, new_project_wizard_model: ProjectWizardModel = None, edit_project_model: ProjectWizardModel = None) -> None:
 
         # state
         self._dynamic_observer_index: int = 0
@@ -50,7 +50,8 @@ class Controller(IController):
         self._highlight_model = highlight_model
         self._current_search_model: IPublisher = None
         self._save_state_model: SaveStateModel = save_state_model
-        self._project_wizard_model: ProjectWizardModel = project_wizard_model
+        self._new_project_wizard_model: ProjectWizardModel = new_project_wizard_model
+        self._edit_project_model: ProjectWizardModel = edit_project_model
 
         # dependencies
         self._path_manager = PathManager()

@@ -46,17 +46,17 @@ class LayoutConfigurationModel(IPublisher):
 
         self.notify_observers()
 
-    def get_state(self) -> Dict:
-        """
-        Returns the current UI and layout state.
+    # def get_state(self) -> Dict:
+    #     """
+    #     Returns the current UI and layout state.
 
-        This includes all information passed in via `update_state`, such as
-        window positions and template group definitions.
+    #     This includes all information passed in via `update_state`, such as
+    #     window positions and template group definitions.
 
-        Returns:
-            Dict: The layout state dictionary.
-        """
-        return self._layout
+    #     Returns:
+    #         Dict: The layout state dictionary.
+    #     """
+    #     return self._layout
 
     def get_tag_types(self) -> List[str]:
         """
@@ -103,3 +103,53 @@ class LayoutConfigurationModel(IPublisher):
             List[str]: List of attribute names that are ID or IDREF types.
         """
         return self._id_ref_attributes.get(tag_type, [])
+
+    def get_num_comparison_displays(self) -> int:
+        """
+        Retrieves the number of comparison displays.
+
+        Returns:
+            int: The number of comparison displays.
+        """
+        return self._layout["num_comparison_displays"]
+
+    def set_num_comparison_displays(self, num_comparison_displays: int) -> None:
+        """
+        Sets the number of dynamically created comparison displays.
+
+        Args:
+            num_comparison_displays (int): The number of comparison displays.
+        """
+        self._layout["num_comparison_displays"] = num_comparison_displays
+        self.notify_observers()
+
+    def get_active_notebook_index(self) -> int:
+        """
+        Retrieves the index of the currently active notebook tab.
+
+        Returns:
+            int: The index of the active notebook tab.
+        """
+        return self._layout["active_notebook_index"]
+
+    def set_active_notebook_index(self, index: int) -> None:
+        """
+        Sets the index of the currently active notebook tab.
+
+        Args:
+            index (int): The index to set as active.
+        """
+        self._layout["active_notebook_index"] = index
+        self.notify_observers()
+
+    def get_state(self) -> dict:
+        """
+        Retrieves the current state of the appearance model.
+
+        Returns:
+            dict: A dictionary containing:
+                - "layout" (dict): The current layout configuration.
+                - "num_comparison_displays" (int): The number of dynamically created comparison displays.
+                - "active_notebook_index" (int): The index of the currently active notebook tab.
+        """
+        return self._layout

@@ -632,7 +632,7 @@ class Controller(IController):
         """
         self.perform_export()
         self.set_active_view("annotation")
-        self._appearance_model.set_active_notebook_index(1)
+        self._layout_configuration_model.set_active_notebook_index(1)
 
     def perform_update_preview_text(self, text: str) -> None:
         """
@@ -1043,7 +1043,8 @@ class Controller(IController):
         return file_path
 
     def _setup_comparison_model(self, documents) -> None:
-        self._appearance_model.set_num_comparison_displays(len(documents)+1)
+        self._layout_configuration_model.set_num_comparison_displays(
+            len(documents)+1)
 
         document_models = [AnnotationDocumentModel()]+[AnnotationDocumentModel(
             document) for document in documents]
@@ -1092,7 +1093,7 @@ class Controller(IController):
         self._comparison_model.set_highlight_models(highlight_models)
 
         # Step 4: Setup displays
-        self._appearance_model.set_num_comparison_displays(
+        self._layout_configuration_model.set_num_comparison_displays(
             len(document_models))
         displays = self._comparison_view.get_comparison_displays()
         self._comparison_model.register_comparison_displays(displays)
@@ -1326,7 +1327,8 @@ class Controller(IController):
 
         index = index_mapping.get(view_id)
         if index is not None:
-            self._appearance_model.set_active_notebook_index(index)
+            print(f"DEBUG notebook set to index: {index=}")
+            self._layout_configuration_model.set_active_notebook_index(index)
 
     def get_file_path(self) -> str:
         """

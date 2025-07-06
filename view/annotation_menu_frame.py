@@ -174,8 +174,9 @@ class AnnotationMenuFrame(tk.Frame, IAnnotationMenuFrame):
         This method should be called once when the view is initialized.
         """
         state = self._controller.get_observer_state(self)
-        self._template_groups = state["template_groups"]
-        self._ensure_layout()
+        if "layout" in state:
+            self._template_groups = state["layout"]["template_groups"]
+            self._ensure_layout()
 
     def finalize_observers(self) -> None:
         """

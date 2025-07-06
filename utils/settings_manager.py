@@ -1,4 +1,3 @@
-from typing import List
 
 from input_output.file_handler import FileHandler
 

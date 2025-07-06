@@ -17,7 +17,7 @@ from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
 from typing import Callable, Dict, List,  Tuple
 from utils.color_manager import ColorManager
 from utils.comparison_manager import ComparisonManager
-from utils.layout_configuration_manager import LayoutConfigurationManager
+from utils.project_configuration_manager import ProjectConfigurationManager
 from utils.path_manager import PathManager
 from utils.pdf_extraction_manager import PDFExtractionManager
 from utils.search_manager import SearchManager
@@ -33,7 +33,7 @@ from view.main_window import MainWindow
 
 
 class Controller(IController):
-    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None, appearance_model: IPublisher = None, highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: SaveStateModel = None) -> None:
+    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: SaveStateModel = None) -> None:
 
         # state
         self._dynamic_observer_index: int = 0
@@ -41,7 +41,6 @@ class Controller(IController):
         self._observer_layout_map: Dict[IObserver, Dict] = {}
 
         self._layout_configuration_model: IPublisher = layout_configuration_model
-        self._appearance_model: IPublisher = appearance_model
         self._extraction_document_model: IDocumentModel = preview_document_model
         self._annotation_document_model: IDocumentModel = annotation_document_model
         self._comparison_model: IComparisonModel = comparison_model
@@ -54,7 +53,7 @@ class Controller(IController):
         # dependencies
         self._path_manager = PathManager()
         self._file_handler = FileHandler(path_manager=self._path_manager)
-        self._layout_configuration_manager = LayoutConfigurationManager(
+        self._layout_configuration_manager = ProjectConfigurationManager(
             self._file_handler)
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
         self._settings_manager = SettingsManager(self._file_handler)
@@ -292,7 +291,7 @@ class Controller(IController):
                     publisher_instance.add_observer(observer)
 
             # Add observer to finalize list if required
-            if finalize:
+            if finalize and observer not in self._views_to_finalize:
                 self._views_to_finalize.append(observer)
 
     def remove_observer(self, observer: IObserver) -> None:
@@ -441,6 +440,7 @@ class Controller(IController):
             have already been registered with the controller.
         """
         configuration = self._layout_configuration_manager.load_configuration()
+
         self._layout_configuration_model.set_configuration(
             configuration=configuration)
         for view in self._views_to_finalize:
@@ -1327,7 +1327,6 @@ class Controller(IController):
 
         index = index_mapping.get(view_id)
         if index is not None:
-            print(f"DEBUG notebook set to index: {index=}")
             self._layout_configuration_model.set_active_notebook_index(index)
 
     def get_file_path(self) -> str:

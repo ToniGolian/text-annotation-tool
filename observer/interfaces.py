@@ -30,7 +30,7 @@ class IPublisher(ABC):
         Args:
             observer (IObserver): The observer to be added.
         """
-        if observer not in self._observers:
+        if not any(existing is observer for existing in self._observers):
             self._observers.append(observer)
 
     def remove_observer(self, observer: IObserver) -> None:

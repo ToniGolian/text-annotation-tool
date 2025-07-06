@@ -43,20 +43,7 @@ class LayoutConfigurationModel(IPublisher):
         self._id_prefixes = configuration.get("id_prefixes", {})
         self._id_names = configuration.get("id_names", {})
         self._id_ref_attributes = configuration.get("id_ref_attributes", {})
-
         self.notify_observers()
-
-    # def get_state(self) -> Dict:
-    #     """
-    #     Returns the current UI and layout state.
-
-    #     This includes all information passed in via `update_state`, such as
-    #     window positions and template group definitions.
-
-    #     Returns:
-    #         Dict: The layout state dictionary.
-    #     """
-    #     return self._layout
 
     def get_tag_types(self) -> List[str]:
         """

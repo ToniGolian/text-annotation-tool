@@ -115,7 +115,6 @@ class SearchModelManager(IPublisher):
         """
         Marks all models as invalid, triggering recalculation on next access.
         """
-        print("DEBUG: Invalidating all search models")
         for model in self._manual_models.values():
             model.invalidate()
         for model in self._db_models.values():

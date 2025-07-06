@@ -6,11 +6,13 @@ from tkinter import messagebox
 from typing import Optional
 from observer.interfaces import IObserver, IPublisher
 from pyparsing import Dict
+from torch import mode
 from view.extraction_view import ExtractionView
 from view.annotation_view import AnnotationView
 from view.comparison_view import ComparisonView
 from controller.interfaces import IController
 from view.project_window import ProjectWindow
+from view.tag_editor_window import TagEditorWindow
 
 
 class MainWindow(tk.Tk, IObserver):
@@ -26,6 +28,7 @@ class MainWindow(tk.Tk, IObserver):
         self._comparison_view = None
 
         self._project_window: Optional[ProjectWindow] = None
+        self._tag_editor_window: Optional[TagEditorWindow] = None
 
         if platform.system() == "Windows":
             self.state('zoomed')
@@ -59,17 +62,21 @@ class MainWindow(tk.Tk, IObserver):
             label="New Project", command=self._on_new_project)
         project_menu.add_command(label="Open Project",
                                  command=self._on_open_project)
-        project_menu.add_separator()
-        project_menu.add_command(label="Save Project",
-                                 command=self._on_save_project)
-        project_menu.add_command(label="Save Project As",
-                                 command=self._on_save_project_as)
+
         project_menu.add_separator()
         project_menu.add_command(label="Edit Project",
                                  command=self._on_edit_project)
         project_menu.add_command(label="Project Settings",
                                  command=self._on_project_settings)
         menu_bar.add_cascade(label="Project", menu=project_menu)
+
+        # Tags menu
+        tags_menu = tk.Menu(menu_bar, tearoff=0)
+        tags_menu.add_command(label="New Tag type",
+                              command=self._on_new_tag_type)
+        tags_menu.add_command(label="Edit Tag type",
+                              command=self._on_edit_tag_type)
+        menu_bar.add_cascade(label="Tags", menu=tags_menu)
 
         # Settings menu
         settings_menu = tk.Menu(menu_bar, tearoff=0)
@@ -122,23 +129,29 @@ class MainWindow(tk.Tk, IObserver):
 
     # Project actions
     def _on_new_project(self):
+        """ Opens the project creation window. """
         self._open_project_window(tab="new")
 
     def _on_edit_project(self):
+        """ Opens the project edit window. """
         self._open_project_window(tab="edit")
 
     def _on_project_settings(self):
+        """ Opens the project settings window. """
         self._open_project_window(tab="settings")
 
-    def _on_save_project(self):
-        raise NotImplementedError("Save project dialog not implemented yet.")
-
-    def _on_save_project_as(self):
-        raise NotImplementedError(
-            "Save project as dialog not implemented yet.")
-
     def _on_open_project(self):
-        raise NotImplementedError("Open project dialog not implemented yet.")
+        """
+        Calls the controller to open an existing project.
+        """
+        self._controller.perform_open_project()
+
+    # Tags actions
+    def _on_new_tag_type(self):
+        self._open_tag_editor("new")
+
+    def _on_edit_tag_type(self):
+        self._open_tag_editor("edit")
 
     # Settings actions
     def _on_settings(self):
@@ -182,6 +195,23 @@ class MainWindow(tk.Tk, IObserver):
 
         # Switch to the specified tab
         self._project_window.select_tab(tab)
+
+    def _open_tag_editor(self, tab: str = "new") -> None:
+        """
+        Opens the tag editor window in the specified mode.
+
+        Args:
+            tab (str): The tab to open in the tag editor. One of 'new' or 'edit'.
+        """
+        from view.tag_editor_window import TagEditorWindow
+
+        if not self._tag_editor_window or not self._tag_editor_window.winfo_exists():
+            self._tag_editor_window = TagEditorWindow(self)
+
+        self._tag_editor_window.deiconify()
+        self._tag_editor_window.lift()
+
+        self._tag_editor_window.select_tab(tab)
 
     # popup dialogs
     def ask_user_for_save_path(self, initial_dir: str = None) -> Optional[str]:

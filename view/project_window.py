@@ -23,7 +23,7 @@ class ProjectWindow(tk.Toplevel):
         super().__init__(master, *args, **kwargs)
         self.title("Project Manager")
         self.geometry("1000x600")
-        self.resizable(False, False)
+        self.resizable(True, True)
 
         self._notebook = ttk.Notebook(self)
         self._notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -55,3 +55,13 @@ class ProjectWindow(tk.Toplevel):
             self._notebook.select(tab_index)
         else:
             raise ValueError(f"Unknown tab name: {name}")
+
+    def _on_save_project(self):
+        raise NotImplementedError("Save project dialog not implemented yet.")
+
+    def _on_save_project_as(self):
+        raise NotImplementedError(
+            "Save project as dialog not implemented yet.")
+
+    def _on_export_project(self):
+        raise NotImplementedError("Export project dialog not implemented yet.")

@@ -6,6 +6,7 @@ from model.comparison_model import ComparisonModel
 from model.layout_configuration_model import LayoutConfigurationModel
 from model.extraction_document_model import ExtractionDocumentModel
 from model.highlight_model import HighlightModel
+from model.project_wizard_model import ProjectWizardModel
 from model.save_state_model import SaveStateModel
 from model.selection_model import SelectionModel
 from view.main_window import MainWindow
@@ -24,10 +25,11 @@ def main():
     annotation_mode_model = AnnotationModeModel()
     highlight_model = HighlightModel()
     save_state_model = SaveStateModel()
+    project_wizard_model = ProjectWizardModel()
 
     print("Creating controller")
     controller = Controller(
-        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, layout_configuration_model=configuration_model, annotation_mode_model=annotation_mode_model, highlight_model=highlight_model, save_state_model=save_state_model)
+        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, layout_configuration_model=configuration_model, annotation_mode_model=annotation_mode_model, highlight_model=highlight_model, save_state_model=save_state_model, project_wizard_model=project_wizard_model)
     print("Initializing views")
     app_view = MainWindow(controller)
     print("Finalizing controller")

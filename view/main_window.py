@@ -144,7 +144,8 @@ class MainWindow(tk.Tk, IObserver):
         """
         Calls the controller to open an existing project.
         """
-        self._controller.perform_open_project()
+        # todo load project
+        pass
 
     # Tags actions
     def _on_new_tag_type(self):
@@ -187,7 +188,8 @@ class MainWindow(tk.Tk, IObserver):
         """
         # Create the project window if it doesn't exist or was closed
         if not self._project_window or not self._project_window.winfo_exists():
-            self._project_window = ProjectWindow(self)
+            self._project_window = ProjectWindow(
+                controller=self._controller, master=self)
 
         # Show and focus the window
         self._project_window.deiconify()

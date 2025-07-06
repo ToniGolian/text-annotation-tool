@@ -10,6 +10,7 @@ from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
 from model.highlight_model import HighlightModel
 from model.interfaces import IComparisonModel, ILayoutConfigurationModel, IDocumentModel, ISearchModel, ISelectionModel
+from model.project_wizard_model import ProjectWizardModel
 from model.save_state_model import SaveStateModel
 from model.tag_model import TagModel
 from model.undo_redo_model import UndoRedoModel
@@ -33,7 +34,7 @@ from view.main_window import MainWindow
 
 
 class Controller(IController):
-    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: SaveStateModel = None) -> None:
+    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: SaveStateModel = None, project_wizard_model: ProjectWizardModel = None) -> None:
 
         # state
         self._dynamic_observer_index: int = 0
@@ -49,6 +50,7 @@ class Controller(IController):
         self._highlight_model = highlight_model
         self._current_search_model: IPublisher = None
         self._save_state_model: SaveStateModel = save_state_model
+        self._project_wizard_model: ProjectWizardModel = project_wizard_model
 
         # dependencies
         self._path_manager = PathManager()
@@ -466,6 +468,31 @@ class Controller(IController):
             self._comparison_view = view
 
     # Perform methods
+
+    # Project Management
+    def perform_project_add_tag_group(self, tag_group: dict) -> None:
+        """
+        Adds a new tag group to the project.
+
+        This method updates the project configuration with the new tag group
+        and notifies observers about the change.
+
+        Args:
+            tag_group (dict): The tag group to be added.
+        """
+        self._project_wizard_model.add_tag_group(tag_group)
+
+    def perform_project_remove_tag_group(self, group_name: str) -> None:
+        """
+        Removes a tag group from the project.
+
+        This method updates the project configuration by removing the specified tag group
+        and notifies observers about the change.
+
+        Args:
+            group_name (str): The name of the tag group to be removed.
+        """
+        self._project_wizard_model.remove_tag_group(group_name)
 
     @with_highlight_update
     def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:

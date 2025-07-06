@@ -1,6 +1,7 @@
 {
     "name": "time_ml",
     "color_scheme": "magma_comp_search_color_scheme.json",
+    "search_normalization": "search_normalization_rules.json",
     "tags": [
         "alink.json",
         "confidence.json",
@@ -17,5 +18,8 @@
         "place_config.json"
     ],
     "are_all_search_results_highlighted": true,
-    "current_language": "german"
+    "current_language": "german",
+    "abbreviations": "abbreviations.json",
+    "suggestions": "suggestions.json",
+    "wrong_suggestions": "wrong_suggestions.json"
 }

@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
+from controller.interfaces import IController
+from view.project_wizard import ProjectWizard
 
 
 class ProjectWindow(tk.Toplevel):
@@ -13,7 +15,7 @@ class ProjectWindow(tk.Toplevel):
     - Project Settings
     """
 
-    def __init__(self, master: tk.Tk, *args, **kwargs) -> None:
+    def __init__(self, controller: IController, master: tk.Tk, *args, **kwargs) -> None:
         """
         Initializes the project window with tabbed interface.
 
@@ -21,6 +23,7 @@ class ProjectWindow(tk.Toplevel):
             master (tk.Tk): The main application window or root.
         """
         super().__init__(master, *args, **kwargs)
+        self._controller = controller
         self.title("Project Manager")
         self.geometry("1000x600")
         self.resizable(True, True)
@@ -33,7 +36,8 @@ class ProjectWindow(tk.Toplevel):
 
     def _init_tabs(self) -> None:
         """Initializes the notebook tabs with empty frames."""
-        self._new_project_frame = ttk.Frame(self._notebook)
+        self._new_project_frame = ProjectWizard(
+            controller=self._controller, master=self._notebook)
         self._edit_project_frame = ttk.Frame(self._notebook)
         self._project_settings_frame = ttk.Frame(self._notebook)
 

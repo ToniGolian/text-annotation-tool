@@ -36,7 +36,7 @@ from view.main_window import MainWindow
 
 
 class Controller(IController):
-    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: IPublisher = None, new_project_wizard_model: IPublisher = None, edit_project_wizard_model: IPublisher = None, global_settings_model: IPublisher = None, project_settings_model: IPublisher = None) -> None:
+    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: IPublisher = None, new_project_wizard_model: IPublisher = None, edit_project_wizard_model: IPublisher = None, load_project_wizard_model: IPublisher = None, global_settings_model: IPublisher = None, project_settings_model: IPublisher = None) -> None:
 
         # state
         self._dynamic_observer_index: int = 0
@@ -54,6 +54,7 @@ class Controller(IController):
         self._save_state_model: SaveStateModel = save_state_model
         self._new_project_wizard_model: ProjectWizardModel = new_project_wizard_model
         self._edit_project_wizard_model: ProjectWizardModel = edit_project_wizard_model
+        self._load_project_wizard_model: ProjectWizardModel = load_project_wizard_model
         self._global_settings_model: GlobalSettingsModel = global_settings_model
         self._project_settings_model: ProjectSettingsModel = project_settings_model
 
@@ -553,6 +554,22 @@ class Controller(IController):
         else:
             raise ValueError(f"Unknown wizard ID: {wizard_id}")
 
+    def perform_project_load_project(self, project_name: str) -> None:
+        """
+        Loads the specified project by its name.
+
+        This method retrieves the project configuration and updates the models
+        accordingly, allowing the user to work with the loaded project.
+
+        Args:
+            project_name (str): The name of the project to load.
+        """
+        project_path = self._edit_project_wizard_model.get_project_path(
+            project_name)
+
+        self._project_configuration_manager.load_project(project_path)
+        self.perform_project_update_projects()
+
     def perform_project_update_projects(self) -> None:
         """
         Updates the list of projects in the edit project wizard model.
@@ -562,6 +579,7 @@ class Controller(IController):
         self._new_project_wizard_model.set_available_tags(available_tags)
         self._edit_project_wizard_model.set_available_tags(available_tags)
         self._edit_project_wizard_model.set_projects(projects)
+        self._load_project_wizard_model.set_projects(projects)
 
     def perform_load_project_data_for_editing(self, project_name: str) -> None:
         """

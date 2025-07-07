@@ -24,7 +24,7 @@ class LoadProjectWindow(tk.Toplevel, IObserver):
         self._controller = controller
         self._controller.add_observer(self)
         self.title("Load Project")
-        self.geometry("400x150")
+        self.geometry("600x200")
         self.resizable(False, False)
 
         # Combobox for selecting a project
@@ -44,7 +44,8 @@ class LoadProjectWindow(tk.Toplevel, IObserver):
         Args:
             publisher (IPublisher): The publisher that triggered the update.
         """
-        state = self._controller.get_observer_state(publisher=publisher)
+        state = self._controller.get_observer_state(
+            observer=self, publisher=publisher)
         projects = state.get("projects", [])
         project_names = [project["name"]
                          for project in projects if "name" in project]
@@ -59,3 +60,4 @@ class LoadProjectWindow(tk.Toplevel, IObserver):
         selected = self._combo_projects.get()
         if selected:
             self._controller.perform_project_load_project(selected)
+            self.destroy()

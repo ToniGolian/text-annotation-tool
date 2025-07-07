@@ -11,6 +11,7 @@ from view.extraction_view import ExtractionView
 from view.annotation_view import AnnotationView
 from view.comparison_view import ComparisonView
 from controller.interfaces import IController
+from view.load_project_window import LoadProjectWindow
 from view.project_window import ProjectWindow
 from view.settings_window import SettingsWindow
 from view.tag_editor_window import TagEditorWindow
@@ -139,10 +140,9 @@ class MainWindow(tk.Tk, IObserver):
 
     def _on_open_project(self):
         """
-        Calls the controller to open an existing project.
+        Opens the project loading dialog to select an existing project.
         """
-        # todo load project
-        pass
+        self._open_load_project_dialog()
 
     # Tags actions
     def _on_new_tag_type(self):
@@ -200,6 +200,19 @@ class MainWindow(tk.Tk, IObserver):
 
         # Switch to the specified tab
         self._project_window.select_tab(tab)
+
+    def _open_load_project_dialog(self) -> None:
+        """
+        Opens a dialog to select and load an existing project.
+        """
+        if not hasattr(self, "_load_project_window") or not self._load_project_window.winfo_exists():
+            self._load_project_window = LoadProjectWindow(
+                controller=self._controller, master=self)
+        self._controller.perform_project_update_projects()
+
+        # Show and focus the window
+        self._load_project_window.deiconify()
+        self._load_project_window.lift()
 
     def _open_tag_editor(self, tab: str = "new") -> None:
         """

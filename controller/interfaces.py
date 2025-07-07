@@ -33,12 +33,12 @@ class IController(ABC):
 
     # observer pattern
     @abstractmethod
-    def add_observer(self, observer: IObserver, mapping_type: str) -> None:
+    def add_observer(self, observer: IObserver) -> None:
         """Register observer to Model"""
         pass
 
     @abstractmethod
-    def remove_observer(self, observer: IObserver, mapping_type: str) -> None:
+    def remove_observer(self, observer: IObserver) -> None:
         """Remove observer from Model"""
         pass
 

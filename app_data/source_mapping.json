@@ -172,6 +172,16 @@
             }
         }
     },
+    "LoadProjectWindow": {
+        "ProjectWizardModel": {
+            "finalize": false,
+            "source_keys": {
+                "load_project_wizard_model": [
+                    "projects"
+                ]
+            }
+        }
+    },
     "EditProjectWizard": {
         "ProjectWizardModel": {
             "finalize": false,

@@ -12,7 +12,6 @@ from model.project_wizard_model import ProjectWizardModel
 from model.save_state_model import SaveStateModel
 from model.selection_model import SelectionModel
 from view.main_window import MainWindow
-import timeit
 
 
 def main():
@@ -29,12 +28,13 @@ def main():
     save_state_model = SaveStateModel()
     new_project_wizard_model = ProjectWizardModel()
     edit_project_wizard_model = ProjectWizardModel()
+    load_project_wizard_model = ProjectWizardModel()
     global_settings_model = GlobalSettingsModel()
     project_settings_model = ProjectSettingsModel()
 
     print("Creating controller")
     controller = Controller(
-        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, layout_configuration_model=configuration_model, annotation_mode_model=annotation_mode_model, highlight_model=highlight_model, save_state_model=save_state_model, new_project_wizard_model=new_project_wizard_model, edit_project_wizard_model=edit_project_wizard_model, global_settings_model=global_settings_model, project_settings_model=project_settings_model)
+        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, layout_configuration_model=configuration_model, annotation_mode_model=annotation_mode_model, highlight_model=highlight_model, save_state_model=save_state_model, new_project_wizard_model=new_project_wizard_model, edit_project_wizard_model=edit_project_wizard_model, load_project_wizard_model=load_project_wizard_model, global_settings_model=global_settings_model, project_settings_model=project_settings_model)
     print("Initializing views")
     app_view = MainWindow(controller)
     print("Finalizing controller")

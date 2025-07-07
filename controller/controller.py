@@ -495,14 +495,68 @@ class Controller(IController):
         """
         self._project_wizard_model.remove_tag_group(group_name)
 
+    def perform_project_add_tags(self, tags: List[str]) -> None:
+        """
+        Adds new tags to the project.
+
+        This method updates the project configuration with the new tags
+        and notifies observers about the change.
+
+        Args:
+            tags (List[str]): The list of tags to be added.
+        """
+        self._edit_project_wizard_model.add_selected_tags(
+            tags)
+
+    def perform_project_remove_tags(self, selected_indices: List[int]) -> None:
+        """
+        Removes specified tags from the project.
+
+        This method updates the project configuration by removing the specified tags
+        and notifies observers about the change.
+
+        Args:
+            tag_names (List[str]): List of tag names to remove.
+        """
+        self._edit_project_wizard_model.remove_selected_tags(
+            selected_indices)
+
     def perform_project_update_projects(self) -> None:
         """
         Updates the list of projects in the edit project wizard model.
         """
         projects = self._project_configuration_manager.get_projects()
-        print(f"DEBUG {projects=}")
-        self._edit_project_wizard_model.set_projects(
-            self._project_configuration_manager.get_projects())
+        self._edit_project_wizard_model.set_projects(projects)
+
+    def perform_load_project_data_for_editing(self, project_name: str) -> None:
+        """
+        Loads the project data for editing in the edit project wizard.
+
+        This method retrieves the project configuration and updates the edit project wizard model
+        with the project's data, allowing users to modify project settings.
+
+        Args:
+            project_name (str): The name of the project to load.
+        """
+        project_path = self._edit_project_wizard_model.get_project_path(
+            project_name)
+        project_data = self._file_handler.read_file(project_path)
+        selected_tags = [tag.capitalize()
+                         for tag in project_data.get("tags", [])]
+        available_tags = self._project_configuration_manager.get_available_tags()
+        for tag in available_tags:
+            tag["display_name"] = f"{tag['name'].capitalize()} ({tag['project']})"
+        tag_group_file_name = project_data.get("groups", "")
+        tag_groups = self._file_handler.read_file(
+            "project_groups", tag_group_file_name) if tag_group_file_name else {}
+        editing_data = {
+            "project_name": project_data.get("name", ""),
+            "available_tags": available_tags,
+            "selected_tags": selected_tags,
+            "tag_group_file_name": tag_group_file_name,
+            "tag_groups": tag_groups
+        }
+        self._edit_project_wizard_model.set_state(editing_data)
 
     @with_highlight_update
     def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:

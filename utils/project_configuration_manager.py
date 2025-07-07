@@ -101,8 +101,8 @@ class ProjectConfigurationManager:
             FileNotFoundError: If `groups.json` or a tag template file is not found.
             JSONDecodeError: If a file is not in valid JSON format.
         """
-        project_settings = self._file_handler.read_file("project_settings")
-        group_file_name = project_settings.get("groups", "default_groups")
+        project_data = self._file_handler.read_file("project_settings")
+        group_file_name = project_data.get("groups", "default_groups")
         groups: Dict[str, List[str]
                      ] = self._file_handler.read_file("project_groups_folder", group_file_name)
         template_groups: List[Dict[str, List[Dict]]] = []
@@ -140,20 +140,64 @@ class ProjectConfigurationManager:
         results: List[Dict[str, str]] = []
 
         for folder in os.listdir(projects_path):
-            print(f"DEBUG {folder=}")
             subdir_path = os.path.join(projects_path, folder)
             if os.path.isdir(subdir_path):
                 project_file = os.path.join(
                     subdir_path, "project_config/project.json")
-                print(f"DEBUG {project_file=}")
                 if os.path.isfile(project_file):
                     data = self._file_handler.read_file(file_path=project_file)
                     project_name = data.get("name")
-                    print(f"DEBUG {project_name=}")
                     if project_name:
                         results.append({
                             "name": project_name,
                             "path": project_file
+                        })
+
+        return results
+
+    def get_available_tags(self) -> List[Dict[str, str]]:
+        """
+        Scans all project directories and collects tag definitions.
+
+        For each tag file found in the `tags` subdirectory of a project, returns a dictionary with:
+            - 'name': Name of the tag (derived from file name, without extension)
+            - 'path': Absolute path to the tag file
+            - 'project': Name of the project (from project.json)
+
+        Returns:
+            List[Dict[str, str]]: List of all tag definitions across all projects.
+
+        Raises:
+            FileNotFoundError: If a required file or directory is missing.
+            JSONDecodeError: If project.json is invalid.
+        """
+        projects_path = self._file_handler.resolve_path("project_folder")
+        results: List[Dict[str, str]] = []
+
+        for folder in os.listdir(projects_path):
+            subdir_path = os.path.join(projects_path, folder)
+            if os.path.isdir(subdir_path):
+                project_file = os.path.join(
+                    subdir_path, "project_config/project.json")
+                tags_dir = os.path.join(subdir_path, "project_config/tags/")
+
+                if not os.path.isfile(project_file) or not os.path.isdir(tags_dir):
+                    continue
+
+                project_data = self._file_handler.read_file(
+                    file_path=project_file)
+                project_name = project_data.get("name")
+                if not project_name:
+                    continue
+
+                for filename in os.listdir(tags_dir):
+                    if filename.endswith(".json"):
+                        tag_name = os.path.splitext(filename)[0]
+                        tag_path = os.path.join(tags_dir, filename)
+                        results.append({
+                            "name": tag_name,
+                            "path": tag_path,
+                            "project": project_name
                         })
 
         return results

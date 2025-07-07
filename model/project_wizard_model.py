@@ -32,7 +32,6 @@ class ProjectWizardModel(IPublisher):
                 'project_name', 'available_tags', 'selected_tags',
                 'tag_group_file_name', 'tag_groups'
         """
-        self._projects = state.get("projects", [])
         self._project_name = state.get("project_name", "")
         self._available_tags = state.get("available_tags", [])
         self._selected_tags = state.get("selected_tags", [])
@@ -50,8 +49,8 @@ class ProjectWizardModel(IPublisher):
         return {
             "projects": self._projects,
             "project_name": self._project_name,
-            "available_tags": self._available_tags,
-            "selected_tags": self._selected_tags,
+            "available_tags": sorted([tag['display_name'] for tag in self._available_tags]),
+            "selected_tags": sorted(self._selected_tags),
             "tag_group_file_name": self._tag_group_file_name,
             "tag_groups": self._tag_groups
         }
@@ -163,16 +162,32 @@ class ProjectWizardModel(IPublisher):
             tags (list[Dict[str, str]]): List of tag dictionaries to add.
         """
         self._selected_tags.extend(tags)
+        print(f"DEBUG model {self._selected_tags=}")
         self.notify_observers()
 
-    def remove_selected_tags(self, tag_names: List[str]) -> None:
+    def remove_selected_tags(self, selected_indices: List[int]) -> None:
         """
-        Removes specified tags from the selected tags list by name and notifies observers.
+        Removes specified tags from the selected tags list by index and notifies observers.
 
         Args:
-            tag_names (List[str]): List of tag names to remove.
+            selected_indices (List[int]): List of indices of tags to remove.
         """
         self._selected_tags = [
-            tag for tag in self._selected_tags if tag["name"] not in tag_names
+            tag for i, tag in enumerate(self._selected_tags) if i not in selected_indices
         ]
         self.notify_observers()
+
+    def get_project_path(self, name: str) -> str:
+        """
+        Retrieves a project by name from the list of available projects.
+
+        Args:
+            name (str): The name of the project to retrieve.
+
+        Returns:
+            Dict[str, str]: The project data if found, otherwise an empty dictionary.
+        """
+        for project in self._projects:
+            if project["name"] == name:
+                return project["path"]
+        return ""

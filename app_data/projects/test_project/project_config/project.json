@@ -1,0 +1,25 @@
+{
+    "name": "test_project",
+    "color_scheme": "magma_comp_search_color_scheme.json",
+    "search_normalization": "search_normalization_rules.json",
+    "tags": [
+        "ALINK",
+        "CONFIDENCE",
+        "EVENT",
+        "MAKEINSTANCE",
+        "PLACE",
+        "SIGNAL",
+        "SLINK",
+        "TIMEX3",
+        "TLINK"
+    ],
+    "groups": "groups01.json",
+    "db_config": [
+        "place_config.json"
+    ],
+    "are_all_search_results_highlighted": true,
+    "current_language": "german",
+    "abbreviations": "abbreviations.json",
+    "suggestions": "suggestions.json",
+    "wrong_suggestions": "wrong_suggestions.json"
+}

@@ -63,7 +63,8 @@ class EditProjectWizard(ProjectWizard):
             return
 
         self._selected_project = self._listbox_projects.get(selected[0])
-        self._controller.load_project_data_for_editing(self._selected_project)
+        self._controller.perform_load_project_data_for_editing(
+            self._selected_project)
 
         # Move to next tab
         self._notebook.select(1)
@@ -92,7 +93,6 @@ class EditProjectWizard(ProjectWizard):
         This method is called when the controller notifies observers of changes.
         """
         super().update(publisher)
-        #! CHECK if its ok to delete keys from source mapping, which are already called by superclass
         state = self._controller.get_observer_state(
             observer=self, publisher=publisher)
         projects = state.get("projects", [])

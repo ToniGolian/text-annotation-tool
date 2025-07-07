@@ -61,7 +61,7 @@ class ProjectWizard(ttk.Frame, IObserver):
 
         # Navigation buttons (Back hidden)
         # Place the button in the bottom row
-        ttk.Button(frame, text="Next", command=lambda: self._notebook.select(1)).grid(
+        ttk.Button(frame, text="Next", command=self._next_tab).grid(
             row=2, column=1, sticky="e", padx=10, pady=10
         )
 
@@ -70,24 +70,48 @@ class ProjectWizard(ttk.Frame, IObserver):
         frame = ttk.Frame(self._notebook)
         self._notebook.add(frame, text="Select Tags")
 
-        ttk.Label(frame, text="Available Tags:").grid(
-            row=0, column=0, sticky="w", padx=10, pady=5)
+        # Content frame for both listboxes
+        content_frame = ttk.Frame(frame)
+        content_frame.grid(row=0, column=0, columnspan=3,
+                           sticky="nsew", padx=10, pady=5)
+        content_frame.columnconfigure(0, weight=1)
+        content_frame.columnconfigure(1, weight=1)
+        content_frame.rowconfigure(0, weight=1)
 
-        self._listbox_tag_selection = tk.Listbox(frame, selectmode=tk.MULTIPLE)
-        self._listbox_tag_selection.grid(
-            row=1, column=0, padx=10, pady=5, sticky="nsew")
+        # Frame for available tags (left)
+        tag_select_frame = ttk.Frame(content_frame)
+        tag_select_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        ttk.Label(tag_select_frame, text="Available Tags:").pack(anchor="w")
+        self._listbox_available_tags = tk.Listbox(
+            tag_select_frame, selectmode=tk.MULTIPLE)
+        self._listbox_available_tags.pack(fill="both", expand=True)
+        ttk.Button(tag_select_frame, text="Add Tags", command=self._add_selected_tags).pack(
+            anchor="w", pady=5
+        )
 
-        ttk.Button(frame, text="Create Tag").grid(
-            row=2, column=0, padx=10, pady=10, sticky="w")
+        # Frame for selected tags (right)
+        selected_tag_frame = ttk.Frame(content_frame)
+        selected_tag_frame.grid(row=0, column=1, sticky="nsew")
+        ttk.Label(selected_tag_frame, text="Selected Tags:").pack(anchor="w")
+        self._listbox_selected_tags = tk.Listbox(selected_tag_frame)
+        self._listbox_selected_tags.pack(fill="both", expand=True)
+        ttk.Button(selected_tag_frame, text="Remove Tags", command=self._remove_selected_tags).pack(
+            anchor="e", pady=5
+        )
 
         # Navigation buttons
-        ttk.Button(frame, text="Back", command=lambda: self._notebook.select(0)).grid(
-            row=3, column=0, sticky="w", padx=10, pady=10)
-        ttk.Button(frame, text="Next", command=lambda: self._notebook.select(2)).grid(
-            row=3, column=0, sticky="e", padx=10, pady=10)
+        ttk.Button(frame, text="Back", command=self._previous_tab).grid(
+            row=1, column=0, sticky="w", padx=10, pady=10
+        )
+        ttk.Button(frame, text="Next", command=self._next_tab).grid(
+            row=1, column=2, sticky="e", padx=10, pady=10
+        )
 
-        frame.rowconfigure(1, weight=1)
+        # Configure layout
         frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(2, weight=1)
+        frame.rowconfigure(0, weight=1)
 
     def _init_page_tag_groups(self) -> None:
         """Initializes the third wizard page for creating tag groups."""
@@ -134,7 +158,8 @@ class ProjectWizard(ttk.Frame, IObserver):
         group_display_frame.grid(row=0, column=1, sticky="nsew")
         ttk.Label(group_display_frame,
                   text="Created Tag Groups:").pack(anchor="w")
-        self._tree_created_groups = ttk.Treeview(group_display_frame)
+        self._tree_created_groups = ttk.Treeview(
+            group_display_frame, show="tree")
         self._tree_created_groups.pack(fill="both", expand=True)
 
         # Action buttons
@@ -144,7 +169,7 @@ class ProjectWizard(ttk.Frame, IObserver):
             row=2, column=2, sticky="e", padx=10, pady=5)
 
         # Navigation buttons
-        ttk.Button(frame, text="Back", command=lambda: self._notebook.select(1)).grid(
+        ttk.Button(frame, text="Back", command=self._previous_tab).grid(
             row=3, column=0, sticky="w", padx=10, pady=10)
         ttk.Button(frame, text="Finish", command=self._finish).grid(
             row=3, column=2, sticky="e", padx=10, pady=10)
@@ -169,35 +194,36 @@ class ProjectWizard(ttk.Frame, IObserver):
         self._entry_project_name.insert(0, state.get("project_name", ""))
 
         # Tags
-        self._populate_tag_listbox(state.get("available_tags", []))
-        self._populate_group_tag_listbox(state.get("selected_tags", []))
+        self._populate_listbox(
+            listbox=self._listbox_available_tags, items=state.get("available_tags", []))
+        self._populate_listbox(
+            listbox=self._listbox_selected_tags, items=state.get("selected_tags", []))
+        self._populate_listbox(
+            listbox=self._listbox_tags_for_group, items=state.get("tags_for_group", []))
 
         # Tag groups
+        tag_groups = state.get("tag_groups", {})
         self._populate_tag_group_tree(state.get("tag_groups", []))
         # File name for tag groups
         self._entry_tag_group_file_name.delete(0, tk.END)
         self._entry_tag_group_file_name.insert(
             0, state.get("tag_group_file_name", ""))
 
-    def _populate_tag_listbox(self, tags: List[str]) -> None:
-        """Fills the listbox for selecting tags from available tag list."""
-        self._listbox_tag_selection.delete(0, tk.END)
-        for tag in tags:
-            self._listbox_tag_selection.insert(tk.END, tag)
+    def _populate_listbox(self, listbox: tk.Listbox, items: List[str]) -> None:
+        """Fills a listbox with the given items."""
+        listbox.delete(0, tk.END)
+        for item in items:
+            listbox.insert(tk.END, item)
 
-    def _populate_group_tag_listbox(self, tags: List[str]) -> None:
-        """Fills the tag group creation listbox with available tags."""
-        self._listbox_tags_for_group.delete(0, tk.END)
-        for tag in tags:
-            self._listbox_tags_for_group.insert(tk.END, tag)
-
-    def _populate_tag_group_tree(self, groups: List[dict]) -> None:
-        """Fills the treeview with existing tag groups."""
+    def _populate_tag_group_tree(self, groups: dict[str, list[str]]) -> None:
+        """Fills the treeview with tag group categories as parents and tag names as children."""
         self._tree_created_groups.delete(
             *self._tree_created_groups.get_children())
-        for group in groups:
-            name = group.get("name", "<unnamed>")
-            self._tree_created_groups.insert("", tk.END, text=name)
+        for group_name, tag_list in groups.items():
+            parent_id = self._tree_created_groups.insert(
+                "", "end", text=group_name)
+            for tag in tag_list:
+                self._tree_created_groups.insert(parent_id, "end", text=tag)
 
     def _add_tag_group(self) -> None:
         """
@@ -205,32 +231,59 @@ class ProjectWizard(ttk.Frame, IObserver):
         """
         group_name = self._entry_tag_group_name.get().strip()
         if not group_name:
-            tk.messagebox.showerror("Error", "Tag group name cannot be empty.")
+            tk.messagebox.showerror(
+                "Error", "Tag group name cannot be empty.", parent=self)
+            self._notebook.select(-1)
             return
 
         selected_tags = [self._listbox_tags_for_group.get(i)
                          for i in self._listbox_tags_for_group.curselection()]
         if not selected_tags:
-            tk.messagebox.showerror("Error", "No tags selected for the group.")
+            tk.messagebox.showerror(
+                "Error", "No tags selected for the group.", parent=self)
+            self._notebook.select(-1)
             return
 
         new_group = {"name": group_name, "tags": selected_tags}
-        self._populate_tag_group_list()
         self._controller.perform_project_add_tag_group(new_group)
 
     def _delete_tag_group(self) -> None:
         """
         Deletes the currently selected tag group from the list.
         """
-        selected_indices = self._listbox_created_groups.curselection()
+        selected_indices = self._tree_created_groups.curselection()
         if not selected_indices:
             tk.messagebox.showerror(
-                "Error", "No tag group selected for deletion.")
+                "Error", "No tag group selected for deletion.", parent=self)
+            self._notebook.select(-1)
             return
 
         for index in selected_indices[::-1]:
-            group_name = self._listbox_created_groups.get(index)
+            group_name = self._tree_created_groups.get(index)
             self._controller.perform_project_remove_tag_group(group_name)
+
+    def _add_selected_tags(self) -> None:
+        """
+        Adds selected tags from the available tags listbox to the selected tags listbox.
+        """
+        selected_indices = self._listbox_available_tags.curselection()
+        if not selected_indices:
+            return
+
+        tags = []
+        for index in selected_indices[::-1]:
+            tags.append(self._listbox_available_tags.get(index))
+            print(f"DEBUG {tags=}")
+            self._controller.perform_project_add_tags(tags)
+
+    def _remove_selected_tags(self) -> None:
+        """
+        Removes selected tags from the selected tags listbox back to the available tags listbox.
+        """
+        selected_indices = self._listbox_selected_tags.curselection()
+        if not selected_indices:
+            return
+        self._controller.perform_project_remove_tags(selected_indices)
 
     def _finish(self) -> None:
         """
@@ -251,3 +304,17 @@ class ProjectWizard(ttk.Frame, IObserver):
         # Notify controller to finalize the project
         self._controller.perform_project_finalize(
             project_name, tag_groups, tag_group_file_name)
+
+    def _next_tab(self) -> None:
+        """
+        Switches to the next tab in the notebook.
+        """
+        index = self._notebook.index(self._notebook.select())
+        self._notebook.select(index + 1)
+
+    def _previous_tab(self) -> None:
+        """
+        Switches to the previous tab in the notebook.
+        """
+        index = self._notebook.index(self._notebook.select())
+        self._notebook.select(index - 1)

@@ -30,7 +30,7 @@
     "project_abbreviations": "app_data/projects/<project>/project_data/abbreviations.json",
     "project_saved_layout": "app_data/projects/<project>/project_data/saved_layout.json",
     "project_color_scheme_folder": "app_data/projects/<project>/project_config/color_schemes/",
-    "project_groups": "app_data/projects/<project>/project_config/groups.json",
+    "project_groups": "app_data/projects/<project>/project_config/groups/",
     "project_suggestions": "app_data/projects/<project>/project_data/suggestions.json",
     "project_wrong_suggestions": "app_data/projects/<project>/project_data/wrong_suggestions.json"
 }

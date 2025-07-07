@@ -13,6 +13,8 @@
     "restore_default_annotation_save_folder": "data/annotation/",
     "restore_default_comparison_save_folder": "data/comparison/",
     "restore_default_merged_save_folder": "data/merged_documents/",
+    "project_folder": "app_data/projects/",
+    "settings_folder": "app_data/settings/",
     "source_mapping": "app_data/source_mapping.json",
     "last_project": "app_data/projects/last_project.json",
     "default_comparison_settings": "app_data/settings/comparison_settings.json",
@@ -24,12 +26,11 @@
     "project_db_dictionaries_folder": "app_data/projects/<project>/project_data/db_dictionaries/",
     "project_db_csv_folder": "app_data/projects/<project>/project_data/db_csv/",
     "project_search_normalization": "app_data/projects/<project>/project_config/search_normalization_rules.json",
-    "project_settings": "app_data/projects/<project>/project_config/project_settings.json",
+    "project_settings": "app_data/projects/<project>/project_config/project.json",
     "project_abbreviations": "app_data/projects/<project>/project_data/abbreviations.json",
     "project_saved_layout": "app_data/projects/<project>/project_data/saved_layout.json",
     "project_color_scheme_folder": "app_data/projects/<project>/project_config/color_schemes/",
     "project_groups": "app_data/projects/<project>/project_config/groups.json",
     "project_suggestions": "app_data/projects/<project>/project_data/suggestions.json",
-    "project_wrong_suggestions": "app_data/projects/<project>/project_data/wrong_suggestions.json",
-    "settings_folder": "app_data/settings/"
+    "project_wrong_suggestions": "app_data/projects/<project>/project_data/wrong_suggestions.json"
 }

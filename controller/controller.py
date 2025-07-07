@@ -34,7 +34,7 @@ from view.main_window import MainWindow
 
 
 class Controller(IController):
-    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: SaveStateModel = None, new_project_wizard_model: ProjectWizardModel = None, edit_project_model: ProjectWizardModel = None) -> None:
+    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: SaveStateModel = None, new_project_wizard_model: ProjectWizardModel = None, edit_project_wizard_model: ProjectWizardModel = None) -> None:
 
         # state
         self._dynamic_observer_index: int = 0
@@ -51,12 +51,12 @@ class Controller(IController):
         self._current_search_model: IPublisher = None
         self._save_state_model: SaveStateModel = save_state_model
         self._new_project_wizard_model: ProjectWizardModel = new_project_wizard_model
-        self._edit_project_model: ProjectWizardModel = edit_project_model
+        self._edit_project_wizard_model: ProjectWizardModel = edit_project_wizard_model
 
         # dependencies
         self._path_manager = PathManager()
         self._file_handler = FileHandler(path_manager=self._path_manager)
-        self._layout_configuration_manager = ProjectConfigurationManager(
+        self._project_configuration_manager = ProjectConfigurationManager(
             self._file_handler)
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
         self._settings_manager = SettingsManager(self._file_handler)
@@ -442,7 +442,7 @@ class Controller(IController):
             This method assumes that all views requiring finalization
             have already been registered with the controller.
         """
-        configuration = self._layout_configuration_manager.load_configuration()
+        configuration = self._project_configuration_manager.load_configuration()
 
         self._layout_configuration_model.set_configuration(
             configuration=configuration)
@@ -494,6 +494,15 @@ class Controller(IController):
             group_name (str): The name of the tag group to be removed.
         """
         self._project_wizard_model.remove_tag_group(group_name)
+
+    def perform_project_update_projects(self) -> None:
+        """
+        Updates the list of projects in the edit project wizard model.
+        """
+        projects = self._project_configuration_manager.get_projects()
+        print(f"DEBUG {projects=}")
+        self._edit_project_wizard_model.set_projects(
+            self._project_configuration_manager.get_projects())
 
     @with_highlight_update
     def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:
@@ -1266,7 +1275,7 @@ class Controller(IController):
         Raises:
             ValueError: If the colorset_name is not recognized or supported.
         """
-        self._color_manager.create_color_scheme(tag_keys=self._layout_configuration_manager.load_configuration()['layout'][
+        self._color_manager.create_color_scheme(tag_keys=self._project_configuration_manager.load_configuration()['layout'][
             'tag_types'], colorset_name=colorset_name, complementary_search_color=complementary_search_color)
 
     # Helpers

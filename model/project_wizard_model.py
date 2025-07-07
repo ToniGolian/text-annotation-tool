@@ -15,12 +15,13 @@ class ProjectWizardModel(IPublisher):
         Initializes the model with empty project settings.
         """
         super().__init__()
+        self._projects: List[str] = []
         self._project_name: str = ""
-        # maps display name to file path
-        self._available_tags: List[dict[str, str]] = []
-        self._selected_tags: List[dict[str, str]] = []
+        # List of {"name": str, "file_path": str}
+        self._available_tags: List[Dict[str, str]] = []
+        self._selected_tags: List[Dict[str, str]] = []
         self._tag_group_file_name: str = ""
-        self._tag_groups: dict[str, list[str]] = {}
+        self._tag_groups: Dict[str, List[str]] = {}
 
     def set_state(self, state: dict) -> None:
         """
@@ -31,8 +32,10 @@ class ProjectWizardModel(IPublisher):
                 'project_name', 'available_tags', 'selected_tags',
                 'tag_group_file_name', 'tag_groups'
         """
+        self._projects = state.get("projects", [])
         self._project_name = state.get("project_name", "")
         self._available_tags = state.get("available_tags", [])
+        self._selected_tags = state.get("selected_tags", [])
         self._tag_group_file_name = state.get("tag_group_file_name", "")
         self._tag_groups = state.get("tag_groups", {})
         self.notify_observers()
@@ -45,6 +48,7 @@ class ProjectWizardModel(IPublisher):
             dict: Dictionary of all project settings.
         """
         return {
+            "projects": self._projects,
             "project_name": self._project_name,
             "available_tags": self._available_tags,
             "selected_tags": self._selected_tags,
@@ -52,7 +56,7 @@ class ProjectWizardModel(IPublisher):
             "tag_groups": self._tag_groups
         }
 
-    def add_tag_group(self, group_name: str, tags: list[str]) -> None:
+    def add_tag_group(self, group_name: str, tags: List[str]) -> None:
         """
         Adds a new tag group to the internal state and notifies observers.
 
@@ -84,19 +88,25 @@ class ProjectWizardModel(IPublisher):
                     "project_name": str,
                     "tag_group_file_name": str,
                     "groups": dict[str, list[str]],
-                    "selected_tags": list[dict[str, str]]
+                    "selected_tags": list[dict[str, str]],
+                    "cleaned_selected_tags": list[dict[str, str]]
                 }
         """
+        cleaned_tags = [
+            {
+                "name": self._clean_name(tag["name"]),
+                "file_path": tag["file_path"]
+            }
+            for tag in self._selected_tags
+            if "name" in tag and "file_path" in tag
+        ]
+
         return {
             "project_name": self._project_name,
             "tag_group_file_name": self._tag_group_file_name,
             "groups": self._tag_groups,
             "selected_tags": self._selected_tags,
-            "cleaned_selected_tags": [
-                {"name": self._clean_name(
-                    name), "path": self._available_tags[name]}
-                for name in self._selected_tags
-            ]
+            "cleaned_selected_tags": cleaned_tags
         }
 
     def _clean_name(self, name: str) -> str:
@@ -123,6 +133,7 @@ class ProjectWizardModel(IPublisher):
             name (str): The new project name.
         """
         self._project_name = name.strip()
+        self.notify_observers()
 
     def set_tag_group_file_name(self, file_name: str) -> None:
         """
@@ -132,13 +143,36 @@ class ProjectWizardModel(IPublisher):
             file_name (str): The new tag group file name.
         """
         self._tag_group_file_name = file_name.strip()
+        self.notify_observers()
 
-    def add_selected_tags(self, tags: list[Dict[str, str]]) -> None:
+    def set_projects(self, projects: List[str]) -> None:
         """
-        Sets the selected tags and notifies observers.
+        Sets the list of available projects and notifies observers.
 
         Args:
-            tags (list[Dict[str, str]]): List of tag dictionaries to set as selected.
+            projects (List[str]): List of project names.
+        """
+        self._projects = projects
+        self.notify_observers()
+
+    def add_selected_tags(self, tags: List[Dict[str, str]]) -> None:
+        """
+        Adds the given tags to the selected tags list and notifies observers.
+
+        Args:
+            tags (list[Dict[str, str]]): List of tag dictionaries to add.
         """
         self._selected_tags.extend(tags)
+        self.notify_observers()
+
+    def remove_selected_tags(self, tag_names: List[str]) -> None:
+        """
+        Removes specified tags from the selected tags list by name and notifies observers.
+
+        Args:
+            tag_names (List[str]): List of tag names to remove.
+        """
+        self._selected_tags = [
+            tag for tag in self._selected_tags if tag["name"] not in tag_names
+        ]
         self.notify_observers()

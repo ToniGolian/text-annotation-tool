@@ -190,6 +190,7 @@ class MainWindow(tk.Tk, IObserver):
         if not self._project_window or not self._project_window.winfo_exists():
             self._project_window = ProjectWindow(
                 controller=self._controller, master=self)
+        self._controller.perform_project_update_projects()
 
         # Show and focus the window
         self._project_window.deiconify()

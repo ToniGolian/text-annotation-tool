@@ -1,7 +1,6 @@
 import os
-from typing import Dict
+from typing import Dict, List
 from input_output.file_handler import FileHandler
-from pyparsing import List
 
 
 class ProjectConfigurationManager:
@@ -121,3 +120,40 @@ class ProjectConfigurationManager:
                 {"group_name": group_name, "templates": templates})
 
         return template_groups
+
+    def get_projects(self) -> List[Dict[str, str]]:
+        """
+        Scans the project directory for valid projects and returns their names and config file paths.
+
+        Uses the FileHandler to read project.json files in each subdirectory of the project path.
+
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries, each containing:
+                - 'name': Project name from project.json
+                - 'path': Absolute path to the project's project.json file
+
+        Raises:
+            FileNotFoundError: If a project.json file is missing in a subdirectory.
+            JSONDecodeError: If a project.json is not a valid JSON file.
+        """
+        projects_path = self._file_handler.resolve_path("project_folder")
+        results: List[Dict[str, str]] = []
+
+        for folder in os.listdir(projects_path):
+            print(f"DEBUG {folder=}")
+            subdir_path = os.path.join(projects_path, folder)
+            if os.path.isdir(subdir_path):
+                project_file = os.path.join(
+                    subdir_path, "project_config/project.json")
+                print(f"DEBUG {project_file=}")
+                if os.path.isfile(project_file):
+                    data = self._file_handler.read_file(file_path=project_file)
+                    project_name = data.get("name")
+                    print(f"DEBUG {project_name=}")
+                    if project_name:
+                        results.append({
+                            "name": project_name,
+                            "path": project_file
+                        })
+
+        return results

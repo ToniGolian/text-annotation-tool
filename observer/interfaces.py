@@ -49,6 +49,7 @@ class IPublisher(ABC):
         Each observer should implement update() to handle the notification.
         """
         for observer in self._observers:
+            print(f"DEBUG {self=}")
             observer.update(self)
 
     def clear_observers(self) -> None:

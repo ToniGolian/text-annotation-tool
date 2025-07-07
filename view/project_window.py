@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from controller.interfaces import IController
+from view.edit_project_wizard import EditProjectWizard
 from view.project_wizard import ProjectWizard
 
 
@@ -38,9 +39,14 @@ class ProjectWindow(tk.Toplevel):
         """Initializes the notebook tabs with empty frames."""
         self._new_project_frame = ProjectWizard(
             controller=self._controller, master=self._notebook)
-        self._edit_project_frame = ProjectWizard(
+        self._edit_project_frame = EditProjectWizard(
             controller=self._controller, master=self._notebook)
         self._project_settings_frame = ttk.Frame(self._notebook)
+
+        self._controller.add_observer(
+            observer=self._new_project_frame)
+        self._controller.add_observer(
+            observer=self._edit_project_frame)
 
         self._notebook.add(self._new_project_frame, text="New Project")
         self._notebook.add(self._edit_project_frame, text="Edit Project")

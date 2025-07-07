@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from controller.interfaces import IController
-from observer.interfaces import IObserver
+from observer.interfaces import IObserver, IPublisher
 
 
 class ProjectWizard(ttk.Frame, IObserver):
@@ -155,14 +155,15 @@ class ProjectWizard(ttk.Frame, IObserver):
         frame.columnconfigure(2, weight=1)
         frame.rowconfigure(1, weight=1)
 
-    def update(self) -> None:
+    def update(self, publisher: IPublisher) -> None:
         """
         Populates the wizard fields with existing project data.
 
         Args:
-            data (dict): Dictionary containing keys like 'name', 'available_tags', 'tag_groups'.
+            publisher (IPublisher): The publisher notifying about the update.
         """
-        state = self._controller.get_observer_state()
+        state = self._controller.get_observer_state(
+            observer=self, publisher=publisher)
         # Project name
         self._entry_project_name.delete(0, tk.END)
         self._entry_project_name.insert(0, state.get("project_name", ""))

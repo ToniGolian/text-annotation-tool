@@ -26,11 +26,11 @@ def main():
     highlight_model = HighlightModel()
     save_state_model = SaveStateModel()
     new_project_wizard_model = ProjectWizardModel()
-    edit_project_model = ProjectWizardModel()
+    edit_project_wizard_model = ProjectWizardModel()
 
     print("Creating controller")
     controller = Controller(
-        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, layout_configuration_model=configuration_model, annotation_mode_model=annotation_mode_model, highlight_model=highlight_model, save_state_model=save_state_model, new_project_wizard_model=new_project_wizard_model, edit_project_model=edit_project_model)
+        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, layout_configuration_model=configuration_model, annotation_mode_model=annotation_mode_model, highlight_model=highlight_model, save_state_model=save_state_model, new_project_wizard_model=new_project_wizard_model, edit_project_wizard_model=edit_project_wizard_model)
     print("Initializing views")
     app_view = MainWindow(controller)
     print("Finalizing controller")

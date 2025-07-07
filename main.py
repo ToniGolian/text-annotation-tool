@@ -3,9 +3,11 @@ from controller.controller import Controller
 from model.annotation_document_model import AnnotationDocumentModel
 from model.annotation_mode_model import AnnotationModeModel
 from model.comparison_model import ComparisonModel
+from model.global_settings_model import GlobalSettingsModel
 from model.layout_configuration_model import LayoutConfigurationModel
 from model.extraction_document_model import ExtractionDocumentModel
 from model.highlight_model import HighlightModel
+from model.project_settings_model import ProjectSettingsModel
 from model.project_wizard_model import ProjectWizardModel
 from model.save_state_model import SaveStateModel
 from model.selection_model import SelectionModel
@@ -27,10 +29,12 @@ def main():
     save_state_model = SaveStateModel()
     new_project_wizard_model = ProjectWizardModel()
     edit_project_wizard_model = ProjectWizardModel()
+    global_settings_model = GlobalSettingsModel()
+    project_settings_model = ProjectSettingsModel()
 
     print("Creating controller")
     controller = Controller(
-        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, layout_configuration_model=configuration_model, annotation_mode_model=annotation_mode_model, highlight_model=highlight_model, save_state_model=save_state_model, new_project_wizard_model=new_project_wizard_model, edit_project_wizard_model=edit_project_wizard_model)
+        preview_document_model=preview_document_model, annotation_document_model=annotation_document_model,  comparison_model=comparison_model, selection_model=selection_model, layout_configuration_model=configuration_model, annotation_mode_model=annotation_mode_model, highlight_model=highlight_model, save_state_model=save_state_model, new_project_wizard_model=new_project_wizard_model, edit_project_wizard_model=edit_project_wizard_model, global_settings_model=global_settings_model, project_settings_model=project_settings_model)
     print("Initializing views")
     app_view = MainWindow(controller)
     print("Finalizing controller")
@@ -43,7 +47,7 @@ def main():
     # testdoc = ["data/annotation/test_doc.json"]
     # controller.perform_open_file(testdoc)
     #!DEBUG
-    app_view._open_project_window()
+    # app_view._open_project_window()
     #! END DEBUG
     # Start the App
     app_view.mainloop()

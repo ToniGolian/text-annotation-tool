@@ -187,6 +187,32 @@
             }
         }
     },
+    "GlobalSettings": {
+        "GlobalSettingsModel": {
+            "finalize": false,
+            "source_keys": {
+                "global_settings_model": [
+                    "default_folders",
+                    "available_align_options",
+                    "align_option"
+                ]
+            }
+        }
+    },
+    "ProjectSettings": {
+        "ProjectSettingsModel": {
+            "finalize": false,
+            "source_keys": {
+                "project_settings_model": [
+                    "project_name",
+                    "color_scheme",
+                    "search_normalization",
+                    "are_all_search_results_highlighted",
+                    "current_language"
+                ]
+            }
+        }
+    },
     "MainWindow": {
         "LayoutConfigurationModel": {
             "finalize": false,

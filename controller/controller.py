@@ -8,8 +8,10 @@ from commands.interfaces import ICommand
 from enums.search_types import SearchType
 from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
+from model.global_settings_model import GlobalSettingsModel
 from model.highlight_model import HighlightModel
 from model.interfaces import IComparisonModel, ILayoutConfigurationModel, IDocumentModel, ISearchModel, ISelectionModel
+from model.project_settings_model import ProjectSettingsModel
 from model.project_wizard_model import ProjectWizardModel
 from model.save_state_model import SaveStateModel
 from model.tag_model import TagModel
@@ -34,7 +36,7 @@ from view.main_window import MainWindow
 
 
 class Controller(IController):
-    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: SaveStateModel = None, new_project_wizard_model: ProjectWizardModel = None, edit_project_wizard_model: ProjectWizardModel = None) -> None:
+    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: IPublisher = None, new_project_wizard_model: IPublisher = None, edit_project_wizard_model: IPublisher = None, global_settings_model: IPublisher = None, project_settings_model: IPublisher = None) -> None:
 
         # state
         self._dynamic_observer_index: int = 0
@@ -52,6 +54,8 @@ class Controller(IController):
         self._save_state_model: SaveStateModel = save_state_model
         self._new_project_wizard_model: ProjectWizardModel = new_project_wizard_model
         self._edit_project_wizard_model: ProjectWizardModel = edit_project_wizard_model
+        self._global_settings_model: GlobalSettingsModel = global_settings_model
+        self._project_settings_model: ProjectSettingsModel = project_settings_model
 
         # dependencies
         self._path_manager = PathManager()

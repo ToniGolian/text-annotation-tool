@@ -13,11 +13,11 @@ class EditProjectWizard(ProjectWizard):
     Adds an initial page for selecting a project from a list and adapts labels to reflect editing.
     """
 
-    def __init__(self, controller: IController, master=None, available_projects: List[str] = None) -> None:
-        self._available_projects = available_projects or []
-        self._selected_project: str | None = None
+    def __init__(self, controller: IController, wizard_id: str, master=None) -> None:
 
-        super().__init__(controller, master)
+        super().__init__(controller=controller, master=master, wizard_id=wizard_id)
+        self._available_projects = []
+        self._selected_project = None
 
         # Add selection page at the beginning
         self._init_page_project_selection()

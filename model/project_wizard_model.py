@@ -162,7 +162,6 @@ class ProjectWizardModel(IPublisher):
             tags (list[Dict[str, str]]): List of tag dictionaries to add.
         """
         self._selected_tags.extend(tags)
-        print(f"DEBUG model {self._selected_tags=}")
         self.notify_observers()
 
     def remove_selected_tags(self, selected_indices: List[int]) -> None:
@@ -191,3 +190,13 @@ class ProjectWizardModel(IPublisher):
             if project["name"] == name:
                 return project["path"]
         return ""
+
+    def set_available_tags(self, tags: List[Dict[str, str]]) -> None:
+        """
+        Sets the list of available tags and notifies observers.
+
+        Args:
+            tags (List[Dict[str, str]]): List of available tag dictionaries.
+        """
+        self._available_tags = tags
+        self.notify_observers()

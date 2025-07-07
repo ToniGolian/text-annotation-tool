@@ -471,61 +471,92 @@ class Controller(IController):
     # Perform methods
 
     # Project Management
-    def perform_project_add_tag_group(self, tag_group: dict) -> None:
+    def perform_project_add_tag_group(self, tag_group: dict, wizard_id: str) -> None:
         """
         Adds a new tag group to the project.
-
-        This method updates the project configuration with the new tag group
+        This method updates the project configuration by adding the specified tag group
         and notifies observers about the change.
-
         Args:
-            tag_group (dict): The tag group to be added.
-        """
-        self._project_wizard_model.add_tag_group(tag_group)
+            tag_group (dict): The tag group to be added, containing group name and tags.
+            wizard_id (str): The ID of the wizard from which the tag group is being added.
 
-    def perform_project_remove_tag_group(self, group_name: str) -> None:
+        Raises:
+            ValueError: If the wizard ID is unknown.
+        """
+        if wizard_id == "new_project_wizard":
+            self._new_project_wizard_model.add_tag_group(tag_group)
+        elif wizard_id == "edit_project_wizard":
+            self._edit_project_wizard_model.add_tag_group(tag_group)
+        else:
+            raise ValueError(f"Unknown wizard ID: {wizard_id}")
+
+    def perform_project_remove_tag_group(self, group_name: str, wizard_id: str) -> None:
         """
         Removes a tag group from the project.
-
         This method updates the project configuration by removing the specified tag group
         and notifies observers about the change.
-
         Args:
             group_name (str): The name of the tag group to be removed.
-        """
-        self._project_wizard_model.remove_tag_group(group_name)
+            wizard_id (str): The ID of the wizard from which the tag group is being removed.
 
-    def perform_project_add_tags(self, tags: List[str]) -> None:
+        Raises:
+            ValueError: If the wizard ID is unknown.
         """
-        Adds new tags to the project.
+        if wizard_id == "new_project_wizard":
+            self._new_project_wizard_model.remove_tag_group(group_name)
+        elif wizard_id == "edit_project_wizard":
+            self._edit_project_wizard_model.remove_tag_group(group_name)
+        else:
+            raise ValueError(f"Unknown wizard ID: {wizard_id}")
 
-        This method updates the project configuration with the new tags
+    def perform_project_add_tags(self, tags: List[str], wizard_id: str) -> None:
+        """
+        Adds new tags to the project.   
+        This method updates the project configuration by adding the specified tags
         and notifies observers about the change.
-
         Args:
-            tags (List[str]): The list of tags to be added.
+            tags (List[str]): List of tag names to add.
+            wizard_id (str): The ID of the wizard from which the tags are being added.
+        Raises:
+            ValueError: If the wizard ID is unknown.
         """
-        self._edit_project_wizard_model.add_selected_tags(
-            tags)
+        if wizard_id == "new_project_wizard":
+            self._new_project_wizard_model.add_tags(tags)
+        elif wizard_id == "edit_project_wizard":
+            self._edit_project_wizard_model.add_tags(tags)
+        else:
+            raise ValueError(f"Unknown wizard ID: {wizard_id}")
 
-    def perform_project_remove_tags(self, selected_indices: List[int]) -> None:
+    def perform_project_remove_tags(self, selected_indices: List[int], wizard_id: str) -> None:
         """
         Removes specified tags from the project.
 
         This method updates the project configuration by removing the specified tags
         and notifies observers about the change.
-
         Args:
-            tag_names (List[str]): List of tag names to remove.
+            selected_indices (List[int]): List of indices of the tags to be removed.
+            wizard_id (str): The ID of the wizard from which the tags are being removed.
+
+        Raises:
+            ValueError: If the wizard ID is unknown.
         """
-        self._edit_project_wizard_model.remove_selected_tags(
-            selected_indices)
+        if wizard_id == "new_project_wizard":
+            self._new_project_wizard_model.remove_selected_tags(
+                selected_indices)
+        elif wizard_id == "edit_project_wizard":
+            self._edit_project_wizard_model.remove_selected_tags(
+                selected_indices)
+        else:
+            raise ValueError(f"Unknown wizard ID: {wizard_id}")
 
     def perform_project_update_projects(self) -> None:
         """
         Updates the list of projects in the edit project wizard model.
         """
         projects = self._project_configuration_manager.get_projects()
+        available_tags = self._get_available_tags()
+        self._new_project_wizard_model.set_available_tags(available_tags)
+        self._edit_project_wizard_model.set_available_tags(available_tags)
         self._edit_project_wizard_model.set_projects(projects)
 
     def perform_load_project_data_for_editing(self, project_name: str) -> None:
@@ -541,11 +572,9 @@ class Controller(IController):
         project_path = self._edit_project_wizard_model.get_project_path(
             project_name)
         project_data = self._file_handler.read_file(project_path)
-        selected_tags = [tag.capitalize()
+        selected_tags = [tag.upper()
                          for tag in project_data.get("tags", [])]
-        available_tags = self._project_configuration_manager.get_available_tags()
-        for tag in available_tags:
-            tag["display_name"] = f"{tag['name'].capitalize()} ({tag['project']})"
+        available_tags = self._get_available_tags()
         tag_group_file_name = project_data.get("groups", "")
         tag_groups = self._file_handler.read_file(
             "project_groups", tag_group_file_name) if tag_group_file_name else {}
@@ -557,6 +586,22 @@ class Controller(IController):
             "tag_groups": tag_groups
         }
         self._edit_project_wizard_model.set_state(editing_data)
+
+    def _get_available_tags(self) -> List[Dict[str, str]]:
+        """
+        Retrieves the list of available tags from the project configuration.
+        This method fetches all tags defined in the project configuration,
+        formats their display names to include the project they belong to,
+        and returns the modified list.
+
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries representing available tags,
+                                  each containing 'name' and 'project' keys.
+        """
+        tags = self._project_configuration_manager.get_available_tags()
+        for tag in tags:
+            tag["display_name"] = f"{tag['name'].upper()} ({tag['project']})"
+        return tags
 
     @with_highlight_update
     def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:

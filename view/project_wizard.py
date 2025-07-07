@@ -29,11 +29,12 @@ class ProjectWizard(ttk.Frame, IObserver):
         _listbox_created_groups (tk.Listbox): Listbox displaying created tag groups.
     """
 
-    def __init__(self, controller: IController, master=None, project_data: dict = None) -> None:
+    def __init__(self, controller: IController, wizard_id: str, master=None, project_data: dict = None) -> None:
         super().__init__(master)
 
         self._controller = controller
         self._controller.add_observer(self)
+        self._wizard_id = wizard_id
 
         self._notebook = ttk.Notebook(self)
         self._notebook.pack(expand=True, fill="both")
@@ -203,7 +204,7 @@ class ProjectWizard(ttk.Frame, IObserver):
 
         # Tag groups
         tag_groups = state.get("tag_groups", {})
-        self._populate_tag_group_tree(state.get("tag_groups", []))
+        self._populate_tag_group_tree(tag_groups)
         # File name for tag groups
         self._entry_tag_group_file_name.delete(0, tk.END)
         self._entry_tag_group_file_name.insert(
@@ -245,7 +246,8 @@ class ProjectWizard(ttk.Frame, IObserver):
             return
 
         new_group = {"name": group_name, "tags": selected_tags}
-        self._controller.perform_project_add_tag_group(new_group)
+        self._controller.perform_project_add_tag_group(
+            new_group, self._wizard_id)
 
     def _delete_tag_group(self) -> None:
         """
@@ -260,7 +262,8 @@ class ProjectWizard(ttk.Frame, IObserver):
 
         for index in selected_indices[::-1]:
             group_name = self._tree_created_groups.get(index)
-            self._controller.perform_project_remove_tag_group(group_name)
+            self._controller.perform_project_remove_tag_group(
+                group_name, self._wizard_id)
 
     def _add_selected_tags(self) -> None:
         """
@@ -273,8 +276,7 @@ class ProjectWizard(ttk.Frame, IObserver):
         tags = []
         for index in selected_indices[::-1]:
             tags.append(self._listbox_available_tags.get(index))
-            print(f"DEBUG {tags=}")
-            self._controller.perform_project_add_tags(tags)
+            self._controller.perform_project_add_tags(tags, self._wizard_id)
 
     def _remove_selected_tags(self) -> None:
         """
@@ -283,7 +285,8 @@ class ProjectWizard(ttk.Frame, IObserver):
         selected_indices = self._listbox_selected_tags.curselection()
         if not selected_indices:
             return
-        self._controller.perform_project_remove_tags(selected_indices)
+        self._controller.perform_project_remove_tags(
+            selected_indices, self._wizard_id)
 
     def _finish(self) -> None:
         """
@@ -296,6 +299,8 @@ class ProjectWizard(ttk.Frame, IObserver):
                 "Error", "Project name cannot be empty.", parent=self)
             self._notebook.select(0)  # Switch back to "Project Name" tab
             return
+
+        # todo redo from here. make clean mvc
 
         tag_groups = self._controller.get_project_wizard_model(
         ).get_state().get("tag_groups", {})

@@ -12,6 +12,7 @@ from view.annotation_view import AnnotationView
 from view.comparison_view import ComparisonView
 from controller.interfaces import IController
 from view.project_window import ProjectWindow
+from view.settings_window import SettingsWindow
 from view.tag_editor_window import TagEditorWindow
 
 
@@ -136,10 +137,6 @@ class MainWindow(tk.Tk, IObserver):
         """ Opens the project edit window. """
         self._open_project_window(tab="edit")
 
-    def _on_project_settings(self):
-        """ Opens the project settings window. """
-        self._open_project_window(tab="settings")
-
     def _on_open_project(self):
         """
         Calls the controller to open an existing project.
@@ -156,7 +153,12 @@ class MainWindow(tk.Tk, IObserver):
 
     # Settings actions
     def _on_settings(self):
-        raise NotImplementedError("Settings dialog not implemented yet.")
+        """ Opens the global settings window. """
+        self._open_settings_window(tab="global")
+
+    def _on_project_settings(self):
+        """ Opens the project settings window. """
+        self._open_settings_window(tab="project")
 
     # Help actions
     def _on_help(self):
@@ -212,6 +214,25 @@ class MainWindow(tk.Tk, IObserver):
         self._tag_editor_window.deiconify()
         self._tag_editor_window.lift()
         self._tag_editor_window.select_tab(tab)
+
+    def _open_settings_window(self, tab: str = "global") -> None:
+        """
+        Opens the settings window and focuses the requested tab.
+
+        Args:
+            tab (str): The tab to activate upon opening. One of 'global', 'project'.
+        """
+        # Create the settings window if it doesn't exist or was closed
+        if not hasattr(self, "_settings_window") or not self._settings_window.winfo_exists():
+            self._settings_window = SettingsWindow(
+                controller=self._controller, master=self)
+
+        # Show and focus the window
+        self._settings_window.deiconify()
+        self._settings_window.lift()
+
+        # Switch to the specified tab
+        self._settings_window.select_tab(tab)
 
     # popup dialogs
     def ask_user_for_save_path(self, initial_dir: str = None) -> Optional[str]:

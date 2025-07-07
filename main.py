@@ -42,7 +42,9 @@ def main():
     #     colorset_name="magma", complementary_search_color=True)
     # testdoc = ["data/annotation/test_doc.json"]
     # controller.perform_open_file(testdoc)
-
+    #!DEBUG
+    app_view._open_project_window()
+    #! END DEBUG
     # Start the App
     app_view.mainloop()
 

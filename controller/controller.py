@@ -202,6 +202,24 @@ class Controller(IController):
 
         return wrapped
 
+    def reset_save_state(method):
+        """
+        Decorator that resets the SaveStateModel after executing a method.
+
+        Args:
+            method (Callable): The method to wrap.
+
+        Returns:
+            Callable: The wrapped method that resets the save state after execution.
+        """
+
+        def wrapper(self, *args, **kwargs):
+            result = method(self, *args, **kwargs)
+            self._save_state_model.reset_all()
+            return result
+        return wrapper
+    
+
     # command pattern
     @with_highlight_update
     @invalidate_search_models
@@ -435,6 +453,7 @@ class Controller(IController):
         """
         self._deregister_observers_for_reload()
         self._remove_finalize_views_for_reload()
+        self._search_views.clear()
 
 
     def _deregister_observers_for_reload(self) -> None:
@@ -584,6 +603,10 @@ class Controller(IController):
         self._project_settings_model.set_project_name(project_name)
         self._path_manager.update_paths(project_name)
 
+
+    @check_for_saving_before
+    @invalidate_search_models
+    @reset_save_state
     def perform_project_load_project(self,reload:bool = False,project_name : str = None) -> None:
         """
         Loads the project configuration and updates all relevant models and views.
@@ -605,6 +628,7 @@ class Controller(IController):
         
         # load the project configuration from the actualized path
         configuration = self._project_configuration_manager.load_configuration()
+
         self._layout_configuration_model.set_configuration(
             configuration=configuration)
 

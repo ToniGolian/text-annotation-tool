@@ -114,7 +114,7 @@ class MainWindow(tk.Tk, IObserver):
         self._notebook.add(self._comparison_view, text="Text Comparison")
 
         self._notebook.select(self.DEFAULT_NOTEBOOK_INDEX)
-        # self._controller.set_active_view(["extraction", "annotation", "comparison"][self.DEFAULT_NOTEBOOK_INDEX])
+        self._controller.set_active_view(["extraction", "annotation", "comparison"][self.DEFAULT_NOTEBOOK_INDEX])
 
     def _destroy_views(self) -> None:
         """

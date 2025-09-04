@@ -25,6 +25,12 @@ class SaveStateModel:
         """
         self._change_counts[key] = 0
 
+    def reset_all(self) -> None:
+        """
+        Resets the change counters for all tracked keys (modes), marking them as clean.
+        """
+        self._change_counts = {}
+
     def increment(self, key: str) -> None:
         """
         Increments the change counter for the given key (used on execute/redo).

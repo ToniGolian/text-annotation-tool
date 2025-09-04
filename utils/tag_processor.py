@@ -147,6 +147,9 @@ class TagProcessor(ITagProcessor):
             start_position = match.start()
 
             id_name = self._controller.get_id_name(tag_type)
+            if not id_name:
+                #if a tag type found in the text is not defined in the current project configuration, skip it
+                continue
 
             # Parse attributes into a dictionary
             attributes = dict(attribute_pattern.findall(attributes_raw))

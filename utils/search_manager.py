@@ -8,15 +8,15 @@ from model.search_model import SearchModel
 
 
 class SearchManager:
-    def __init__(self, search_normalization: Dict = None, file_handler: FileHandler = None) -> None:
+    def __init__(self,file_handler: FileHandler = None) -> None:
         """        Initializes the search manager with an optional file handler.
         Args:
             file_handler (FileHandler, optional): An instance of FileHandler for file operations.
         """
         self._file_handler = file_handler
-        self._common_suffixes = search_normalization.get("common_suffixes")
+        self._common_suffixes: List[str] = []
         # Characters to strip from words during search
-        self._chars_to_strip = search_normalization.get("chars_to_strip")
+        self._chars_to_strip: str = ""
 
     def calculate_db_search_model(self, tag_type: str, document_model: IDocumentModel) -> SearchModel:
         """

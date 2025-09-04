@@ -1,4 +1,5 @@
 
+from typing import Dict
 from input_output.file_handler import FileHandler
 
 
@@ -12,8 +13,7 @@ class SettingsManager:
         Initializes the SettingsManager, loading file paths and settings.
         """
         self._file_handler = file_handler
-        self._project_settings = self._file_handler.read_file(
-            "project_settings")
+        self._project_settings: Dict[str, str] = {}
 
     def are_all_search_results_highlighted(self) -> bool:
         """
@@ -86,11 +86,25 @@ class SettingsManager:
             dict: The search normalization settings.
         """
         current_language = self._project_settings.get("current_language", [])
+        print(f"DEBUG {current_language=}")
         search_normalization_rules = self._file_handler.read_file(
             "project_search_normalization")
+        print(f"DEBUG {search_normalization_rules=}")
         if not search_normalization_rules:
             raise KeyError(
                 "The key 'project_search_normalization' is missing in the settings file.")
         search_normalization_rules["common_suffixes"] = search_normalization_rules.get(
             "common_suffixes", []).get(current_language, [])
         return search_normalization_rules
+
+    def update_settings(self) -> None:
+        """
+        Loads the current settings from the settings file.
+        """
+        self._project_settings = self._file_handler.read_file("project_settings")
+
+    def export_settings(self) -> None:
+        """
+        Exports the current settings to the settings file.
+        """
+        self._file_handler.write_file("project_settings", self._project_settings)

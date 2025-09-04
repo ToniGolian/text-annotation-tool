@@ -27,7 +27,7 @@ class ProjectSettingsModel(IPublisher):
             name (str): The name of the project.
         """
         self._project_name = name
-        self._notify_observers()
+        self.notify_observers()
 
     def set_color_scheme(self, scheme: str) -> None:
         """
@@ -37,7 +37,7 @@ class ProjectSettingsModel(IPublisher):
             scheme (str): The name of the color scheme.
         """
         self._color_scheme = scheme
-        self._notify_observers()
+        self.notify_observers()
 
     def set_search_normalization(self, normalization: Dict[str, str]) -> None:
         """
@@ -47,7 +47,7 @@ class ProjectSettingsModel(IPublisher):
             normalization (Dict[str, str]): A dictionary of normalization rules.
         """
         self._search_normalization = normalization
-        self._notify_observers()
+        self.notify_observers()
 
     def set_are_all_search_results_highlighted(self, value: bool) -> None:
         """
@@ -57,7 +57,7 @@ class ProjectSettingsModel(IPublisher):
             value (bool): True to highlight all results, False otherwise.
         """
         self._are_all_search_results_highlighted = value
-        self._notify_observers()
+        self.notify_observers()
 
     def set_current_language(self, language: str) -> None:
         """
@@ -67,7 +67,7 @@ class ProjectSettingsModel(IPublisher):
             language (str): The selected language code or name.
         """
         self._current_language = language
-        self._notify_observers()
+        self.notify_observers()
 
     def get_state(self) -> Dict[str, object]:
         """
@@ -97,4 +97,4 @@ class ProjectSettingsModel(IPublisher):
         self._are_all_search_results_highlighted = state.get(
             "are_all_search_results_highlighted", False)
         self._current_language = state.get("current_language", "")
-        self._notify_observers()
+        self.notify_observers()

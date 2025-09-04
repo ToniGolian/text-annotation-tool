@@ -5,8 +5,7 @@ from tkinter import filedialog
 from tkinter import messagebox
 from typing import Optional
 from observer.interfaces import IObserver, IPublisher
-from pyparsing import Dict
-from torch import mode
+from typing import Dict
 from view.extraction_view import ExtractionView
 from view.annotation_view import AnnotationView
 from view.comparison_view import ComparisonView
@@ -179,6 +178,9 @@ class MainWindow(tk.Tk, IObserver):
             self._notebook.select(state["active_notebook_index"])
             if state["active_notebook_index"] == 1:
                 self._annotation_view.focus_set()
+        if "project_name" in state:
+            project_name = state["project_name"]
+            self.title(f"Text Annotation Tool ({project_name})" if project_name else "Text Annotation Tool")
 
     # Helpers
     def _open_project_window(self, tab: str = "new") -> None:
@@ -320,3 +322,13 @@ class MainWindow(tk.Tk, IObserver):
         view_name = view_id.capitalize().replace("_", " ")
         message = f"The document in view '{view_name}' has unsaved changes.\nDo you want to save it?"
         return messagebox.askyesno("Unsaved Changes", message)
+
+    def finalize_view(self) -> None:
+        """ 
+        Finalizes the main window view, updating the title based on the current project name.
+        """
+        state = self._controller.get_observer_state(self)
+        print(f"DEBUG {state=}")
+        if "project_name" in state:
+            project_name = state["project_name"]
+            self.title(f"Text Annotation Tool ({project_name})" if project_name else "Text Annotation Tool")

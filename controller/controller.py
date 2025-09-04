@@ -70,12 +70,12 @@ class Controller(IController):
         self._comparison_manager = ComparisonManager(self, self._tag_processor)
         self._pdf_extraction_manager = PDFExtractionManager(controller=self)
 
-        self._search_manager = SearchManager(
-            search_normalization=self._settings_manager.get_search_normalization(), file_handler=self._file_handler)
+        self._search_manager = SearchManager(file_handler=self._file_handler)
         self._search_model_manager = SearchModelManager(self._search_manager)
         self._color_manager = ColorManager(self._file_handler)
 
         # config
+        self.update_project_name()
         # Load the source mapping once and store it in an instance variable
         self._source_mapping = self._file_handler.read_file(
             "source_mapping")
@@ -433,26 +433,7 @@ class Controller(IController):
 
     # initialization
 
-    def finalize_views(self) -> None:
-        """
-        Finalizes the initialization of all views that were previously
-        not fully initialized.
 
-        This method iterates over all registered views (observers) and
-        triggers their `update` method to provide the necessary data
-        for completing their initialization. It ensures that all views
-        are in a fully operational state after this method is called.
-
-        Note:
-            This method assumes that all views requiring finalization
-            have already been registered with the controller.
-        """
-        configuration = self._project_configuration_manager.load_configuration()
-
-        self._layout_configuration_model.set_configuration(
-            configuration=configuration)
-        for view in self._views_to_finalize:
-            view.finalize_view()
 
     def register_view(self, view_id: str, view: IView = None) -> None:
         """
@@ -554,20 +535,51 @@ class Controller(IController):
         else:
             raise ValueError(f"Unknown wizard ID: {wizard_id}")
 
-    def perform_project_load_project(self, project_name: str) -> None:
+    def update_project_name(self,project_name:str=None) -> None:
         """
-        Loads the specified project by its name.
-
-        This method retrieves the project configuration and updates the models
-        accordingly, allowing the user to work with the loaded project.
+        Updates the project name in the project settings model.
 
         Args:
-            project_name (str): The name of the project to load.
+            project_name (str, optional): The new project name. If None, the last project name is used.
         """
-        project_path = self._edit_project_wizard_model.get_project_path(
-            project_name)
+        if not project_name:
+            project_name=self._path_manager.get_last_project_name()
 
-        self._project_configuration_manager.load_project(project_path)
+        # update the project settings model and path manager with the new project name
+        self._project_settings_model.set_project_name(project_name)
+        self._path_manager.update_paths(project_name)
+
+    def perform_project_load_project(self,project_name:str =None) -> None:
+        """
+        Loads the project configuration and updates all relevant models and views.
+        Args:
+            project_name (str, optional): The name of the project to load. If None,
+                                          the current project path is used. Defaults to None.   
+        Raises:
+            FileNotFoundError: If the project configuration file does not exist.
+        """
+        # update the project name in the project settings model and path manager
+        self.update_project_name(project_name)
+        
+        # update the suggestion manager with the new tag suggestions accordingly to the current project
+        self._suggestion_manager.update_suggestions()
+        self._settings_manager.update_settings()
+        search_normalization = self._settings_manager.get_search_normalization()
+        self._search_manager.set_search_normalization(search_normalization)
+
+        # load the project configuration from the actualized path
+        configuration = self._project_configuration_manager.load_configuration()
+
+        self._layout_configuration_model.set_configuration(
+            configuration=configuration)
+        for view in self._views_to_finalize:
+            view.finalize_view()
+
+        self._file_handler.write_file(
+            "last_project", {"last_project": self._project_settings_model.get_state().get("project_name", "")}
+        )
+
+        # update all project wizards accordingly
         self.perform_project_update_projects()
 
     def perform_project_update_projects(self) -> None:
@@ -580,6 +592,7 @@ class Controller(IController):
         self._edit_project_wizard_model.set_available_tags(available_tags)
         self._edit_project_wizard_model.set_projects(projects)
         self._load_project_wizard_model.set_projects(projects)
+
 
     def perform_load_project_data_for_editing(self, project_name: str) -> None:
         """

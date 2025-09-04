@@ -7,11 +7,6 @@
     "eventTags": [
         "EVENT",
         "MAKEINSTANCE",
-        "ALINK",
-        "SLINK"
-    ],
-    "metaHelperTags": [
-        "SIGNAL",
-        "CONFIDENCE"
+        "ALINK"
     ]
 }

@@ -50,7 +50,7 @@ class IController(ABC):
     # initializations
 
     @abstractmethod
-    def finalize_views(self) -> None:
+    def perform_project_load_project(self) -> None:
         """
         Finalizes the initialization of all views that were previously 
         not fully initialized.

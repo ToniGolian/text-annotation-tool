@@ -38,7 +38,7 @@ def main():
     print("Initializing views")
     app_view = MainWindow(controller)
     print("Finalizing controller")
-    controller.finalize_views()
+    controller.perform_project_load_project()
     print("######### END INIT ###########")
     # controller.perform_create_color_scheme(
     #     colorset_name="viridis", complementary_search_color=True)

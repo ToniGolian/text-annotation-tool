@@ -3,15 +3,15 @@
     "color_scheme": "magma_comp_search_color_scheme.json",
     "search_normalization": "search_normalization_rules.json",
     "tags": [
-        "ALINK",
-        "CONFIDENCE",
-        "EVENT",
-        "MAKEINSTANCE",
-        "PLACE",
-        "SIGNAL",
-        "SLINK",
-        "TIMEX3",
-        "TLINK"
+        "alink.json",
+        "confidence.json",
+        "event.json",
+        "makeinstance.json",
+        "place.json",
+        "signal.json",
+        "slink.json",
+        "timex3.json",
+        "tlink.json"
     ],
     "groups": "groups01.json",
     "db_config": [

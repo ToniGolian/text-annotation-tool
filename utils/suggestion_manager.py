@@ -23,10 +23,9 @@ class SuggestionManager:
         Args:
             file_handler (FileHandler): An instance responsible for handling file operations.
         """
-        self._file_handler = file_handler
-        self._controller = controller
-        self._attribute_suggestions = self._file_handler.read_file(
-            "project_suggestions")
+        self._file_handler: FileHandler = file_handler
+        self._controller: IController = controller
+        self._attribute_suggestions:Dict[str, Dict[str, str]] = {}
 
     def get_suggestions(self, selected_text: str, document_model: IAnnotableDocumentModel) -> Dict:
         """
@@ -81,4 +80,9 @@ class SuggestionManager:
             key: f"{id_prefixes[key]}{value}"for key, value in id_suggestions.items()}
         return id_suggestions
 
-    # todo implement add suggestion
+    def update_suggestions(self) -> None:
+        """
+        Reloads attribute suggestions from the configuration file.
+        """
+        self._attribute_suggestions = self._file_handler.read_file(
+            "project_suggestions")

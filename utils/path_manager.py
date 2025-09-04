@@ -14,18 +14,17 @@ class PathManager:
         """
         Initializes the path manager by resolving the current project name
         and building the expanded path mapping.
+
         """
         self._app_paths_file = "app_data/app_paths.json"
         self._paths: dict = {}
-        self._project: str = self._resolve_project_name()
-        self._build_paths(self._project)
 
-    def _resolve_project_name(self) -> str:
+    def get_last_project_name(self) -> str:
         """
         Resolves the project name from config or falls back to first existing folder.
 
         Returns:
-            str: The name of the active project.
+            str: The name of the last project.
 
         Raises:
             FileNotFoundError: If the project root directory is missing.
@@ -35,7 +34,7 @@ class PathManager:
             app_paths = json.load(f)
 
         path_to_last_project = app_paths.get(
-            "path_to_last_project", "").strip()
+            "last_project", "").strip()
 
         if path_to_last_project and os.path.exists(path_to_last_project):
             with open(path_to_last_project, "r", encoding="utf-8") as f:
@@ -60,19 +59,18 @@ class PathManager:
 
         return projects[0]
 
-    def _build_paths(self, project_name: str) -> None:
+    def update_paths(self, project_name: str) -> None:
         """
         Rebuilds the internal path mapping for the given project name.
 
         Args:
             project_name (str): The new project to resolve paths for.
         """
-        self._project = project_name
         with open(self._app_paths_file, "r", encoding="utf-8") as f:
             raw_paths = json.load(f)
 
         self._paths = {
-            key: os.path.normpath(path.replace("<project>", self._project))
+            key: os.path.normpath(path.replace("<project>", project_name))
             for key, path in raw_paths.items()
         }
 
@@ -91,20 +89,4 @@ class PathManager:
             return self._paths[key_or_path]
         return os.path.normpath(key_or_path)
 
-    def update_project(self, new_project: str) -> None:
-        """
-        Updates the current project and rebuilds all paths accordingly.
 
-        Args:
-            new_project (str): The new project name to apply.
-        """
-        self._build_paths(new_project)
-
-    def get_project_name(self) -> str:
-        """
-        Returns the currently active project name.
-
-        Returns:
-            str: The project name.
-        """
-        return self._project

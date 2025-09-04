@@ -25,7 +25,7 @@ class GlobalSettingsModel(IPublisher):
             folders (Dict[str, str]): A dictionary mapping keys to folder paths.
         """
         self._default_folders = folders
-        self._notify_observers()
+        self.notify_observers()
 
     def set_available_align_options(self, options: List[str]) -> None:
         """
@@ -35,7 +35,7 @@ class GlobalSettingsModel(IPublisher):
             options (List[str]): A list of strings representing alignment modes.
         """
         self._available_align_options = options
-        self._notify_observers()
+        self.notify_observers()
 
     def set_align_option(self, option: str) -> None:
         """
@@ -45,7 +45,7 @@ class GlobalSettingsModel(IPublisher):
             option (str): The chosen alignment option.
         """
         self._align_option = option
-        self._notify_observers()
+        self.notify_observers()
 
     def get_state(self) -> Dict[str, object]:
         """
@@ -72,4 +72,4 @@ class GlobalSettingsModel(IPublisher):
         self._available_align_options = state.get(
             "available_align_options", [])
         self._align_option = state.get("align_option", "")
-        self._notify_observers()
+        self.notify_observers()

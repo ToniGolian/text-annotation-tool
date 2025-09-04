@@ -231,6 +231,14 @@
                     "active_notebook_index"
                 ]
             }
+        },
+        "ProjectSettingsModel": {
+            "finalize": true,
+            "source_keys": {
+                "project_settings_model": [
+                    "project_name"
+                ]
+            }
         }
     }
 }

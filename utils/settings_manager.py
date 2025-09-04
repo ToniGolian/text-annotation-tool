@@ -86,10 +86,8 @@ class SettingsManager:
             dict: The search normalization settings.
         """
         current_language = self._project_settings.get("current_language", [])
-        print(f"DEBUG {current_language=}")
         search_normalization_rules = self._file_handler.read_file(
             "project_search_normalization")
-        print(f"DEBUG {search_normalization_rules=}")
         if not search_normalization_rules:
             raise KeyError(
                 "The key 'project_search_normalization' is missing in the settings file.")

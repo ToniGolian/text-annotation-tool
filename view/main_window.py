@@ -114,7 +114,7 @@ class MainWindow(tk.Tk, IObserver):
         self._notebook.add(self._comparison_view, text="Text Comparison")
 
         self._notebook.select(self.DEFAULT_NOTEBOOK_INDEX)
-        self._controller.set_active_view(["extraction", "annotation", "comparison"][self.DEFAULT_NOTEBOOK_INDEX])
+        # self._controller.set_active_view(["extraction", "annotation", "comparison"][self.DEFAULT_NOTEBOOK_INDEX])
 
     def _destroy_views(self) -> None:
         """
@@ -131,7 +131,7 @@ class MainWindow(tk.Tk, IObserver):
         Destroys and re-renders the views, typically called when a new project is loaded
         to ensure views are in sync with the new project data.
         """ 
-        self._controller.deregister_observers_for_reload()
+        self._controller.cleanup_observers_for_reload()
         self._destroy_views()
         self._render_views()
 
@@ -346,7 +346,6 @@ class MainWindow(tk.Tk, IObserver):
         Finalizes the main window view, updating the title based on the current project name.
         """
         state = self._controller.get_observer_state(self)
-        print(f"DEBUG {state=}")
         if "project_name" in state:
             project_name = state["project_name"]
             self.title(f"Text Annotation Tool ({project_name})" if project_name else "Text Annotation Tool")

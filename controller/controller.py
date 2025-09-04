@@ -327,9 +327,7 @@ class Controller(IController):
                 publisher_instance = getattr(self, f"_{publisher_key}", None)
 
                 if publisher_instance is None:
-                    raise KeyError(
-                        f"Publisher instance '{publisher_key}' not found as an attribute in Controller "
-                        f"for observer {observer.__class__.__name__}")
+                    continue
 
                 # Remove observer from the publisher
                 publisher_instance.remove_observer(observer)
@@ -431,40 +429,46 @@ class Controller(IController):
 
         return observer_config[publisher_name]
 
-    def deregister_observers_for_reload(self) -> None:
+    def cleanup_observers_for_reload(self) -> None:
+        """
+        Cleans up observers and views in preparation for reloading a project.
+        """
+        self._deregister_observers_for_reload()
+        self._remove_finalize_views_for_reload()
+
+
+    def _deregister_observers_for_reload(self) -> None:
         """
         Deregisters all observers from their publishers that are marked with 'deregister_on_reload' in the source mapping.
-
-        This method is used when reloading or switching projects to ensure that all observers flagged for deregistration
-        are properly removed from their publishers, preventing memory leaks and outdated references.
+        Uses the same mapping logic as add_observer to ensure all relevant observer instances are removed.
         """
         for observer_name, publisher_configs in self._source_mapping.items():
-            for publisher_name, config in publisher_configs.items():
+            for _, config in publisher_configs.items():
                 if not config.get("deregister_on_reload", False):
                     continue  # Skip if not marked for deregistration
 
-                # Attempt to resolve the publisher instance from the controller's attributes
-                publisher_instance = getattr(self, f"_{publisher_name.lower()}", None)
-                if publisher_instance is None:
-                    print(f"[DEBUG] Publisher '{publisher_name}' not found in Controller for observer '{observer_name}'.")
-                    continue
+                # Get all publisher keys from source_keys (same as in add_observer)
+                source_keys = config.get("source_keys", {})
+                for publisher_key in source_keys.keys():
+                    publisher_instance = getattr(self, f"_{publisher_key}", None)
+                    if publisher_instance is None:
+                        continue
 
-                # Attempt to find all observer instances of the given class registered with this publisher
-                observers_to_remove = [
-                    observer for observer in publisher_instance._observers
-                    if observer.__class__.__name__ == observer_name
-                ]
-                if not observers_to_remove:
-                    print(f"[DEBUG] No observers of type '{observer_name}' found in publisher '{publisher_name}'.")
-                    continue
+                    # Remove all observer instances of this class from the publisher
+                    for observer in publisher_instance._observers[:]:
+                        if observer.__class__.__name__ == observer_name:
+                            publisher_instance.remove_observer(observer)
 
-                # Remove each matching observer using the controller's remove_observer method
-                for observer in observers_to_remove:
-                    self.remove_observer(observer)
-                    print(f"[DEBUG] Deregistered observer '{observer_name}' from publisher '{publisher_name}' using Controller.remove_observer.")
+    def _remove_finalize_views_for_reload(self) -> None:
+        """
+        Removes all views that were registered for finalization, except for the MainWindow.
+        """
+        for view in self._views_to_finalize:
+            if view.__class__.__name__ == "MainWindow":
+                self._views_to_finalize=[view]
+                return
+
     # initialization
-
-
 
     def register_view(self, view_id: str, view: IView = None) -> None:
         """
@@ -598,13 +602,12 @@ class Controller(IController):
         self._settings_manager.update_settings()
         search_normalization = self._settings_manager.get_search_normalization()
         self._search_manager.set_search_normalization(search_normalization)
-
+        
         # load the project configuration from the actualized path
         configuration = self._project_configuration_manager.load_configuration()
-
         self._layout_configuration_model.set_configuration(
             configuration=configuration)
-        
+
         if reload:
             self._main_window.reload_views_for_new_project()
 

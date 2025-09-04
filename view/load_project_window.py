@@ -59,5 +59,5 @@ class LoadProjectWindow(tk.Toplevel, IObserver):
         """
         selected = self._combo_projects.get()
         if selected:
-            self._controller.perform_project_load_project(selected)
+            self._controller.perform_project_load_project(project_name=selected,reload=True)
             self.destroy()

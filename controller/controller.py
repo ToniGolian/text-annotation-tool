@@ -431,6 +431,37 @@ class Controller(IController):
 
         return observer_config[publisher_name]
 
+    def deregister_observers_for_reload(self) -> None:
+        """
+        Deregisters all observers from their publishers that are marked with 'deregister_on_reload' in the source mapping.
+
+        This method is used when reloading or switching projects to ensure that all observers flagged for deregistration
+        are properly removed from their publishers, preventing memory leaks and outdated references.
+        """
+        for observer_name, publisher_configs in self._source_mapping.items():
+            for publisher_name, config in publisher_configs.items():
+                if not config.get("deregister_on_reload", False):
+                    continue  # Skip if not marked for deregistration
+
+                # Attempt to resolve the publisher instance from the controller's attributes
+                publisher_instance = getattr(self, f"_{publisher_name.lower()}", None)
+                if publisher_instance is None:
+                    print(f"[DEBUG] Publisher '{publisher_name}' not found in Controller for observer '{observer_name}'.")
+                    continue
+
+                # Attempt to find all observer instances of the given class registered with this publisher
+                observers_to_remove = [
+                    observer for observer in publisher_instance._observers
+                    if observer.__class__.__name__ == observer_name
+                ]
+                if not observers_to_remove:
+                    print(f"[DEBUG] No observers of type '{observer_name}' found in publisher '{publisher_name}'.")
+                    continue
+
+                # Remove each matching observer using the controller's remove_observer method
+                for observer in observers_to_remove:
+                    self.remove_observer(observer)
+                    print(f"[DEBUG] Deregistered observer '{observer_name}' from publisher '{publisher_name}' using Controller.remove_observer.")
     # initialization
 
 
@@ -549,12 +580,13 @@ class Controller(IController):
         self._project_settings_model.set_project_name(project_name)
         self._path_manager.update_paths(project_name)
 
-    def perform_project_load_project(self,project_name:str =None) -> None:
+    def perform_project_load_project(self,reload:bool = False,project_name : str = None) -> None:
         """
         Loads the project configuration and updates all relevant models and views.
         Args:
             project_name (str, optional): The name of the project to load. If None,
-                                          the current project path is used. Defaults to None.   
+                                          the current project path is used. Defaults to None.
+            reload (bool, optional): Whether to reload the project. Defaults to False.
         Raises:
             FileNotFoundError: If the project configuration file does not exist.
         """
@@ -572,6 +604,10 @@ class Controller(IController):
 
         self._layout_configuration_model.set_configuration(
             configuration=configuration)
+        
+        if reload:
+            self._main_window.reload_views_for_new_project()
+
         for view in self._views_to_finalize:
             view.finalize_view()
 

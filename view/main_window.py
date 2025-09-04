@@ -39,13 +39,13 @@ class MainWindow(tk.Tk, IObserver):
         self.title("Text Annotation Tool")
 
         self._create_menu()
-        self._render()
+        self._render_views()
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
         self._controller.add_observer(self)
 
     def _create_menu(self) -> None:
         menu_bar = tk.Menu(self)
-        self._notebook = ttk.Notebook(self)
+        # self._notebook = ttk.Notebook(self)
 
         # Create File, Project, Settings, and Help menus
         # File menu
@@ -97,25 +97,43 @@ class MainWindow(tk.Tk, IObserver):
 
         self.config(menu=menu_bar)
 
-    def _render(self) -> None:
+    def _render_views(self) -> None:
+        """
+        Renders the main views within the notebook.
+        """
+        self._notebook = ttk.Notebook(self)
         self._notebook.pack(fill="both", expand=True)
 
-        self._extraction_view = ExtractionView(
-            parent=self._notebook, controller=self._controller)
+        self._extraction_view = ExtractionView(parent=self._notebook, controller=self._controller)
         self._notebook.add(self._extraction_view, text="PDF Extraction")
 
-        self._annotation_view = AnnotationView(
-            parent=self._notebook, controller=self._controller)
+        self._annotation_view = AnnotationView(parent=self._notebook, controller=self._controller)
         self._notebook.add(self._annotation_view, text="Text Annotation")
 
-        self._comparison_view = ComparisonView(
-            parent=self._notebook, controller=self._controller)
+        self._comparison_view = ComparisonView(parent=self._notebook, controller=self._controller)
         self._notebook.add(self._comparison_view, text="Text Comparison")
 
-        active_views = ["extraction", "annotation", "comparison"]
         self._notebook.select(self.DEFAULT_NOTEBOOK_INDEX)
-        self._controller.set_active_view(
-            active_views[self.DEFAULT_NOTEBOOK_INDEX])
+        self._controller.set_active_view(["extraction", "annotation", "comparison"][self.DEFAULT_NOTEBOOK_INDEX])
+
+    def _destroy_views(self) -> None:
+        """
+        Destroys the current views and the notebook.
+        """
+        if hasattr(self, "_notebook") and self._notebook.winfo_exists():
+            self._notebook.destroy()
+        self._extraction_view = None
+        self._annotation_view = None
+        self._comparison_view = None
+
+    def reload_views_for_new_project(self) -> None:
+        """
+        Destroys and re-renders the views, typically called when a new project is loaded
+        to ensure views are in sync with the new project data.
+        """ 
+        self._controller.deregister_observers_for_reload()
+        self._destroy_views()
+        self._render_views()
 
     # Menu actions
     # File actions

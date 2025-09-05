@@ -104,17 +104,21 @@ class MainWindow(tk.Tk, IObserver):
         self._notebook = ttk.Notebook(self)
         self._notebook.pack(fill="both", expand=True)
 
-        self._extraction_view = ExtractionView(parent=self._notebook, controller=self._controller)
+        self._extraction_view = ExtractionView(
+            parent=self._notebook, controller=self._controller)
         self._notebook.add(self._extraction_view, text="PDF Extraction")
 
-        self._annotation_view = AnnotationView(parent=self._notebook, controller=self._controller)
+        self._annotation_view = AnnotationView(
+            parent=self._notebook, controller=self._controller)
         self._notebook.add(self._annotation_view, text="Text Annotation")
 
-        self._comparison_view = ComparisonView(parent=self._notebook, controller=self._controller)
+        self._comparison_view = ComparisonView(
+            parent=self._notebook, controller=self._controller)
         self._notebook.add(self._comparison_view, text="Text Comparison")
 
         self._notebook.select(self.DEFAULT_NOTEBOOK_INDEX)
-        self._controller.set_active_view(["extraction", "annotation", "comparison"][self.DEFAULT_NOTEBOOK_INDEX])
+        self._controller.set_active_view(
+            ["extraction", "annotation", "comparison"][self.DEFAULT_NOTEBOOK_INDEX])
 
     def _destroy_views(self) -> None:
         """
@@ -130,7 +134,7 @@ class MainWindow(tk.Tk, IObserver):
         """
         Destroys and re-renders the views, typically called when a new project is loaded
         to ensure views are in sync with the new project data.
-        """ 
+        """
         self._controller.cleanup_observers_for_reload()
         self._destroy_views()
         self._render_views()
@@ -198,7 +202,8 @@ class MainWindow(tk.Tk, IObserver):
                 self._annotation_view.focus_set()
         if "project_name" in state:
             project_name = state["project_name"]
-            self.title(f"Text Annotation Tool ({project_name})" if project_name else "Text Annotation Tool")
+            self.title(
+                f"Text Annotation Tool ({project_name})" if project_name else "Text Annotation Tool")
 
     # Helpers
     def _open_project_window(self, tab: str = "new") -> None:
@@ -348,4 +353,5 @@ class MainWindow(tk.Tk, IObserver):
         state = self._controller.get_observer_state(self)
         if "project_name" in state:
             project_name = state["project_name"]
-            self.title(f"Text Annotation Tool ({project_name})" if project_name else "Text Annotation Tool")
+            self.title(
+                f"Text Annotation Tool ({project_name})" if project_name else "Text Annotation Tool")

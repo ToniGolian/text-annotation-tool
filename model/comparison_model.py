@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from typing import Dict, List, Tuple, Union
 from model.highlight_model import HighlightModel
 from model.interfaces import IComparisonModel, IDocumentModel, ITagModel
@@ -12,14 +12,30 @@ class ComparisonModel(IComparisonModel):
 
     def __init__(self):
         super().__init__()
-        self._document_models: List[IDocumentModel] = []
-        self._highlight_models: List[HighlightModel] = []
-        self._file_names: List[str] = []
-        self._merged_document: IDocumentModel = None
-        self._comparison_sentences: List[List[str]] = []
-        self._adopted_flags: List[int] = []
-        self._differing_to_global: List[int] = []
+        self._set_defaults()
+
+    def _set_defaults(self) -> None:
+        """
+        Assign default values to all attributes.
+        """
+        self._document_models: list[IDocumentModel] = []
+        self._highlight_models: list[HighlightModel] = []
+        self._file_names: list[str] = []
+        self._merged_document: Optional[IDocumentModel] = None
+        self._comparison_sentences: list[list[str]] = []
+        self._adopted_flags: list[int] = []
+        self._differing_to_global: list[int] = []
         self._current_index: int = 0
+
+    def reset(self) -> None:
+        """
+        Resets the comparison model to an empty state.
+
+        This method clears all internal data structures and prepares the model
+        for a new comparison session.
+        """
+        self._set_defaults()
+        self.notify_observers()
 
     def set_document_models(self, documents: List[IDocumentModel]) -> None:
         """

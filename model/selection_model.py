@@ -12,9 +12,25 @@ class SelectionModel(IPublisher):
         Initializes the SelectionModel with no selected text or position.
         """
         super().__init__()  # Initializes _data_observers from the base class
+        self._set_defaults()
+
+    def _set_defaults(self) -> None:
+        """
+        Assign default values to all attributes.
+        """
         self._selected_text = ""
         self._position = -1
         self._suggestions = {}
+
+    def reset(self, notify: bool = None) -> None:
+        """
+        Resets the selection model to its default state.
+        Args:
+            notify (bool, optional): If True, notifies observers after resetting. Defaults to None.
+        """
+        self._set_defaults()
+        if notify:
+            self.notify_observers()
 
     def set_selected_text_data(self, data: Dict[str, Union[str, int]]) -> None:
         """

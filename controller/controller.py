@@ -44,6 +44,12 @@ class Controller(IController):
         self._observer_layout_map: Dict[IObserver, Dict] = {}
 
         self._layout_configuration_model: IPublisher = layout_configuration_model
+        self._new_project_wizard_model: ProjectWizardModel = new_project_wizard_model
+        self._edit_project_wizard_model: ProjectWizardModel = edit_project_wizard_model
+        self._load_project_wizard_model: ProjectWizardModel = load_project_wizard_model
+        self._global_settings_model: GlobalSettingsModel = global_settings_model
+        self._project_settings_model: ProjectSettingsModel = project_settings_model
+
         self._extraction_document_model: IDocumentModel = preview_document_model
         self._annotation_document_model: IDocumentModel = annotation_document_model
         self._comparison_model: IComparisonModel = comparison_model
@@ -52,11 +58,6 @@ class Controller(IController):
         self._highlight_model = highlight_model
         self._current_search_model: IPublisher = None
         self._save_state_model: SaveStateModel = save_state_model
-        self._new_project_wizard_model: ProjectWizardModel = new_project_wizard_model
-        self._edit_project_wizard_model: ProjectWizardModel = edit_project_wizard_model
-        self._load_project_wizard_model: ProjectWizardModel = load_project_wizard_model
-        self._global_settings_model: GlobalSettingsModel = global_settings_model
-        self._project_settings_model: ProjectSettingsModel = project_settings_model
 
         # dependencies
         self._path_manager = PathManager()
@@ -202,9 +203,9 @@ class Controller(IController):
 
         return wrapped
 
-    def reset_save_state(method):
+    def reset_project_models(method):
         """
-        Decorator that resets the SaveStateModel after executing a method.
+        Decorator that resets the project-related models after executing a method.
 
         Args:
             method (Callable): The method to wrap.
@@ -215,12 +216,19 @@ class Controller(IController):
 
         def wrapper(self, *args, **kwargs):
             result = method(self, *args, **kwargs)
-            self._save_state_model.reset_all()
+            self._extraction_document_model.reset()
+            self._annotation_document_model.reset()
+            self._comparison_model.reset()
+            self._selection_model.reset()
+            self._annotation_mode_model.reset()
+            self._highlight_model.reset()
+            self._save_state_model.reset()
+            self._current_search_model = None
             return result
         return wrapper
-    
 
     # command pattern
+
     @with_highlight_update
     @invalidate_search_models
     @update_current_search_model
@@ -353,6 +361,8 @@ class Controller(IController):
         # If the observer was added to the finalize list, remove it
         if observer in self._views_to_finalize:
             self._views_to_finalize.remove(observer)
+        if observer in self._search_views:
+            self._search_views.remove(observer)
 
     def get_observer_state(self, observer: IObserver, publisher: IPublisher = None) -> dict:
         """
@@ -455,7 +465,6 @@ class Controller(IController):
         self._remove_finalize_views_for_reload()
         self._search_views.clear()
 
-
     def _deregister_observers_for_reload(self) -> None:
         """
         Deregisters all observers from their publishers that are marked with 'deregister_on_reload' in the source mapping.
@@ -469,7 +478,8 @@ class Controller(IController):
                 # Get all publisher keys from source_keys (same as in add_observer)
                 source_keys = config.get("source_keys", {})
                 for publisher_key in source_keys.keys():
-                    publisher_instance = getattr(self, f"_{publisher_key}", None)
+                    publisher_instance = getattr(
+                        self, f"_{publisher_key}", None)
                     if publisher_instance is None:
                         continue
 
@@ -484,7 +494,7 @@ class Controller(IController):
         """
         for view in self._views_to_finalize:
             if view.__class__.__name__ == "MainWindow":
-                self._views_to_finalize=[view]
+                self._views_to_finalize = [view]
                 return
 
     # initialization
@@ -561,9 +571,9 @@ class Controller(IController):
             ValueError: If the wizard ID is unknown.
         """
         if wizard_id == "new_project_wizard":
-            self._new_project_wizard_model.add_tags(tags)
+            self._new_project_wizard_model.add_selected_tags(tags)
         elif wizard_id == "edit_project_wizard":
-            self._edit_project_wizard_model.add_tags(tags)
+            self._edit_project_wizard_model.add_selected_tags(tags)
         else:
             raise ValueError(f"Unknown wizard ID: {wizard_id}")
 
@@ -589,7 +599,7 @@ class Controller(IController):
         else:
             raise ValueError(f"Unknown wizard ID: {wizard_id}")
 
-    def update_project_name(self,project_name:str=None) -> None:
+    def update_project_name(self, project_name: str = None) -> None:
         """
         Updates the project name in the project settings model.
 
@@ -597,17 +607,15 @@ class Controller(IController):
             project_name (str, optional): The new project name. If None, the last project name is used.
         """
         if not project_name:
-            project_name=self._path_manager.get_last_project_name()
+            project_name = self._path_manager.get_last_project_name()
 
         # update the project settings model and path manager with the new project name
         self._project_settings_model.set_project_name(project_name)
         self._path_manager.update_paths(project_name)
 
-
     @check_for_saving_before
-    @invalidate_search_models
-    @reset_save_state
-    def perform_project_load_project(self,reload:bool = False,project_name : str = None) -> None:
+    @reset_project_models
+    def perform_project_load_project(self, reload: bool = False, project_name: str = None) -> None:
         """
         Loads the project configuration and updates all relevant models and views.
         Args:
@@ -619,13 +627,13 @@ class Controller(IController):
         """
         # update the project name in the project settings model and path manager
         self.update_project_name(project_name)
-        
+
         # update the suggestion manager with the new tag suggestions accordingly to the current project
         self._suggestion_manager.update_suggestions()
         self._settings_manager.update_settings()
         search_normalization = self._settings_manager.get_search_normalization()
         self._search_manager.set_search_normalization(search_normalization)
-        
+
         # load the project configuration from the actualized path
         configuration = self._project_configuration_manager.load_configuration()
 
@@ -639,7 +647,8 @@ class Controller(IController):
             view.finalize_view()
 
         self._file_handler.write_file(
-            "last_project", {"last_project": self._project_settings_model.get_state().get("project_name", "")}
+            "last_project", {"last_project": self._project_settings_model.get_state().get(
+                "project_name", "")}
         )
 
         # update all project wizards accordingly
@@ -655,7 +664,6 @@ class Controller(IController):
         self._edit_project_wizard_model.set_available_tags(available_tags)
         self._edit_project_wizard_model.set_projects(projects)
         self._load_project_wizard_model.set_projects(projects)
-
 
     def perform_load_project_data_for_editing(self, project_name: str) -> None:
         """
@@ -1087,7 +1095,7 @@ class Controller(IController):
                 self._load_comparison_model(documents[0])
             else:
                 self._setup_comparison_model(documents)
-        self._save_state_model.reset(self._active_view_id)
+        self._save_state_model.reset_key(self._active_view_id)
 
     def perform_save(self, file_path: str = None, view_id: str = None) -> None:
         view_id = view_id or self._active_view_id

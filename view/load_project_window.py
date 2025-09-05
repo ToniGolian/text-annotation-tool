@@ -59,5 +59,13 @@ class LoadProjectWindow(tk.Toplevel, IObserver):
         """
         selected = self._combo_projects.get()
         if selected:
-            self._controller.perform_project_load_project(project_name=selected,reload=True)
+            self._controller.perform_project_load_project(
+                project_name=selected, reload=True)
             self.destroy()
+
+    def destroy(self) -> None:
+        """
+        Cleans up the observer before destroying the window.
+        """
+        self._controller.remove_observer(self)
+        super().destroy()

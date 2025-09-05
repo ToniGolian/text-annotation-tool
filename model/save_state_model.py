@@ -16,7 +16,7 @@ class SaveStateModel:
         """
         self._change_counts: dict[str, int] = {}
 
-    def reset(self, key: str) -> None:
+    def reset_key(self, key: str) -> None:
         """
         Marks the state of the given key (mode) as clean by resetting its counter.
 
@@ -25,7 +25,7 @@ class SaveStateModel:
         """
         self._change_counts[key] = 0
 
-    def reset_all(self) -> None:
+    def reset(self) -> None:
         """
         Resets the change counters for all tracked keys (modes), marking them as clean.
         """

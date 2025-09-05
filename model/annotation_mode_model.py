@@ -8,12 +8,24 @@ class AnnotationModeModel:
     """
 
     def __init__(self):
+        self._set_defaults()
+
+    def _set_defaults(self) -> None:
+        """
+        Assign default values to all attributes.
+        """
         # Current mode: 'manual' or 'auto'
         self._mode = "manual"
         # Internal flag to indicate whether auto mode is paused
         self._auto_paused = False
         # Flag to remember if pause was explicitly requested
         self._pause_requested = False
+
+    def reset(self) -> None:
+        """
+        Resets the annotation mode model to its default state.
+        """
+        self._set_defaults()
 
     def set_manual_mode(self) -> None:
         """Switches the mode to manual and clears pause state."""

@@ -18,8 +18,10 @@ class ProjectWizardModel(IPublisher):
         self._projects: List[str] = []
         self._project_name: str = ""
         # List of {"name": str, "file_path": str}
-        self._available_tags: List[Dict[str, str]] = []
+        self._globally_available_tags: List[Dict[str, str]] = []
+        self._locally_available_tags: List[Dict[str, str]] = []
         self._selected_tags: List[Dict[str, str]] = []
+        self._locally_available_tags: List[Dict[str, str]] = []
         self._tag_group_file_name: str = ""
         self._tag_groups: Dict[str, List[str]] = {}
 
@@ -33,10 +35,11 @@ class ProjectWizardModel(IPublisher):
                 'tag_group_file_name', 'tag_groups'
         """
         self._project_name = state.get("project_name", "")
-        self._available_tags = state.get("available_tags", [])
+        self._globally_available_tags = state.get("available_tags", [])
         self._selected_tags = state.get("selected_tags", [])
         self._tag_group_file_name = state.get("tag_group_file_name", "")
         self._tag_groups = state.get("tag_groups", {})
+        self._update_locally_available_tags()
         self.notify_observers()
 
     def get_state(self) -> dict:
@@ -46,14 +49,18 @@ class ProjectWizardModel(IPublisher):
         Returns:
             dict: Dictionary of all project settings.
         """
-        return {
+        loc_tags = sorted([tag['display_name']
+                          for tag in self._locally_available_tags])
+        state = {
             "projects": self._projects,
             "project_name": self._project_name,
-            "available_tags": sorted([tag['display_name'] for tag in self._available_tags]),
+            "globally_available_tags": sorted([tag['display_name'] for tag in self._globally_available_tags]),
+            "locally_available_tags": sorted([tag['display_name'] for tag in self._locally_available_tags]),
             "selected_tags": sorted(self._selected_tags),
             "tag_group_file_name": self._tag_group_file_name,
             "tag_groups": self._tag_groups
         }
+        return state
 
     def add_tag_group(self, group_name: str, tags: List[str]) -> None:
         """
@@ -161,7 +168,20 @@ class ProjectWizardModel(IPublisher):
         Args:
             tags (list[Dict[str, str]]): List of tag dictionaries to add.
         """
+        print("Before")
+        print("#" * 40)
+        print(f"DEBUG {self._selected_tags[-2:]=}")
+        print(f"DEBUG {self._locally_available_tags[-2:]=}")
         self._selected_tags.extend(tags)
+        print("After extend")
+        print("#" * 40)
+        print(f"DEBUG {self._selected_tags[-2:]=}")
+        print(f"DEBUG {self._locally_available_tags[-2:]=}")
+        self._update_locally_available_tags()
+        print("After update")
+        print("#" * 40)
+        print(f"DEBUG {self._selected_tags[-2:]=}")
+        print(f"DEBUG {self._locally_available_tags[-2:]=}")
         self.notify_observers()
 
     def remove_selected_tags(self, selected_indices: List[int]) -> None:
@@ -174,7 +194,17 @@ class ProjectWizardModel(IPublisher):
         self._selected_tags = [
             tag for i, tag in enumerate(self._selected_tags) if i not in selected_indices
         ]
+        self._update_locally_available_tags()
         self.notify_observers()
+
+    def _update_locally_available_tags(self) -> None:
+        """
+        Updates the list of locally available tags based on the selected tags
+        and notifies observers.
+        """
+        self._locally_available_tags = [
+            item for item in self._globally_available_tags if item not in self._selected_tags
+        ]
 
     def get_project_path(self, name: str) -> str:
         """
@@ -193,10 +223,11 @@ class ProjectWizardModel(IPublisher):
 
     def set_available_tags(self, tags: List[Dict[str, str]]) -> None:
         """
-        Sets the list of available tags and notifies observers.
+        Sets the list of globally available tags and notifies observers.
 
         Args:
-            tags (List[Dict[str, str]]): List of available tag dictionaries.
+            tags (List[Dict[str, str]]): List of globally available tag dictionaries.
         """
-        self._available_tags = tags
+        self._globally_available_tags = tags
+        self._update_locally_available_tags()
         self.notify_observers()

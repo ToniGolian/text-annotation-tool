@@ -196,7 +196,7 @@ class ProjectWizard(ttk.Frame, IObserver):
 
         # Tags
         self._populate_listbox(
-            listbox=self._listbox_available_tags, items=state.get("available_tags", []))
+            listbox=self._listbox_available_tags, items=state.get("locally_available_tags", []))
         self._populate_listbox(
             listbox=self._listbox_selected_tags, items=state.get("selected_tags", []))
         self._populate_listbox(
@@ -274,9 +274,9 @@ class ProjectWizard(ttk.Frame, IObserver):
             return
 
         tags = []
-        for index in selected_indices[::-1]:
+        for index in selected_indices:
             tags.append(self._listbox_available_tags.get(index))
-            self._controller.perform_project_add_tags(tags, self._wizard_id)
+        self._controller.perform_project_add_tags(tags, self._wizard_id)
 
     def _remove_selected_tags(self) -> None:
         """
@@ -323,3 +323,10 @@ class ProjectWizard(ttk.Frame, IObserver):
         """
         index = self._notebook.index(self._notebook.select())
         self._notebook.select(index - 1)
+
+    def destroy(self) -> None:
+        """
+        Cleans up the observer before destroying the window.
+        """
+        self._controller.remove_observer(self)
+        super().destroy()

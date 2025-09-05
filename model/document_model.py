@@ -13,6 +13,15 @@ class DocumentModel(IDocumentModel):
         Initializes the DocumentModel with default values for its attributes.
         """
         super().__init__()
+        self._reset_fields(document_data)
+
+    def _reset_fields(self, document_data: Dict = None) -> None:
+        """
+        Resets the fields of the DocumentModel to default values or provided data.
+
+        Args:
+            document_data (Dict, optional): A dictionary containing initial values for the document's attributes.
+        """
         document_data = document_data or {}
 
         self._document_type: str = document_data.get("document_type", "")
@@ -20,6 +29,14 @@ class DocumentModel(IDocumentModel):
         self._file_name: str = document_data.get("file_name", "")
         self._meta_tags: Dict = document_data.get("meta_tags", {})
         self._text: str = document_data.get("text", "")
+
+    def reset(self) -> None:
+        """
+        Resets the document model to its default state.
+        """
+        self._reset_fields()
+        # TODO WARNING maybe this must be removed. Test if it breaks anything
+        self.notify_observers()
 
     # Getters and Setters
 

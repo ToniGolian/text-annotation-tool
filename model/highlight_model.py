@@ -21,8 +21,25 @@ class HighlightModel(IPublisher):
         Initializes the HighlightModel with empty tag and search highlight lists.
         """
         super().__init__()
+        self._set_defaults()
+
+    def _set_defaults(self) -> None:
+        """
+        Assign default values to all attributes.
+        """
         self._tag_highlights: List[Tuple[str, int, int]] = []
         self._search_highlights: List[Tuple[str, int, int]] = []
+
+    def reset(self, notify: bool = None) -> None:
+        """
+        Resets the highlight model to its default state.
+
+        Args:
+            notify (bool, optional): If True, notifies observers after resetting. Defaults to None.
+        """
+        self._set_defaults()
+        if notify:
+            self.notify_observers()
 
     def add_tag_highlights(self, highlights: List[Tuple[str, int, int]]) -> None:
         """

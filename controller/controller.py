@@ -617,6 +617,8 @@ class Controller(IController):
 
     def perform_project_save_project(self) -> None:
         project_data = self._project_wizard_model.get_state()
+        # todo complete
+        raise NotImplementedError()
 
     def perform_project_update_project_data(self, update_data: Dict[str, Any]) -> None:
         """

@@ -47,31 +47,31 @@ class ProjectWizardFrame(ttk.Frame, IObserver):
 
     def _init_page_project_name(self) -> None:
         """Initializes the first wizard page for entering the project name."""
-        frame = ttk.Frame(self._notebook)
-        self._notebook.add(frame, text="Project Name")
+        self._page_project_name = ttk.Frame(self._notebook)
+        self._notebook.add(self._page_project_name, text="Project Name")
 
-        ttk.Label(frame, text="Project Name:").grid(
+        ttk.Label(self._page_project_name, text="Project Name:").grid(
             row=0, column=0, padx=10, pady=10, sticky="w")
-        self._entry_project_name = tk.Entry(frame)
+        self._entry_project_name = tk.Entry(self._page_project_name)
         self._entry_project_name.grid(
             row=0, column=1, padx=10, pady=10, sticky="ew")
-        frame.columnconfigure(1, weight=1)
+        self._page_project_name.columnconfigure(1, weight=1)
         # Fill row=1 with weight so it takes up vertical space
-        frame.rowconfigure(1, weight=1)
+        self._page_project_name.rowconfigure(1, weight=1)
 
         # Navigation buttons (Back hidden)
         # Place the button in the bottom row
-        ttk.Button(frame, text="Next", command=self._on_button_pressed_next_tab).grid(
+        ttk.Button(self._page_project_name, text="Next", command=self._on_button_pressed_next_tab).grid(
             row=2, column=1, sticky="e", padx=10, pady=10
         )
 
     def _init_page_tag_selection(self) -> None:
         """Initializes the second wizard page for selecting tags and creating new ones."""
-        frame = ttk.Frame(self._notebook)
-        self._notebook.add(frame, text="Select Tags")
+        self._page_tag_selection = ttk.Frame(self._notebook)
+        self._notebook.add(self._page_tag_selection, text="Select Tags")
 
         # Content frame for both listboxes
-        content_frame = ttk.Frame(frame)
+        content_frame = ttk.Frame(self._page_tag_selection)
         content_frame.grid(row=0, column=0, columnspan=3,
                            sticky="nsew", padx=10, pady=5)
         content_frame.columnconfigure(0, weight=1)
@@ -100,26 +100,26 @@ class ProjectWizardFrame(ttk.Frame, IObserver):
         )
 
         # Navigation buttons
-        ttk.Button(frame, text="Back", command=self._on_button_pressed_previous_tab).grid(
+        ttk.Button(self._page_tag_selection, text="Back", command=self._on_button_pressed_previous_tab).grid(
             row=1, column=0, sticky="w", padx=10, pady=10
         )
-        ttk.Button(frame, text="Next", command=self._on_button_pressed_next_tab).grid(
+        ttk.Button(self._page_tag_selection, text="Next", command=self._on_button_pressed_next_tab).grid(
             row=1, column=2, sticky="e", padx=10, pady=10
         )
 
         # Configure layout
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=1)
-        frame.rowconfigure(0, weight=1)
+        self._page_tag_selection.columnconfigure(0, weight=1)
+        self._page_tag_selection.columnconfigure(1, weight=1)
+        self._page_tag_selection.columnconfigure(2, weight=1)
+        self._page_tag_selection.rowconfigure(0, weight=1)
 
     def _init_page_tag_groups(self) -> None:
         """Initializes the third wizard page for creating tag groups."""
-        frame = ttk.Frame(self._notebook)
-        self._notebook.add(frame, text="Tag Groups")
+        self._page_tag_groups = ttk.Frame(self._notebook)
+        self._notebook.add(self._page_tag_groups, text="Tag Groups")
 
         # Frame for file name and group name entries
-        entry_frame = ttk.Frame(frame)
+        entry_frame = ttk.Frame(self._page_tag_groups)
         entry_frame.grid(row=0, column=0, columnspan=3,
                          sticky="ew", padx=10, pady=5)
         entry_frame.columnconfigure(1, weight=1)
@@ -137,7 +137,7 @@ class ProjectWizardFrame(ttk.Frame, IObserver):
             row=1, column=1, sticky="ew", padx=5, pady=2)
 
         # Frame for tag selection and tag group display
-        content_frame = ttk.Frame(frame)
+        content_frame = ttk.Frame(self._page_tag_groups)
         content_frame.grid(row=1, column=0, columnspan=3,
                            sticky="nsew", padx=10, pady=5)
         content_frame.columnconfigure(0, weight=1)
@@ -163,22 +163,22 @@ class ProjectWizardFrame(ttk.Frame, IObserver):
         self._tree_created_groups.pack(fill="both", expand=True)
 
         # Action buttons
-        ttk.Button(frame, text="Add Tag Group", command=self._on_button_pressed_add_tag_group).grid(
+        ttk.Button(self._page_tag_groups, text="Add Tag Group", command=self._on_button_pressed_add_tag_group).grid(
             row=2, column=0, sticky="w", padx=10, pady=5)
-        ttk.Button(frame, text="Delete Tag Group", command=self._on_button_pressed_delete_tag_group).grid(
+        ttk.Button(self._page_tag_groups, text="Delete Tag Group", command=self._on_button_pressed_delete_tag_group).grid(
             row=2, column=2, sticky="e", padx=10, pady=5)
 
         # Navigation buttons
-        ttk.Button(frame, text="Back", command=self._on_button_pressed_previous_tab).grid(
+        ttk.Button(self._page_tag_groups, text="Back", command=self._on_button_pressed_previous_tab).grid(
             row=3, column=0, sticky="w", padx=10, pady=10)
-        ttk.Button(frame, text="Finish", command=self._on_button_pressed_finish).grid(
+        ttk.Button(self._page_tag_groups, text="Finish", command=self._on_button_pressed_finish).grid(
             row=3, column=2, sticky="e", padx=10, pady=10)
 
         # Configure overall layout
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=1)
-        frame.rowconfigure(1, weight=1)
+        self._page_tag_groups.columnconfigure(0, weight=1)
+        self._page_tag_groups.columnconfigure(1, weight=1)
+        self._page_tag_groups.columnconfigure(2, weight=1)
+        self._page_tag_groups.rowconfigure(1, weight=1)
 
     def update(self, publisher: IPublisher) -> None:
         """
@@ -235,15 +235,16 @@ class ProjectWizardFrame(ttk.Frame, IObserver):
                 - Page 2 (Tag Groups): {'tag_group_file_name': str, 'tag_groups': Dict[str, List[str]]}
 
         """
-        index = self._notebook.index(self._notebook.select())
+        current_tab = self._notebook.select()
+        print(f"DEBUG {current_tab=}")
         data = {}
-        if index == 0:
+        if current_tab == str(self._page_project_name):
             data["project_name"] = self._entry_project_name.get().strip()
-        elif index == 1:
+        elif current_tab == str(self._page_tag_selection):
             selected_tags = [self._listbox_selected_tags.get(i)
                              for i in range(self._listbox_selected_tags.size())]
             data["selected_tags"] = selected_tags
-        elif index == 2:
+        elif current_tab == str(self._page_tag_groups):
             data["tag_group_file_name"] = self._entry_tag_group_file_name.get().strip()
             # Collect tag groups from the treeview
             tag_groups = {}

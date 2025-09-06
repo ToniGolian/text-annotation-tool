@@ -176,12 +176,29 @@
             }
         }
     },
-    "ProjectWizard": {
+    "ProjectWizardFrame": {
         "ProjectWizardModel": {
             "finalize": false,
             "deregister_on_reload": false,
             "source_keys": {
-                "new_project_wizard_model": [
+                "project_wizard_model": [
+                    "project_name",
+                    "globally_available_tags",
+                    "locally_available_tags",
+                    "selected_tags",
+                    "tag_group_file_name",
+                    "tag_groups"
+                ]
+            }
+        }
+    },
+    "EditProjectWizardFrame": {
+        "ProjectWizardModel": {
+            "finalize": false,
+            "deregister_on_reload": false,
+            "source_keys": {
+                "project_wizard_model": [
+                    "projects",
                     "project_name",
                     "globally_available_tags",
                     "locally_available_tags",
@@ -197,25 +214,8 @@
             "finalize": false,
             "deregister_on_reload": false,
             "source_keys": {
-                "load_project_wizard_model": [
+                "project_wizard_model": [
                     "projects"
-                ]
-            }
-        }
-    },
-    "EditProjectWizard": {
-        "ProjectWizardModel": {
-            "finalize": false,
-            "deregister_on_reload": false,
-            "source_keys": {
-                "edit_project_wizard_model": [
-                    "projects",
-                    "project_name",
-                    "globally_available_tags",
-                    "locally_available_tags",
-                    "selected_tags",
-                    "tag_group_file_name",
-                    "tag_groups"
                 ]
             }
         }

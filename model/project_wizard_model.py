@@ -35,7 +35,8 @@ class ProjectWizardModel(IPublisher):
                 'tag_group_file_name', 'tag_groups'
         """
         self._project_name = state.get("project_name", "")
-        self._globally_available_tags = state.get("available_tags", {})
+        self._globally_available_tags = state.get(
+            "globally_available_tags", {})
         self._selected_tags = state.get("selected_tags", [])
         self._tag_group_file_name = state.get("tag_group_file_name", "")
         self._tag_groups = state.get("tag_groups", {})
@@ -206,7 +207,7 @@ class ProjectWizardModel(IPublisher):
                 return project["path"]
         return ""
 
-    def set_available_tags(self, tags: List[Dict[str, str]]) -> None:
+    def set_globally_available_tags(self, tags: List[Dict[str, str]]) -> None:
         """
         Sets the list of globally available tags and notifies observers.
 

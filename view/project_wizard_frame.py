@@ -6,7 +6,7 @@ from controller.interfaces import IController
 from observer.interfaces import IObserver, IPublisher
 
 
-class ProjectWizard(ttk.Frame, IObserver):
+class ProjectWizardFrame(ttk.Frame, IObserver):
     """
     A multi-step wizard widget used to create or edit a project.
 
@@ -29,12 +29,11 @@ class ProjectWizard(ttk.Frame, IObserver):
         _listbox_created_groups (tk.Listbox): Listbox displaying created tag groups.
     """
 
-    def __init__(self, controller: IController, wizard_id: str, master=None, project_data: dict = None) -> None:
+    def __init__(self, controller: IController, master=None, project_data: dict = None) -> None:
         super().__init__(master)
 
         self._controller = controller
         self._controller.add_observer(self)
-        self._wizard_id = wizard_id
 
         self._notebook = ttk.Notebook(self)
         self._notebook.pack(expand=True, fill="both")
@@ -190,7 +189,6 @@ class ProjectWizard(ttk.Frame, IObserver):
         """
         state = self._controller.get_observer_state(
             observer=self, publisher=publisher)
-        print(f"DEBUG {state['project_name']=}")
         # Project name
         self._entry_project_name.delete(0, tk.END)
         self._entry_project_name.insert(0, state.get("project_name", ""))
@@ -227,6 +225,36 @@ class ProjectWizard(ttk.Frame, IObserver):
             for tag in tag_list:
                 self._tree_created_groups.insert(parent_id, "end", text=tag)
 
+    def _collect_current_page_data(self) -> dict:
+        """
+        Collects data from the current page to update the model.
+        Returns:
+            dict: A dictionary containing the data from the current page. The keys depend on the current page:
+                - Page 0 (Project Name): {'project_name': str}
+                - Page 1 (Tag Selection): {'selected_tags': List[str]}
+                - Page 2 (Tag Groups): {'tag_group_file_name': str, 'tag_groups': Dict[str, List[str]]}
+
+        """
+        index = self._notebook.index(self._notebook.select())
+        data = {}
+        if index == 0:
+            data["project_name"] = self._entry_project_name.get().strip()
+        elif index == 1:
+            selected_tags = [self._listbox_selected_tags.get(i)
+                             for i in range(self._listbox_selected_tags.size())]
+            data["selected_tags"] = selected_tags
+        elif index == 2:
+            data["tag_group_file_name"] = self._entry_tag_group_file_name.get().strip()
+            # Collect tag groups from the treeview
+            tag_groups = {}
+            for parent_id in self._tree_created_groups.get_children():
+                group_name = self._tree_created_groups.item(parent_id, "text")
+                tags = [self._tree_created_groups.item(
+                    child_id, "text") for child_id in self._tree_created_groups.get_children(parent_id)]
+                tag_groups[group_name] = tags
+            data["tag_groups"] = tag_groups
+        return data
+
     def _on_button_pressed_add_tag_group(self) -> None:
         """
         Adds a new tag group based on the current entries and selected tags.
@@ -235,7 +263,7 @@ class ProjectWizard(ttk.Frame, IObserver):
         if not group_name:
             tk.messagebox.showerror(
                 "Error", "Tag group name cannot be empty.", parent=self)
-            self._notebook.select(-1)
+            # self._notebook.select(-1)
             return
 
         selected_tags = [self._listbox_tags_for_group.get(i)
@@ -243,12 +271,12 @@ class ProjectWizard(ttk.Frame, IObserver):
         if not selected_tags:
             tk.messagebox.showerror(
                 "Error", "No tags selected for the group.", parent=self)
-            self._notebook.select(-1)
+            # self._notebook.select(-1)
             return
 
         new_group = {"name": group_name, "tags": selected_tags}
         self._controller.perform_project_add_tag_group(
-            new_group, self._wizard_id)
+            new_group)
 
     def _on_button_pressed_delete_tag_group(self) -> None:
         """
@@ -264,7 +292,7 @@ class ProjectWizard(ttk.Frame, IObserver):
         for index in selected_indices[::-1]:
             group_name = self._tree_created_groups.get(index)
             self._controller.perform_project_remove_tag_group(
-                group_name, self._wizard_id)
+                group_name)
 
     def _on_button_pressed_add_selected_tags(self) -> None:
         """
@@ -277,7 +305,7 @@ class ProjectWizard(ttk.Frame, IObserver):
         tags = []
         for index in selected_indices:
             tags.append(self._listbox_available_tags.get(index))
-        self._controller.perform_project_add_tags(tags, self._wizard_id)
+        self._controller.perform_project_add_tags(tags)
 
     def _on_button_pressed_remove_selected_tags(self) -> None:
         """
@@ -287,7 +315,7 @@ class ProjectWizard(ttk.Frame, IObserver):
         if not selected_indices:
             return
         self._controller.perform_project_remove_tags(
-            selected_indices, self._wizard_id)
+            selected_indices)
 
     def _on_button_pressed_finish(self) -> None:
         """
@@ -300,21 +328,14 @@ class ProjectWizard(ttk.Frame, IObserver):
                 "Error", "Project name cannot be empty.", parent=self)
             self._notebook.select(0)  # Switch back to "Project Name" tab
             return
-
-        # todo redo from here. make clean mvc
-
-        tag_groups = self._controller.get_project_wizard_model(
-        ).get_state().get("tag_groups", {})
-        tag_group_file_name = self._entry_tag_group_file_name.get().strip()
-
-        # Notify controller to finalize the project
-        self._controller.perform_project_finalize(
-            project_name, tag_groups, tag_group_file_name)
+        self._controller.perform_project_save_project()
 
     def _on_button_pressed_next_tab(self) -> None:
         """
         Switches to the next tab in the notebook.
         """
+        current_page_data = self._collect_current_page_data()
+        self._controller.perform_project_update_project_data(current_page_data)
         index = self._notebook.index(self._notebook.select())
         self._notebook.select(index + 1)
 
@@ -322,6 +343,8 @@ class ProjectWizard(ttk.Frame, IObserver):
         """
         Switches to the previous tab in the notebook.
         """
+        current_page_data = self._collect_current_page_data()
+        self._controller.perform_project_update_project_data(current_page_data)
         index = self._notebook.index(self._notebook.select())
         self._notebook.select(index - 1)
 

@@ -4,18 +4,18 @@ from tkinter import ttk
 
 from controller.interfaces import IController
 from observer.interfaces import IPublisher
-from view.project_wizard import ProjectWizard
+from view.project_wizard_frame import ProjectWizardFrame
 
 
-class EditProjectWizard(ProjectWizard):
+class EditProjectWizardFrame(ProjectWizardFrame):
     """
     A specialized version of the ProjectWizard used for editing existing projects.
     Adds an initial page for selecting a project from a list and adapts labels to reflect editing.
     """
 
-    def __init__(self, controller: IController, wizard_id: str, master=None) -> None:
+    def __init__(self, controller: IController, master=None) -> None:
 
-        super().__init__(controller=controller, master=master, wizard_id=wizard_id)
+        super().__init__(controller=controller, master=master)
         self._available_projects = []
         self._selected_project = None
 

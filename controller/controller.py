@@ -17,7 +17,7 @@ from model.save_state_model import SaveStateModel
 from model.tag_model import TagModel
 from model.undo_redo_model import UndoRedoModel
 from observer.interfaces import IPublisher, IObserver, IPublisher, IObserver
-from typing import Callable, Dict, List,  Tuple
+from typing import Any, Callable, Dict, List,  Tuple
 from utils.color_manager import ColorManager
 from utils.comparison_manager import ComparisonManager
 from utils.project_configuration_manager import ProjectConfigurationManager
@@ -36,7 +36,7 @@ from view.main_window import MainWindow
 
 
 class Controller(IController):
-    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: IPublisher = None, new_project_wizard_model: IPublisher = None, edit_project_wizard_model: IPublisher = None, load_project_wizard_model: IPublisher = None, global_settings_model: IPublisher = None, project_settings_model: IPublisher = None) -> None:
+    def __init__(self, layout_configuration_model: ILayoutConfigurationModel, preview_document_model: IPublisher = None, annotation_document_model: IPublisher = None, comparison_model: IComparisonModel = None, selection_model: IPublisher = None,  highlight_model: IPublisher = None, annotation_mode_model: IPublisher = None, save_state_model: IPublisher = None, project_wizard_model: IPublisher = None, global_settings_model: IPublisher = None, project_settings_model: IPublisher = None) -> None:
 
         # state
         self._dynamic_observer_index: int = 0
@@ -44,9 +44,7 @@ class Controller(IController):
         self._observer_layout_map: Dict[IObserver, Dict] = {}
 
         self._layout_configuration_model: IPublisher = layout_configuration_model
-        self._new_project_wizard_model: ProjectWizardModel = new_project_wizard_model
-        self._edit_project_wizard_model: ProjectWizardModel = edit_project_wizard_model
-        self._load_project_wizard_model: ProjectWizardModel = load_project_wizard_model
+        self._project_wizard_model: ProjectWizardModel = project_wizard_model
         self._global_settings_model: GlobalSettingsModel = global_settings_model
         self._project_settings_model: ProjectSettingsModel = project_settings_model
 
@@ -203,7 +201,7 @@ class Controller(IController):
 
         return wrapped
 
-    def reset_project_models(method):
+    def reset_project_relevant_models(method):
         """
         Decorator that resets the project-related models after executing a method.
 
@@ -521,63 +519,37 @@ class Controller(IController):
     # Perform methods
 
     # Project Management
-    def perform_project_add_tag_group(self, tag_group: dict, wizard_id: str) -> None:
+    def perform_project_add_tag_group(self, tag_group: dict) -> None:
         """
         Adds a new tag group to the project.
         This method updates the project configuration by adding the specified tag group
         and notifies observers about the change.
         Args:
             tag_group (dict): The tag group to be added, containing group name and tags.
-            wizard_id (str): The ID of the wizard from which the tag group is being added.
-
-        Raises:
-            ValueError: If the wizard ID is unknown.
         """
-        if wizard_id == "new_project_wizard":
-            self._new_project_wizard_model.add_tag_group(tag_group)
-        elif wizard_id == "edit_project_wizard":
-            self._edit_project_wizard_model.add_tag_group(tag_group)
-        else:
-            raise ValueError(f"Unknown wizard ID: {wizard_id}")
+        self._project_wizard_model.add_tag_group(tag_group)
 
-    def perform_project_remove_tag_group(self, group_name: str, wizard_id: str) -> None:
+    def perform_project_remove_tag_group(self, group_name: str) -> None:
         """
         Removes a tag group from the project.
         This method updates the project configuration by removing the specified tag group
         and notifies observers about the change.
         Args:
             group_name (str): The name of the tag group to be removed.
-            wizard_id (str): The ID of the wizard from which the tag group is being removed.
-
-        Raises:
-            ValueError: If the wizard ID is unknown.
         """
-        if wizard_id == "new_project_wizard":
-            self._new_project_wizard_model.remove_tag_group(group_name)
-        elif wizard_id == "edit_project_wizard":
-            self._edit_project_wizard_model.remove_tag_group(group_name)
-        else:
-            raise ValueError(f"Unknown wizard ID: {wizard_id}")
+        self._project_wizard_model.remove_tag_group(group_name)
 
-    def perform_project_add_tags(self, tags: List[str], wizard_id: str) -> None:
+    def perform_project_add_tags(self, tags: List[str]) -> None:
         """
         Adds new tags to the project.   
         This method updates the project configuration by adding the specified tags
         and notifies observers about the change.
         Args:
             tags (List[str]): List of tag names to add.
-            wizard_id (str): The ID of the wizard from which the tags are being added.
-        Raises:
-            ValueError: If the wizard ID is unknown.
         """
-        if wizard_id == "new_project_wizard":
-            self._new_project_wizard_model.add_selected_tags(tags)
-        elif wizard_id == "edit_project_wizard":
-            self._edit_project_wizard_model.add_selected_tags(tags)
-        else:
-            raise ValueError(f"Unknown wizard ID: {wizard_id}")
+        self._project_wizard_model.add_selected_tags(tags)
 
-    def perform_project_remove_tags(self, selected_indices: List[int], wizard_id: str) -> None:
+    def perform_project_remove_tags(self, selected_indices: List[int]) -> None:
         """
         Removes specified tags from the project.
 
@@ -585,19 +557,8 @@ class Controller(IController):
         and notifies observers about the change.
         Args:
             selected_indices (List[int]): List of indices of the tags to be removed.
-            wizard_id (str): The ID of the wizard from which the tags are being removed.
-
-        Raises:
-            ValueError: If the wizard ID is unknown.
         """
-        if wizard_id == "new_project_wizard":
-            self._new_project_wizard_model.remove_selected_tags(
-                selected_indices)
-        elif wizard_id == "edit_project_wizard":
-            self._edit_project_wizard_model.remove_selected_tags(
-                selected_indices)
-        else:
-            raise ValueError(f"Unknown wizard ID: {wizard_id}")
+        self._project_wizard_model.remove_selected_tags(selected_indices)
 
     def update_project_name(self, project_name: str = None) -> None:
         """
@@ -614,7 +575,7 @@ class Controller(IController):
         self._path_manager.update_paths(project_name)
 
     @check_for_saving_before
-    @reset_project_models
+    @reset_project_relevant_models
     def perform_project_load_project(self, reload: bool = False, project_name: str = None) -> None:
         """
         Loads the project configuration and updates all relevant models and views.
@@ -654,16 +615,31 @@ class Controller(IController):
         # update all project wizards accordingly
         self.perform_project_update_projects()
 
+    def perform_project_save_project(self) -> None:
+        project_data = self._project_wizard_model.get_state()
+
+    def perform_project_update_project_data(self, update_data: Dict[str, Any]) -> None:
+        """
+        Updates the project data in the project wizard model.
+        Args:
+            update_data (Dict[str, Any]): A dictionary containing the project data to be updated.
+        """
+        state = self._project_wizard_model.get_state()
+        for key, value in update_data.items():
+            if value:
+                state[key] = value
+
+        self._project_wizard_model.set_state(state)
+        state = self._project_wizard_model.get_state()
+
     def perform_project_update_projects(self) -> None:
         """
         Updates the list of projects in the edit project wizard model.
         """
         projects = self._project_configuration_manager.get_projects()
         available_tags = self._get_available_tags()
-        self._new_project_wizard_model.set_available_tags(available_tags)
-        self._edit_project_wizard_model.set_available_tags(available_tags)
-        self._edit_project_wizard_model.set_projects(projects)
-        self._load_project_wizard_model.set_projects(projects)
+        self._project_wizard_model.set_globally_available_tags(available_tags)
+        self._project_wizard_model.set_projects(projects)
 
     def perform_load_project_data_for_editing(self, project_name: str) -> None:
         """
@@ -675,7 +651,7 @@ class Controller(IController):
         Args:
             project_name (str): The name of the project to load.
         """
-        project_path = self._edit_project_wizard_model.get_project_path(
+        project_path = self._project_wizard_model.get_project_path(
             project_name)
         project_data = self._file_handler.read_file(project_path)
         selected_tags = [tag.upper()
@@ -691,7 +667,7 @@ class Controller(IController):
             "tag_group_file_name": tag_group_file_name,
             "tag_groups": tag_groups
         }
-        self._edit_project_wizard_model.set_state(editing_data)
+        self._project_wizard_model.set_state(editing_data)
 
     def _get_available_tags(self) -> Dict[str, Dict[str, str]]:
         """

@@ -693,21 +693,18 @@ class Controller(IController):
         }
         self._edit_project_wizard_model.set_state(editing_data)
 
-    def _get_available_tags(self) -> List[Dict[str, str]]:
+    def _get_available_tags(self) -> Dict[str, Dict[str, str]]:
         """
-        Retrieves the list of available tags from the project configuration.
-        This method fetches all tags defined in the project configuration,
-        formats their display names to include the project they belong to,
-        and returns the modified list.
+        Retrieves and formats the available tags from the project configuration.
 
         Returns:
-            List[Dict[str, str]]: A list of dictionaries representing available tags,
-                                  each containing 'name' and 'project' keys.
+            Dict[str, Dict]: A dictionary mapping formatted tag display names to their details.
         """
         tags = self._project_configuration_manager.get_available_tags()
-        for tag in tags:
-            tag["display_name"] = f"{tag['name'].upper()} ({tag['project']})"
-        return tags
+        available_tags = {
+            f"{tag['name'].upper()} ({tag['project']})": tag for tag in tags}
+
+        return available_tags
 
     @with_highlight_update
     def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:

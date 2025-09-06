@@ -62,7 +62,7 @@ class ProjectWizard(ttk.Frame, IObserver):
 
         # Navigation buttons (Back hidden)
         # Place the button in the bottom row
-        ttk.Button(frame, text="Next", command=self._next_tab).grid(
+        ttk.Button(frame, text="Next", command=self._on_button_pressed_next_tab).grid(
             row=2, column=1, sticky="e", padx=10, pady=10
         )
 
@@ -86,7 +86,7 @@ class ProjectWizard(ttk.Frame, IObserver):
         self._listbox_available_tags = tk.Listbox(
             tag_select_frame, selectmode=tk.MULTIPLE)
         self._listbox_available_tags.pack(fill="both", expand=True)
-        ttk.Button(tag_select_frame, text="Add Tags", command=self._add_selected_tags).pack(
+        ttk.Button(tag_select_frame, text="Add Tags", command=self._on_button_pressed_add_selected_tags).pack(
             anchor="w", pady=5
         )
 
@@ -96,15 +96,15 @@ class ProjectWizard(ttk.Frame, IObserver):
         ttk.Label(selected_tag_frame, text="Selected Tags:").pack(anchor="w")
         self._listbox_selected_tags = tk.Listbox(selected_tag_frame)
         self._listbox_selected_tags.pack(fill="both", expand=True)
-        ttk.Button(selected_tag_frame, text="Remove Tags", command=self._remove_selected_tags).pack(
+        ttk.Button(selected_tag_frame, text="Remove Tags", command=self._on_button_pressed_remove_selected_tags).pack(
             anchor="e", pady=5
         )
 
         # Navigation buttons
-        ttk.Button(frame, text="Back", command=self._previous_tab).grid(
+        ttk.Button(frame, text="Back", command=self._on_button_pressed_previous_tab).grid(
             row=1, column=0, sticky="w", padx=10, pady=10
         )
-        ttk.Button(frame, text="Next", command=self._next_tab).grid(
+        ttk.Button(frame, text="Next", command=self._on_button_pressed_next_tab).grid(
             row=1, column=2, sticky="e", padx=10, pady=10
         )
 
@@ -164,15 +164,15 @@ class ProjectWizard(ttk.Frame, IObserver):
         self._tree_created_groups.pack(fill="both", expand=True)
 
         # Action buttons
-        ttk.Button(frame, text="Add Tag Group", command=self._add_tag_group).grid(
+        ttk.Button(frame, text="Add Tag Group", command=self._on_button_pressed_add_tag_group).grid(
             row=2, column=0, sticky="w", padx=10, pady=5)
-        ttk.Button(frame, text="Delete Tag Group", command=self._delete_tag_group).grid(
+        ttk.Button(frame, text="Delete Tag Group", command=self._on_button_pressed_delete_tag_group).grid(
             row=2, column=2, sticky="e", padx=10, pady=5)
 
         # Navigation buttons
-        ttk.Button(frame, text="Back", command=self._previous_tab).grid(
+        ttk.Button(frame, text="Back", command=self._on_button_pressed_previous_tab).grid(
             row=3, column=0, sticky="w", padx=10, pady=10)
-        ttk.Button(frame, text="Finish", command=self._finish).grid(
+        ttk.Button(frame, text="Finish", command=self._on_button_pressed_finish).grid(
             row=3, column=2, sticky="e", padx=10, pady=10)
 
         # Configure overall layout
@@ -190,6 +190,7 @@ class ProjectWizard(ttk.Frame, IObserver):
         """
         state = self._controller.get_observer_state(
             observer=self, publisher=publisher)
+        print(f"DEBUG {state['project_name']=}")
         # Project name
         self._entry_project_name.delete(0, tk.END)
         self._entry_project_name.insert(0, state.get("project_name", ""))
@@ -200,7 +201,7 @@ class ProjectWizard(ttk.Frame, IObserver):
         self._populate_listbox(
             listbox=self._listbox_selected_tags, items=state.get("selected_tags", []))
         self._populate_listbox(
-            listbox=self._listbox_tags_for_group, items=state.get("tags_for_group", []))
+            listbox=self._listbox_tags_for_group, items=state.get("selected_tags", []))
 
         # Tag groups
         tag_groups = state.get("tag_groups", {})
@@ -226,7 +227,7 @@ class ProjectWizard(ttk.Frame, IObserver):
             for tag in tag_list:
                 self._tree_created_groups.insert(parent_id, "end", text=tag)
 
-    def _add_tag_group(self) -> None:
+    def _on_button_pressed_add_tag_group(self) -> None:
         """
         Adds a new tag group based on the current entries and selected tags.
         """
@@ -249,7 +250,7 @@ class ProjectWizard(ttk.Frame, IObserver):
         self._controller.perform_project_add_tag_group(
             new_group, self._wizard_id)
 
-    def _delete_tag_group(self) -> None:
+    def _on_button_pressed_delete_tag_group(self) -> None:
         """
         Deletes the currently selected tag group from the list.
         """
@@ -265,7 +266,7 @@ class ProjectWizard(ttk.Frame, IObserver):
             self._controller.perform_project_remove_tag_group(
                 group_name, self._wizard_id)
 
-    def _add_selected_tags(self) -> None:
+    def _on_button_pressed_add_selected_tags(self) -> None:
         """
         Adds selected tags from the available tags listbox to the selected tags listbox.
         """
@@ -278,7 +279,7 @@ class ProjectWizard(ttk.Frame, IObserver):
             tags.append(self._listbox_available_tags.get(index))
         self._controller.perform_project_add_tags(tags, self._wizard_id)
 
-    def _remove_selected_tags(self) -> None:
+    def _on_button_pressed_remove_selected_tags(self) -> None:
         """
         Removes selected tags from the selected tags listbox back to the available tags listbox.
         """
@@ -288,7 +289,7 @@ class ProjectWizard(ttk.Frame, IObserver):
         self._controller.perform_project_remove_tags(
             selected_indices, self._wizard_id)
 
-    def _finish(self) -> None:
+    def _on_button_pressed_finish(self) -> None:
         """
         Finalizes the project creation or editing process.
         This method should gather all data and notify the controller.
@@ -310,14 +311,14 @@ class ProjectWizard(ttk.Frame, IObserver):
         self._controller.perform_project_finalize(
             project_name, tag_groups, tag_group_file_name)
 
-    def _next_tab(self) -> None:
+    def _on_button_pressed_next_tab(self) -> None:
         """
         Switches to the next tab in the notebook.
         """
         index = self._notebook.index(self._notebook.select())
         self._notebook.select(index + 1)
 
-    def _previous_tab(self) -> None:
+    def _on_button_pressed_previous_tab(self) -> None:
         """
         Switches to the previous tab in the notebook.
         """

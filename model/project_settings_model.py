@@ -29,6 +29,15 @@ class ProjectSettingsModel(IPublisher):
         self._project_name = name
         self.notify_observers()
 
+    def get_project_name(self) -> str:
+        """
+        Gets the project name.
+
+        Returns:
+            str: The name of the project.
+        """
+        return self._project_name
+
     def set_color_scheme(self, scheme: str) -> None:
         """
         Sets the color scheme used in the project.

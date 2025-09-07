@@ -1,0 +1,79 @@
+{
+    "app_data": {
+        "directories": {
+            "projects": {
+                "directories": {
+                    "<project>": {
+                        "directories": {
+                            "config": {
+                                "directories": {
+                                    "color_schemes": {
+                                        "directories": {},
+                                        "files": []
+                                    },
+                                    "database": {
+                                        "directories": {},
+                                        "files": []
+                                    },
+                                    "groups": {
+                                        "directories": {},
+                                        "files": []
+                                    },
+                                    "settings": {
+                                        "directories": {},
+                                        "files": []
+                                    },
+                                    "tags": {
+                                        "directories": {},
+                                        "files": []
+                                    }
+                                },
+                                "files": []
+                            },
+                            "databases": {
+                                "directories": {
+                                    "csv": {
+                                        "directories": {},
+                                        "files": []
+                                    },
+                                    "dictionaries": {
+                                        "directories": {},
+                                        "files": []
+                                    }
+                                },
+                                "files": []
+                            },
+                            "files": []
+                        },
+                        "files": []
+                    }
+                }
+            }
+        }
+    },
+    "data": {
+        "directories": {
+            "<project>": {
+                "directories": {
+                    "annotations": {
+                        "directories": {},
+                        "files": []
+                    },
+                    "comparisons": {
+                        "directories": {},
+                        "files": []
+                    },
+                    "extractions": {
+                        "directories": {},
+                        "files": []
+                    },
+                    "merged_documents": {
+                        "directories": {},
+                        "files": []
+                    }
+                },
+                "files": []
+            }
+        }
+    }
+}

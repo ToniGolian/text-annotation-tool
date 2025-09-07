@@ -137,7 +137,6 @@ class ProjectConfigurationManager:
             JSONDecodeError: If a project.json is not a valid JSON file.
         """
         projects_path = self._file_handler.resolve_path("project_folder")
-        print(f"DEBUG ProjectConfigurationManager: {projects_path=}")
         results: List[Dict[str, str]] = []
 
         for folder in os.listdir(projects_path):

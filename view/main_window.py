@@ -237,7 +237,6 @@ class MainWindow(tk.Tk, IObserver):
         """
         Opens a dialog to select and load an existing project.
         """
-        print("DEBUG MainWindow: Opening load project dialog")
         if not hasattr(self, "_load_project_window") or not self._load_project_window.winfo_exists():
             self._load_project_window = LoadProjectWindow(
                 controller=self._controller, master=self)

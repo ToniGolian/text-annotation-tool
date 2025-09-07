@@ -14,6 +14,7 @@
     "restore_default_annotation_save_folder": "data/<project>/annotation/",
     "restore_default_comparison_save_folder": "data/<project>/comparison/",
     "restore_default_merged_save_folder": "data/<project>/merged_documents/",
+    "project_template": "app_data/project_template.json",
     "project_folder": "app_data/projects/",
     "settings_folder": "app_data/global_settings/",
     "source_mapping": "app_data/source_mapping.json",

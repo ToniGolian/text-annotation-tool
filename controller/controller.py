@@ -548,7 +548,6 @@ class Controller(IController):
         Prepares the controller for loading an existing project.
         This method resets relevant models and states to ensure a clean slate for project loading.
         """
-        print("DEBUG Controller: Opening load project dialog")
         self._main_window.open_load_project_dialog()
 
     def perform_menu_tag_new_type(self) -> None:
@@ -712,11 +711,17 @@ class Controller(IController):
     def perform_project_save_project(self) -> None:
         project_data = self._project_wizard_model.get_state()
         # if directories not exist, create them
-        project_name = project_data.get("project_name", "")
-        self._create_project_directories(project_name)
-        # save the project configuration
-        # todo complete
-        raise NotImplementedError()
+        new_project_name = project_data.get("project_name", "")
+
+        # store current project name to go back if changed
+        current_project_name = self._project_settings_model.get_project_name()
+        self._path_manager.update_paths(new_project_name)
+
+        self._create_project_directories(new_project_name)
+        # create projectfiles
+        self._create_project_files(new_project_name, project_data)
+
+        self._path_manager.update_paths(current_project_name)
 
     def _create_project_directories(self, project_name: str) -> None:
         """
@@ -727,6 +732,19 @@ class Controller(IController):
         """
         self._project_directory_manager.create_project_structure(
             project_name)
+
+    def _create_project_files(self, project_name: str, project_data: Dict[str, Any]) -> None:
+        """
+        Creates the necessary project files for a new project.
+
+        Args:
+            project_name (str): The name of the project for which to create files.
+            project_data (Dict[str, Any]): The data to be saved in the project configuration file.
+        """
+        # todo continue here
+        raise NotImplementedError("Project file creation not implemented yet.")
+        self._project_directory_manager.create_project_files(
+            project_name, project_data)
 
     def perform_project_update_project_data(self, update_data: Dict[str, Any]) -> None:
         """
@@ -746,9 +764,7 @@ class Controller(IController):
         """
         Updates the list of projects in the edit project wizard model.
         """
-        print("DEBUG Controller: Updating project list")
         projects = self._project_configuration_manager.get_projects()
-        print(f"DEBUG Controller: Found projects: {projects}")
         available_tags = self._get_available_tags()
         self._project_wizard_model.set_globally_available_tags(available_tags)
         self._project_wizard_model.set_projects(projects)

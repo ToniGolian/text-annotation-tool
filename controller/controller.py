@@ -545,6 +545,7 @@ class Controller(IController):
         Prepares the controller for loading an existing project.
         This method resets relevant models and states to ensure a clean slate for project loading.
         """
+        print("DEBUG Controller: Opening load project dialog")
         self._main_window.open_load_project_dialog()
 
     def perform_menu_tag_new_type(self) -> None:
@@ -732,7 +733,9 @@ class Controller(IController):
         """
         Updates the list of projects in the edit project wizard model.
         """
+        print("DEBUG Controller: Updating project list")
         projects = self._project_configuration_manager.get_projects()
+        print(f"DEBUG Controller: Found projects: {projects}")
         available_tags = self._get_available_tags()
         self._project_wizard_model.set_globally_available_tags(available_tags)
         self._project_wizard_model.set_projects(projects)

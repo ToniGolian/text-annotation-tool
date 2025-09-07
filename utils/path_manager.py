@@ -44,7 +44,7 @@ class PathManager:
                 if project_name:
                     return project_name
 
-        project_root = os.path.join("app_data", "projects")
+        project_root = os.path.join("app_data", "project_folder")
         try:
             projects = [
                 name for name in os.listdir(project_root)
@@ -88,5 +88,3 @@ class PathManager:
         if key_or_path in self._paths:
             return self._paths[key_or_path]
         return os.path.normpath(key_or_path)
-
-

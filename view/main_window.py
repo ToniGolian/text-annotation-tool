@@ -162,6 +162,10 @@ class MainWindow(tk.Tk, IObserver):
         """ Opens the project edit window. """
         self._controller.perform_menu_edit_project()
 
+    def _on_project_settings(self):
+        """ Opens the project settings window. """
+        self._controller.perform_menu_project_settings()
+
     def _on_open_project(self):
         """
         Opens the project loading dialog to select an existing project.
@@ -170,24 +174,20 @@ class MainWindow(tk.Tk, IObserver):
 
     # Tags actions
     def _on_new_tag_type(self):
+        """ Opens the tag editor in new tag mode. """
         self._controller.perform_menu_tag_new_type()
-        self.open_tag_editor("new")
 
     def _on_edit_tag_type(self):
+        """ Opens the tag editor in edit mode. """
         self._controller.perform_menu_tag_edit_type()
-        self.open_tag_editor("edit")
 
     # Settings actions
     def _on_settings(self):
         """ Opens the global settings window. """
         self._controller.perform_menu_global_settings()
-        self.open_settings_window(tab="global")
-
-    def _on_project_settings(self):
-        """ Opens the project settings window. """
-        self._controller.perform_menu_project_settings()
 
     # Help actions
+
     def _on_help(self):
         self._controller.perform_menu_help()
         raise NotImplementedError("Help dialog not implemented yet.")

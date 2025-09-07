@@ -175,6 +175,11 @@ class FileHandler:
         Args:
             dir_path (str): The directory path to create.
         """
+        print(f"DEBUG {dir_path=}")
+        if os.path.exists(dir_path):
+            print(f"DEBUG Directory already exists: {dir_path}")
+            print(dir_path)
+            raise FileExistsError(f"Directory already exists: {dir_path}")
         os.makedirs(dir_path, exist_ok=True)
 
     def check_overwriting(self, file_path: str) -> bool:

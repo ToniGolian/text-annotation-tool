@@ -25,6 +25,7 @@ from utils.comparison_manager import ComparisonManager
 from utils.project_configuration_manager import ProjectConfigurationManager
 from utils.path_manager import PathManager
 from utils.pdf_extraction_manager import PDFExtractionManager
+from utils.project_directory_manager import ProjectDirectoryManager
 from utils.search_manager import SearchManager
 from utils.search_model_manager import SearchModelManager
 from utils.settings_manager import SettingsManager
@@ -62,6 +63,8 @@ class Controller(IController):
         # dependencies
         self._path_manager = PathManager()
         self._file_handler = FileHandler(path_manager=self._path_manager)
+        self._project_directory_manager = ProjectDirectoryManager(
+            self._file_handler)
         self._project_configuration_manager = ProjectConfigurationManager(
             self._file_handler)
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
@@ -714,6 +717,16 @@ class Controller(IController):
         # save the project configuration
         # todo complete
         raise NotImplementedError()
+
+    def _create_project_directories(self, project_name: str) -> None:
+        """
+        Creates the necessary directories for a new project.
+
+        Args:
+            project_name (str): The name of the project for which to create directories.
+        """
+        self._project_directory_manager.create_project_structure(
+            project_name)
 
     def perform_project_update_project_data(self, update_data: Dict[str, Any]) -> None:
         """

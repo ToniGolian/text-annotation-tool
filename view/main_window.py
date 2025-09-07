@@ -4,6 +4,7 @@ from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
 from typing import Optional
+from enums.menu_pages import MenuPage
 from observer.interfaces import IObserver, IPublisher
 from typing import Dict
 from view.extraction_view import ExtractionView
@@ -152,40 +153,47 @@ class MainWindow(tk.Tk, IObserver):
 
     # Project actions
     def _on_new_project(self):
-        """ Opens the project creation window. """
-        self._open_project_window(tab="new")
+        """
+        Opens the project creation window.
+        """
+        self._controller.perform_menu_new_project()
 
     def _on_edit_project(self):
         """ Opens the project edit window. """
-        self._open_project_window(tab="edit")
+        self._controller.perform_menu_edit_project()
 
     def _on_open_project(self):
         """
         Opens the project loading dialog to select an existing project.
         """
-        self._open_load_project_dialog()
+        self._controller.perform_menu_load_project()
 
     # Tags actions
     def _on_new_tag_type(self):
-        self._open_tag_editor("new")
+        self._controller.perform_menu_tag_new_type()
+        self.open_tag_editor("new")
 
     def _on_edit_tag_type(self):
-        self._open_tag_editor("edit")
+        self._controller.perform_menu_tag_edit_type()
+        self.open_tag_editor("edit")
 
     # Settings actions
     def _on_settings(self):
         """ Opens the global settings window. """
-        self._open_settings_window(tab="global")
+        self._controller.perform_menu_global_settings()
+        self.open_settings_window(tab="global")
 
     def _on_project_settings(self):
         """ Opens the project settings window. """
-        self._open_settings_window(tab="project")
+        self._controller.perform_menu_project_settings()
 
     # Help actions
     def _on_help(self):
+        self._controller.perform_menu_help()
         raise NotImplementedError("Help dialog not implemented yet.")
 
     def _on_about(self):
+        self._controller.perform_menu_about()
         raise NotImplementedError("About dialog not implemented yet.")
 
     # Window close action
@@ -206,19 +214,18 @@ class MainWindow(tk.Tk, IObserver):
                 f"Text Annotation Tool ({project_name})" if project_name else "Text Annotation Tool")
 
     # Helpers
-    def _open_project_window(self, tab: str = "new") -> None:
+    def open_project_window(self, tab: MenuPage = MenuPage.NEW_PROJECT) -> None:
         """
         Opens the project window and focuses the requested tab.
 
         Args:
-            tab (str): The tab to activate upon opening. One of 'new', 'edit', 'settings'.
+            tab (ProjectWizardTab): The tab to activate upon opening. 
         """
         # Create the project window if it doesn't exist or was closed
         if not self._project_window or not self._project_window.winfo_exists():
             self._project_window = ProjectWindow(
                 controller=self._controller, master=self)
         self._controller.perform_project_update_projects()
-
         # Show and focus the window
         self._project_window.deiconify()
         self._project_window.lift()
@@ -226,7 +233,7 @@ class MainWindow(tk.Tk, IObserver):
         # Switch to the specified tab
         self._project_window.select_tab(tab)
 
-    def _open_load_project_dialog(self) -> None:
+    def open_load_project_dialog(self) -> None:
         """
         Opens a dialog to select and load an existing project.
         """
@@ -239,12 +246,12 @@ class MainWindow(tk.Tk, IObserver):
         self._load_project_window.deiconify()
         self._load_project_window.lift()
 
-    def _open_tag_editor(self, tab: str = "new") -> None:
+    def open_tag_editor(self, tab: MenuPage = MenuPage.NEW_TAG) -> None:
         """
         Opens the tag editor window in the specified mode.
 
         Args:
-            tab (str): The tab to open in the tag editor. One of 'new' or 'edit'.
+            tab (MenuPage): The tab to activate upon opening. One of 'NEW' or 'EDIT'.
         """
         if not self._tag_editor_window or not self._tag_editor_window.winfo_exists():
             self._tag_editor_window = TagEditorWindow(self)
@@ -253,12 +260,12 @@ class MainWindow(tk.Tk, IObserver):
         self._tag_editor_window.lift()
         self._tag_editor_window.select_tab(tab)
 
-    def _open_settings_window(self, tab: str = "global") -> None:
+    def open_settings_window(self, tab: MenuPage = MenuPage.GLOBAL_SETTINGS) -> None:
         """
         Opens the settings window and focuses the requested tab.
 
         Args:
-            tab (str): The tab to activate upon opening. One of 'global', 'project'.
+            tab (MenuPage): only for uniformity of the interface.
         """
         # Create the settings window if it doesn't exist or was closed
         if not hasattr(self, "_settings_window") or not self._settings_window.winfo_exists():
@@ -270,7 +277,7 @@ class MainWindow(tk.Tk, IObserver):
         self._settings_window.lift()
 
         # Switch to the specified tab
-        self._settings_window.select_tab(tab)
+        self._settings_window.select_tab(0)
 
     # popup dialogs
     def ask_user_for_save_path(self, initial_dir: str = None) -> Optional[str]:

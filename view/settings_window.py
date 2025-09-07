@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from controller.interfaces import IController
+from enums.menu_pages import MenuPage
 from view.global_settings import GlobalSettings
 from view.project_settings import ProjectSettings
 
@@ -39,16 +40,16 @@ class SettingsWindow(tk.Toplevel):
         self._notebook.add(self._global_settings, text="Global Settings")
         self._notebook.add(self._project_settings, text="Project Settings")
 
-    def select_tab(self, name: str) -> None:
+    def select_tab(self, tab: MenuPage) -> None:
         """
         Programmatically selects a tab by name.
 
         Args:
-            name (str): Either "global" or "project".
+            tab (MenuPage): Either GLOBAL_SETTINGS or PROJECT_SETTINGS.
         """
-        name = name.lower()
-        tab_index = {"global": 0, "project": 1}.get(name)
-        if tab_index is not None:
-            self._notebook.select(tab_index)
+        notebook_page = {MenuPage.GLOBAL_SETTINGS: self._global_settings,
+                         MenuPage.PROJECT_SETTINGS: self._project_settings}.get(tab)
+        if notebook_page is not None:
+            self._notebook.select(notebook_page)
         else:
-            raise ValueError(f"Unknown tab name: {name}")
+            raise ValueError(f"Unknown tab name: {tab}")

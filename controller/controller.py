@@ -5,6 +5,8 @@ from commands.edit_tag_command import EditTagCommand
 from enums.failure_reasons import FailureReason
 from controller.interfaces import IController
 from commands.interfaces import ICommand
+from enums.menu_pages import MenuPage
+from enums.wizard_types import ProjectWizardType, TagWizardType
 from enums.search_types import SearchType
 from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
@@ -517,6 +519,81 @@ class Controller(IController):
             self._comparison_view = view
 
     # Perform methods
+    # Menu actions
+    def perform_menu_new_project(self) -> None:
+        """
+        Prepares the controller for creating a new project.
+        This method resets relevant models and states to ensure a clean slate for project creation.
+        """
+        self._project_wizard_model.reset()
+        self._project_wizard_model.set_project_wizard_type(
+            ProjectWizardType.NEW)
+        self._main_window.open_project_window(tab=MenuPage.NEW_PROJECT)
+
+    def perform_menu_edit_project(self) -> None:
+        """
+        Prepares the controller for editing an existing project.
+        This method resets relevant models and states to ensure a clean slate for project editing.
+        """
+        self._project_wizard_model.reset()
+        self._project_wizard_model.set_project_wizard_type(
+            ProjectWizardType.EDIT)
+        self._main_window.open_project_window(tab=MenuPage.EDIT_PROJECT)
+
+    def perform_menu_load_project(self) -> None:
+        """
+        Prepares the controller for loading an existing project.
+        This method resets relevant models and states to ensure a clean slate for project loading.
+        """
+        self._main_window.open_load_project_dialog()
+
+    def perform_menu_tag_new_type(self) -> None:
+        """
+        Prepares the controller for adding a new tag type.
+        This method resets relevant models and states to ensure a clean slate for creating a new tag type.
+        """
+        self._tag_wizard_model.reset()
+        self._tag_wizard_model.set_tag_wizard_type(
+            TagWizardType.NEW)
+        self._main_window.open_tag_editor(MenuPage.NEW_TAG)
+
+    def perform_menu_tag_edit_type(self) -> None:
+        """
+        Prepares the controller for editing an existing tag type.
+        This method resets relevant models and states to ensure a clean slate for editing a tag type.
+        """
+        self._tag_wizard_model.reset()
+        self._tag_wizard_model.set_tag_wizard_type(
+            TagWizardType.EDIT)
+        self._main_window.open_tag_editor(MenuPage.EDIT_TAG)
+
+    def perform_menu_global_settings(self) -> None:
+        """
+        Prepares the controller for managing global settings.
+        This method can be expanded to include any necessary setup for global settings management.
+        """
+        self._main_window.open_settings_window(MenuPage.GLOBAL_SETTINGS)
+
+    def perform_menu_project_settings(self) -> None:
+        """
+        Prepares the controller for managing project-specific settings.
+        This method can be expanded to include any necessary setup for project settings management.
+        """
+        self._main_window.open_project_window(MenuPage.PROJECT_SETTINGS)
+
+    def perform_menu_help(self) -> None:
+        """
+        Prepares the controller for displaying help information.
+        This method can be expanded to include any necessary setup for help management.
+        """
+        pass
+
+    def perform_menu_about(self) -> None:
+        """
+        Prepares the controller for displaying about information.
+        This method can be expanded to include any necessary setup for about management.
+        """
+        pass
 
     # Project Management
     def perform_project_add_tag_group(self, tag_group: dict) -> None:
@@ -574,6 +651,19 @@ class Controller(IController):
         self._project_settings_model.set_project_name(project_name)
         self._path_manager.update_paths(project_name)
 
+    def project_name_exists(self, project_name: str) -> bool:
+        """
+        Checks if a project with the given name already exists.
+
+        Args:
+            project_name (str): The name of the project to check.
+
+        Returns:
+            bool: True if the project exists, False otherwise.
+        """
+        projects = self._project_configuration_manager.get_projects()
+        return any(proj["name"] == project_name for proj in projects)
+
     @check_for_saving_before
     @reset_project_relevant_models
     def perform_project_load_project(self, reload: bool = False, project_name: str = None) -> None:
@@ -617,8 +707,8 @@ class Controller(IController):
 
     def perform_project_save_project(self) -> None:
         project_data = self._project_wizard_model.get_state()
-        project_name = project_data.get("project_name", "")
         # if directories not exist, create them
+        project_name = project_data.get("project_name", "")
         self._create_project_directories(project_name)
         # save the project configuration
         # todo complete
@@ -668,12 +758,13 @@ class Controller(IController):
             "project_groups", tag_group_file_name) if tag_group_file_name else {}
         editing_data = {
             "project_name": project_data.get("name", ""),
-            "available_tags": available_tags,
+            "available_tags": available_tags,  # todo edit to new date structure
             "selected_tags": selected_tags,
             "tag_group_file_name": tag_group_file_name,
             "tag_groups": tag_groups
         }
-        self._project_wizard_model.set_state(editing_data)
+        self._project_wizard_model.set_state(
+            editing_data, project_wizard_type=MenuPage.EDIT_PROJECT)
 
     def _get_available_tags(self) -> Dict[str, Dict[str, str]]:
         """

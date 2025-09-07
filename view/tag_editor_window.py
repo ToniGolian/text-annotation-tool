@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+from enums.menu_pages import MenuPage
+
 
 class TagEditorWindow(tk.Toplevel):
     """
@@ -26,29 +28,30 @@ class TagEditorWindow(tk.Toplevel):
         self._notebook = ttk.Notebook(self)
         self._notebook.pack(fill=tk.BOTH, expand=True)
 
-        new_tag_frame = ttk.Frame(self._notebook)
-        edit_tag_frame = ttk.Frame(self._notebook)
+        self._new_tag_frame = ttk.Frame(self._notebook)
+        self._edit_tag_frame = ttk.Frame(self._notebook)
 
-        self._notebook.add(new_tag_frame, text="New Tag")
-        self._notebook.add(edit_tag_frame, text="Edit Tag")
+        self._notebook.add(self._new_tag_frame, text="New Tag")
+        self._notebook.add(self._edit_tag_frame, text="Edit Tag")
 
         # Placeholder content for 'New Tag' tab
-        ttk.Label(new_tag_frame, text="New Tag creation UI goes here.").pack(
+        ttk.Label(self._new_tag_frame, text="New Tag creation UI goes here.").pack(
             pady=20)
 
         # Placeholder content for 'Edit Tag' tab
-        ttk.Label(edit_tag_frame, text="Tag editing UI goes here.").pack(pady=20)
+        ttk.Label(self._edit_tag_frame,
+                  text="Tag editing UI goes here.").pack(pady=20)
 
-    def select_tab(self, name: str) -> None:
+    def select_tab(self, tab: MenuPage) -> None:
         """
         Programmatically selects a tab by name.
 
         Args:
-            name (str): One of "new", "edit", or "settings".
+            tab (MenuPage): The tab to activate. One of 'NEW_TAB' or 'EDIT_TAB'.
         """
-        name = name.lower()
-        tab_index = {"new": 0, "edit": 1}.get(name)
-        if tab_index is not None:
-            self._notebook.select(tab_index)
+        notebook_page = {MenuPage.NEW_TAB: self._new_tag_frame,
+                         MenuPage.EDIT_TAB: self._edit_tag_frame}.get(tab)
+        if notebook_page is not None:
+            self._notebook.select(notebook_page)
         else:
-            raise ValueError(f"Unknown tab name: {name}")
+            raise ValueError(f"Unknown tab name: {tab}")

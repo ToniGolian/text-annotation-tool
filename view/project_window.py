@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from controller.interfaces import IController
-from enums.project_wizard_types import ProjectWizardType
+from enums.menu_pages import MenuPage
 from view.edit_project_wizard_frame import EditProjectWizardFrame
 from view.project_wizard_frame import ProjectWizardFrame
 
@@ -39,9 +39,9 @@ class ProjectWindow(tk.Toplevel):
     def _init_tabs(self) -> None:
         """Initializes the notebook tabs with empty frames."""
         self._new_project_frame = ProjectWizardFrame(
-            controller=self._controller, project_wizard_type=ProjectWizardType.NEW, master=self._notebook)
+            controller=self._controller, master=self._notebook)
         self._edit_project_frame = EditProjectWizardFrame(
-            controller=self._controller, project_wizard_type=ProjectWizardType.EDIT, master=self._notebook)
+            controller=self._controller, master=self._notebook)
         self._project_settings_frame = ttk.Frame(self._notebook)
 
         self._controller.add_observer(
@@ -54,19 +54,20 @@ class ProjectWindow(tk.Toplevel):
         self._notebook.add(self._project_settings_frame,
                            text="Project Settings")
 
-    def select_tab(self, name: str) -> None:
+    def select_tab(self, tab: MenuPage) -> None:
         """
         Programmatically selects a tab by name.
 
         Args:
-            name (str): One of "new", "edit", or "settings".
+            tab (ProjectWizardTab): The tab to select. One of 'NEW_PROJECT', 'EDIT_PROJECT', or 'PROJECT_SETTINGS'.
         """
-        name = name.lower()
-        tab_index = {"new": 0, "edit": 1, "settings": 2}.get(name)
-        if tab_index is not None:
-            self._notebook.select(tab_index)
+        notebook_page = {MenuPage.NEW_PROJECT: self._new_project_frame,
+                         MenuPage.EDIT_PROJECT: self._edit_project_frame,
+                         MenuPage.PROJECT_SETTINGS: self._project_settings_frame}.get(tab)
+        if notebook_page is not None:
+            self._notebook.select(notebook_page)
         else:
-            raise ValueError(f"Unknown tab name: {name}")
+            raise ValueError(f"Unknown tab: {tab}")
 
     def _on_save_project(self):
         raise NotImplementedError("Save project dialog not implemented yet.")

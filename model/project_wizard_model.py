@@ -1,4 +1,5 @@
 from typing import Dict, List
+from enums.wizard_types import ProjectWizardType
 from observer.interfaces import IPublisher
 
 
@@ -15,15 +16,21 @@ class ProjectWizardModel(IPublisher):
         Initializes the model with empty project settings.
         """
         super().__init__()
-        self._projects: List[str] = []
-        self._project_name: str = ""
-        # Dict of {"display_name": {"name": str, "file_path": str}}
-        self._globally_available_tags: Dict[str, Dict[str, str]] = {}
-        self._selected_tags: List[str] = []  # Display names of selected tags
-        # Display names of locally available tags
-        self._locally_available_tags: List[str] = []
-        self._tag_group_file_name: str = ""
-        self._tag_groups: Dict[str, List[str]] = {}
+        self._set_defaults()
+
+    def _set_defaults(self) -> None:
+        """
+        Resets the model to its initial empty state and notifies observers.
+        """
+        self._projects = []
+        self._project_name = ""
+        self._globally_available_tags = {}
+        self._selected_tags = []
+        self._locally_available_tags = []
+        self._tag_group_file_name = ""
+        self._tag_groups = {}
+        self._project_wizard_type = None
+        self.notify_observers()
 
     def set_state(self, state: dict) -> None:
         """
@@ -33,6 +40,7 @@ class ProjectWizardModel(IPublisher):
             state (dict): Dictionary containing keys:
                 'project_name', 'available_tags', 'selected_tags',
                 'tag_group_file_name', 'tag_groups'
+            project_wizard_type (ProjectWizardType): Type of the project wizard (NEW or EDIT).
         """
         self._project_name = state.get("project_name", "")
         self._globally_available_tags = state.get(
@@ -217,3 +225,27 @@ class ProjectWizardModel(IPublisher):
         self._globally_available_tags = tags
         self._update_locally_available_tags()
         self.notify_observers()
+
+    def set_project_wizard_type(self, wizard_type: ProjectWizardType) -> None:
+        """
+        Sets the type of the project wizard (NEW or EDIT) .
+
+        Args:
+            wizard_type (ProjectWizardType): The type of the project wizard.
+        """
+        self._project_wizard_type = wizard_type
+
+    def get_project_wizard_type(self) -> ProjectWizardType:
+        """
+        Retrieves the current type of the project wizard.
+
+        Returns:
+            ProjectWizardType: The current project wizard type.
+        """
+        return self._project_wizard_type
+
+    def reset(self) -> None:
+        """
+        Resets the model to its default state and notifies observers.
+        """
+        self._set_defaults()

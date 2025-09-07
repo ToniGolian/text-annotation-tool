@@ -617,6 +617,10 @@ class Controller(IController):
 
     def perform_project_save_project(self) -> None:
         project_data = self._project_wizard_model.get_state()
+        project_name = project_data.get("project_name", "")
+        # if directories not exist, create them
+        self._create_project_directories(project_name)
+        # save the project configuration
         # todo complete
         raise NotImplementedError()
 

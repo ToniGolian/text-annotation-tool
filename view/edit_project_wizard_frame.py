@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from controller.interfaces import IController
+from enums.project_wizard_types import ProjectWizardType
 from observer.interfaces import IPublisher
 from view.project_wizard_frame import ProjectWizardFrame
 
@@ -13,9 +14,10 @@ class EditProjectWizardFrame(ProjectWizardFrame):
     Adds an initial page for selecting a project from a list and adapts labels to reflect editing.
     """
 
-    def __init__(self, controller: IController, master=None) -> None:
+    def __init__(self, controller: IController, project_wizard_type: ProjectWizardType, master=None) -> None:
 
-        super().__init__(controller=controller, master=master)
+        super().__init__(controller=controller,
+                         project_wizard_type=project_wizard_type, master=master)
         self._available_projects = []
         self._selected_project = None
 
@@ -30,6 +32,7 @@ class EditProjectWizardFrame(ProjectWizardFrame):
         self._notebook.tab(2, text="Edit Tags")
         self._notebook.tab(3, text="Edit Tag Groups")
 
+        self._project_wizard_type = project_wizard_type
         # Update last button label from "Finish" to "Edit Project"
         self._replace_finish_button()
 

@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from controller.interfaces import IController
+from enums.project_wizard_types import ProjectWizardType
 from view.edit_project_wizard_frame import EditProjectWizardFrame
 from view.project_wizard_frame import ProjectWizardFrame
 
@@ -38,9 +39,9 @@ class ProjectWindow(tk.Toplevel):
     def _init_tabs(self) -> None:
         """Initializes the notebook tabs with empty frames."""
         self._new_project_frame = ProjectWizardFrame(
-            controller=self._controller, master=self._notebook)
+            controller=self._controller, project_wizard_type=ProjectWizardType.NEW, master=self._notebook)
         self._edit_project_frame = EditProjectWizardFrame(
-            controller=self._controller, master=self._notebook)
+            controller=self._controller, project_wizard_type=ProjectWizardType.EDIT, master=self._notebook)
         self._project_settings_frame = ttk.Frame(self._notebook)
 
         self._controller.add_observer(

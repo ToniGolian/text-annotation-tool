@@ -1,8 +1,10 @@
+from enum import Enum
 from typing import List
 import tkinter as tk
 from tkinter import ttk
 
 from controller.interfaces import IController
+from enums.project_wizard_types import ProjectWizardType
 from observer.interfaces import IObserver, IPublisher
 
 
@@ -29,7 +31,7 @@ class ProjectWizardFrame(ttk.Frame, IObserver):
         _listbox_created_groups (tk.Listbox): Listbox displaying created tag groups.
     """
 
-    def __init__(self, controller: IController, master=None, project_data: dict = None) -> None:
+    def __init__(self, controller: IController, project_wizard_type: ProjectWizardType, master=None, project_data: dict = None) -> None:
         super().__init__(master)
 
         self._controller = controller
@@ -41,6 +43,8 @@ class ProjectWizardFrame(ttk.Frame, IObserver):
         self._init_page_project_name()
         self._init_page_tag_selection()
         self._init_page_tag_groups()
+
+        self._project_wizard_type = project_wizard_type
 
         if project_data:
             self.set_project_data(project_data)
@@ -327,7 +331,14 @@ class ProjectWizardFrame(ttk.Frame, IObserver):
         if not project_name:
             tk.messagebox.showerror(
                 "Error", "Project name cannot be empty.", parent=self)
-            self._notebook.select(0)  # Switch back to "Project Name" tab
+            # Switch back to "Project Name" tab
+            self._notebook.select(self._tab_project_name)
+            return
+
+        if self._project_wizard_type == ProjectWizardType.NEW and self._controller.project_name_exists(project_name):
+            tk.messagebox.showerror(
+                "Error", f"A project named '{project_name}' already exists.", parent=self)
+            self._notebook.select(self._tab_project_name)
             return
         self._controller.perform_project_save_project()
 

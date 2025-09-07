@@ -168,6 +168,15 @@ class FileHandler:
         """
         return os.path.splitext(os.path.basename(file_path))[0]
 
+    def create_directory(self, dir_path: str) -> None:
+        """
+        Creates a directory at the specified path, including any necessary parent directories.
+
+        Args:
+            dir_path (str): The directory path to create.
+        """
+        os.makedirs(dir_path, exist_ok=True)
+
     def check_overwriting(self, file_path: str) -> bool:
         """
         Checks whether the given file path already exists.

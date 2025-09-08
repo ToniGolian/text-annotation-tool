@@ -192,3 +192,8 @@ class FileHandler:
         if os.path.exists(file_path):
             return True
         return False
+
+    def copy_file(self, source_key: str, target_key: str, source_extension: str = "", target_extension: str = "") -> None:
+        source_path = self.resolve_path(source_key, extension=source_extension)
+        target_path = self.resolve_path(target_key, extension=target_extension)
+        print(f"DEBUG source_path: {source_path}, target_path: {target_path}")

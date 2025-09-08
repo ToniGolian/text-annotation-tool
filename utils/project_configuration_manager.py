@@ -195,7 +195,7 @@ class ProjectConfigurationManager:
                         tag_name = os.path.splitext(filename)[0]
                         tag_path = os.path.join(tags_dir, filename)
                         results.append({
-                            "name": tag_name,
+                            "name": tag_name.upper(),
                             "path": tag_path,
                             "project": project_name
                         })

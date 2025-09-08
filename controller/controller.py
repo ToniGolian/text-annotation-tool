@@ -709,19 +709,19 @@ class Controller(IController):
         self.perform_project_update_projects()
 
     def perform_project_save_project(self) -> None:
-        project_data = self._project_wizard_model.get_state()
+        project_data = self._project_wizard_model.get_project_build_data()
+        print(f"DEBUG {project_data.keys()=}")
         # if directories not exist, create them
-        new_project_name = project_data.get("project_name", "")
-
-        # store current project name to go back if changed
-        current_project_name = self._project_settings_model.get_project_name()
-        self._path_manager.update_paths(new_project_name)
-
-        self._create_project_directories(new_project_name)
-        # create projectfiles
-        self._create_project_files(new_project_name, project_data)
-
-        self._path_manager.update_paths(current_project_name)
+        project_name = project_data.get("project_name", "")
+        project_type: ProjectWizardType = project_data.get(
+            "project_wizard_type", ProjectWizardType.NEW)
+        if project_type == ProjectWizardType.NEW:
+            # self._create_project_directories(project_name)
+            # todo reactivate
+            self._create_project_files(project_name, project_data)
+        elif project_type == ProjectWizardType.EDIT:
+            # update project files
+            raise NotImplementedError("Project editing not implemented yet.")
 
     def _create_project_directories(self, project_name: str) -> None:
         """
@@ -741,10 +741,35 @@ class Controller(IController):
             project_name (str): The name of the project for which to create files.
             project_data (Dict[str, Any]): The data to be saved in the project configuration file.
         """
-        # todo continue here
-        raise NotImplementedError("Project file creation not implemented yet.")
-        self._project_directory_manager.create_project_files(
-            project_name, project_data)
+        # store current project name to go back if changed
+        current_project_name = self._project_settings_model.get_project_name()
+        self._path_manager.update_paths(project_name)
+        tags = project_data.get("selected_tags", [])
+        print("#"*20)
+        print(f"DEBUG {len(tags)=}")
+        print(f"DEBUG {tags=}")
+        for tag in tags:
+            self._file_handler.copy_file(tag["path"], "project_tags_folder")
+        print("#"*20)
+        # config
+
+        # tags /selected tags
+
+        # groups
+
+        # # database
+
+        # color
+
+        # settings
+
+        # databases
+
+        # # csv
+
+        # # dictionarie
+
+        self._path_manager.update_paths(current_project_name)
 
     def perform_project_update_project_data(self, update_data: Dict[str, Any]) -> None:
         """
@@ -790,13 +815,13 @@ class Controller(IController):
             "project_groups", tag_group_file_name) if tag_group_file_name else {}
         editing_data = {
             "project_name": project_data.get("name", ""),
-            "available_tags": available_tags,  # todo edit to new date structure
+            "globally_available_tags": available_tags,
             "selected_tags": selected_tags,
             "tag_group_file_name": tag_group_file_name,
             "tag_groups": tag_groups
         }
         self._project_wizard_model.set_state(
-            editing_data, project_wizard_type=MenuPage.EDIT_PROJECT)
+            editing_data)
 
     def _get_available_tags(self) -> Dict[str, Dict[str, str]]:
         """
@@ -806,10 +831,9 @@ class Controller(IController):
             Dict[str, Dict]: A dictionary mapping formatted tag display names to their details.
         """
         tags = self._project_configuration_manager.get_available_tags()
-        available_tags = {
-            f"{tag['name'].upper()} ({tag['project']})": tag for tag in tags}
-
-        return available_tags
+        for tag in tags:
+            tag["display_name"] = f"{tag['name'].upper()} ({tag['project']})"
+        return tags
 
     @with_highlight_update
     def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:

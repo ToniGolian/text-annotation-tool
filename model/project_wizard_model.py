@@ -24,9 +24,10 @@ class ProjectWizardModel(IPublisher):
         """
         self._projects = []
         self._project_name = ""
-        self._globally_available_tags = {}
-        self._selected_tags = []
+        self._globally_available_tags = []
+        self._selected_tags_display_names = []
         self._locally_available_tags = []
+        self._locally_available_tags_display_names = []
         self._tag_group_file_name = ""
         self._tag_groups = {}
         self._project_wizard_type = None
@@ -40,12 +41,11 @@ class ProjectWizardModel(IPublisher):
             state (dict): Dictionary containing keys:
                 'project_name', 'available_tags', 'selected_tags',
                 'tag_group_file_name', 'tag_groups'
-            project_wizard_type (ProjectWizardType): Type of the project wizard (NEW or EDIT).
         """
         self._project_name = state.get("project_name", "")
         self._globally_available_tags = state.get(
-            "globally_available_tags", {})
-        self._selected_tags = state.get("selected_tags", [])
+            "globally_available_tags", [])
+        self._selected_tags_display_names = state.get("selected_tags", [])
         self._tag_group_file_name = state.get("tag_group_file_name", "")
         self._tag_groups = state.get("tag_groups", {})
         self._update_locally_available_tags()
@@ -62,10 +62,11 @@ class ProjectWizardModel(IPublisher):
             "projects": self._projects,
             "project_name": self._project_name,
             "globally_available_tags":  self._globally_available_tags,
-            "locally_available_tags": self._locally_available_tags,
-            "selected_tags": self._selected_tags,
+            "locally_available_tags": self._locally_available_tags_display_names,
+            "selected_tags": self._selected_tags_display_names,
             "tag_group_file_name": self._tag_group_file_name,
-            "tag_groups": self._tag_groups
+            "tag_groups": self._tag_groups,
+            "project_wizard_type": self._project_wizard_type
         }
         return state
 
@@ -103,22 +104,23 @@ class ProjectWizardModel(IPublisher):
                     "project_name": str,
                     "tag_group_file_name": str,
                     "groups": dict[str, list[str]],
-                    "cleaned_selected_tags": dict[str, dict[str, str]]
+                    "selected_tags": dict[str, dict[str, str]]
                 }
         """
-        cleaned_tags = {tag_key:
-                        {"name": self._clean_name(
-                            tag_info["name"]), "file_path": tag_info["file_path"]}
-                        for tag_key in self._selected_tags
-                        for tag_info in [self._globally_available_tags.get(tag_key)]
-                        if tag_info is not None
-                        }
+        # selected_tags_clean_names = {self._clean_name(name)
+        #  for name in self._selected_tags_display_names}
+        selected_tags = [
+            {
+                "name": tag["name"],
+                "path": tag["path"]
+            } for tag in self._globally_available_tags
+            if tag["display_name"] in self._selected_tags_display_names]
 
         return {
             "project_name": self._project_name,
             "tag_group_file_name": self._tag_group_file_name,
             "groups": self._tag_groups,
-            "cleaned_selected_tags": cleaned_tags
+            "selected_tags": selected_tags
         }
 
     def _clean_name(self, name: str) -> str:
@@ -174,8 +176,8 @@ class ProjectWizardModel(IPublisher):
         Args:
             tags (list[str]): List of tag names to add.
         """
-        self._selected_tags.extend(tags)
-        self._selected_tags.sort()
+        self._selected_tags_display_names.extend(tags)
+        self._selected_tags_display_names.sort()
         self._update_locally_available_tags()
         self.notify_observers()
 
@@ -186,8 +188,8 @@ class ProjectWizardModel(IPublisher):
         Args:
             selected_indices (List[int]): List of indices of tags to remove.
         """
-        self._selected_tags = [
-            tag for i, tag in enumerate(self._selected_tags) if i not in selected_indices
+        self._selected_tags_display_names = [
+            tag for i, tag in enumerate(self._selected_tags_display_names) if i not in selected_indices
         ]
         self._update_locally_available_tags()
         self.notify_observers()
@@ -196,9 +198,25 @@ class ProjectWizardModel(IPublisher):
         """
         Updates the list of locally available tags by excluding selected tags from globally available tags.
         """
-        self._locally_available_tags = sorted(
-            display_name for display_name in self._globally_available_tags.keys() if display_name not in self._selected_tags
-        )
+        self._locally_available_tags = [
+            item for item in self._globally_available_tags if item["display_name"] not in self._selected_tags_display_names
+        ]
+
+        self._locally_available_tags_display_names = self._retrieve_display_names(
+            self._locally_available_tags)
+
+    def _retrieve_display_names(self, tags: List[Dict[str, str]]) -> List[str]:
+        """
+        Retrieves the display names from a list of tag dictionaries.
+
+        Args:
+            tags (List[Dict[str, str]]): List of tag dictionaries.
+
+        Returns:
+            List[str]: List of display names.
+        """
+
+        return sorted([tag["display_name"] for tag in tags if "display_name" in tag])
 
     def get_project_path(self, name: str) -> str:
         """

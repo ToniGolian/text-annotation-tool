@@ -23,6 +23,7 @@
     "color_sets": "app_data/color_sets.json",
     "project_databases_folder": "app_data/projects/<project>/databases/",
     "project_config_folder": "app_data/projects/<project>/config/",
+    "project_tags_folder": "app_data/projects/<project>/config/tags/",
     "project_groups_folder": "app_data/projects/<project>/config/groups/",
     "project_db_config_folder": "app_data/projects/<project>/config/database/",
     "project_db_dictionaries_folder": "app_data/projects/<project>/databases/dictionaries/",

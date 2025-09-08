@@ -24,6 +24,7 @@ class ProjectWizardModel(IPublisher):
         """
         self._projects = []
         self._project_name = ""
+        # [{name: str, path: str,display_name: str,project: str}]
         self._globally_available_tags = []
         self._selected_tags_display_names = []
         self._locally_available_tags = []
@@ -104,15 +105,15 @@ class ProjectWizardModel(IPublisher):
                     "project_name": str,
                     "tag_group_file_name": str,
                     "groups": dict[str, list[str]],
-                    "selected_tags": dict[str, dict[str, str]]
+                    "selected_tags": list[dict[str, str]]  # List of selected tag dictionaries
                 }
         """
-        # selected_tags_clean_names = {self._clean_name(name)
-        #  for name in self._selected_tags_display_names}
         selected_tags = [
             {
                 "name": tag["name"],
-                "path": tag["path"]
+                "path": tag["path"],
+                "display_name": tag["display_name"],
+                "project": tag["project"]
             } for tag in self._globally_available_tags
             if tag["display_name"] in self._selected_tags_display_names]
 

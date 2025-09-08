@@ -716,7 +716,7 @@ class Controller(IController):
         project_type: ProjectWizardType = project_data.get(
             "project_wizard_type", ProjectWizardType.NEW)
         if project_type == ProjectWizardType.NEW:
-            # self._create_project_directories(project_name)
+            self._create_project_directories(project_name)
             # todo reactivate
             self._create_project_files(project_name, project_data)
         elif project_type == ProjectWizardType.EDIT:
@@ -745,12 +745,27 @@ class Controller(IController):
         current_project_name = self._project_settings_model.get_project_name()
         self._path_manager.update_paths(project_name)
         tags = project_data.get("selected_tags", [])
-        print("#"*20)
-        print(f"DEBUG {len(tags)=}")
-        print(f"DEBUG {tags=}")
+
+        while True:
+            # search the duplicates
+            tags_by_name = {}
+            for tag in tags:
+                tags_by_name.setdefault(tag["name"], []).append(tag)
+            duplicates = {name: tag_list for name,
+                          tag_list in tags_by_name.items() if len(tag_list) > 1}
+            non_duplicates = [tag_list[0]
+                              for _, tag_list in tags_by_name.items() if len(tag_list) == 1]
+            if duplicates:
+                renamed_duplicate_tags = self._main_window.ask_user_for_tag_duplicates(
+                    duplicates)
+                if renamed_duplicate_tags is None:
+                    return
+                tags = non_duplicates + renamed_duplicate_tags
+            break
+        # todo check stop logic
+
         for tag in tags:
             self._file_handler.copy_file(tag["path"], "project_tags_folder")
-        print("#"*20)
         # config
 
         # tags /selected tags

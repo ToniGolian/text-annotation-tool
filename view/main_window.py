@@ -3,10 +3,12 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
-from typing import Optional
+from tkinter import simpledialog
+from typing import Any, List, Optional
 from enums.menu_pages import MenuPage
 from observer.interfaces import IObserver, IPublisher
 from typing import Dict
+from view.duplicates_dialog import DuplicatesDialog
 from view.extraction_view import ExtractionView
 from view.annotation_view import AnnotationView
 from view.comparison_view import ComparisonView
@@ -336,6 +338,21 @@ class MainWindow(tk.Tk, IObserver):
             title="Overwrite File?",
             message=f"The file '{path}' already exists.\nDo you want to overwrite it?"
         )
+
+    def ask_user_for_tag_duplicates(self, duplicates: Dict[str, list[Dict]]) -> List[Dict[str, Any]] | None:
+        """
+        Opens a dialog to inform the user about duplicate tag names across projects
+        and prompts for a new name for one of the duplicates.
+
+        Args:
+            duplicates (Dict[str, list[Dict]]): A mapping from duplicate tag names to lists of tag info dicts.
+
+        Returns:
+            List[Dict[str, Any]] | None: A list of tag dicts with updated names if the user confirms,
+            or None if the user cancels the dialog.
+        """
+        dialog = DuplicatesDialog(duplicates, master=self)
+        return dialog.show()
 
     def prompt_save(self, view_id: str) -> bool:
         """

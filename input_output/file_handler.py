@@ -1,5 +1,6 @@
 import inspect
 import os
+import shutil
 from typing import Dict
 from input_output.interfaces import IReadWriteStrategy
 from input_output.file_handler_strategies import JsonReadWriteStrategy, CsvReadWriteStrategy, TxtReadWriteStrategy
@@ -195,5 +196,7 @@ class FileHandler:
 
     def copy_file(self, source_key: str, target_key: str, source_extension: str = "", target_extension: str = "") -> None:
         source_path = self.resolve_path(source_key, extension=source_extension)
-        target_path = self.resolve_path(target_key, extension=target_extension)
-        print(f"DEBUG source_path: {source_path}, target_path: {target_path}")
+        filename = os.path.basename(source_path)
+        target_path = os.path.join(self.resolve_path(
+            target_key, extension=target_extension), filename)
+        shutil.copy2(source_path, target_path)

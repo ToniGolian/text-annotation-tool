@@ -6,6 +6,7 @@ from enums.failure_reasons import FailureReason
 from controller.interfaces import IController
 from commands.interfaces import ICommand
 from enums.menu_pages import MenuPage
+from enums.project_data_error import ProjectDataError
 from enums.wizard_types import ProjectWizardType, TagWizardType
 from enums.search_types import SearchType
 from input_output.file_handler import FileHandler
@@ -25,6 +26,7 @@ from utils.comparison_manager import ComparisonManager
 from utils.project_configuration_manager import ProjectConfigurationManager
 from utils.path_manager import PathManager
 from utils.pdf_extraction_manager import PDFExtractionManager
+from utils.project_data_processor import ProjectDataProcessor
 from utils.project_directory_manager import ProjectDirectoryManager
 from utils.project_file_manager import ProjectFileManager
 from utils.search_manager import SearchManager
@@ -70,6 +72,7 @@ class Controller(IController):
             self, self._file_handler)
         self._project_configuration_manager = ProjectConfigurationManager(
             self._file_handler)
+        self._project_data_processor = ProjectDataProcessor(self._file_handler)
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
         self._settings_manager = SettingsManager(self._file_handler)
         self._tag_processor = TagProcessor(self)
@@ -717,7 +720,8 @@ class Controller(IController):
 
     def perform_project_save_project(self) -> None:
         project_data = self._project_wizard_model.get_project_build_data()
-        project_data = self._validate_and_complete_project_data(project_data)
+        project_data = self._project_data_processor.validate_and_complete(
+            project_data)
 
         # if directories not exist, create them
         project_name = project_data.get("project_name", "")
@@ -751,95 +755,52 @@ class Controller(IController):
         self._project_file_manager.create_project_files(
             project_name, project_data)
 
-    def _validate_and_complete_project_data(self, project_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Validates and adjusts the project data to ensure it meets required criteria.
+    def handle_project_data_error(self, error: ProjectDataError) -> None:
+        if error == ProjectDataError.EMPTY_PROJECT_NAME:
+            pass
+        elif error == ProjectDataError.DUPLICATE_PROJECT_NAME:
+            pass
+        elif error == ProjectDataError.EMPTY_SELECTED_TAGS:
+            pass
+        elif error == ProjectDataError.EMPTY_TAG_GROUP_FILE_NAME:
+            pass
+        elif error == ProjectDataError.EMPTY_TAG_GROUPS:
+            pass
 
-        Args:
-            project_data (Dict[str, Any]): The project data to validate.
+    # def _create_tag_files(self, tags: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    #     """
+    #     Creates tag files for the given tags.
+    #     Args:
+    #         tags (List[Dict[str, str]]): List of tags to create files for in the current project.
+    #     Returns:
+    #         List[Dict[str, str]]: List of tags with updated unique tag names.
+    #     """
+    #     for tag in tags:
+    #         self._file_handler.copy_file(
+    #             source_key=tag["path"], target_key="project_tags_folder", target_file_name=tag["name"].lower())
+    #         tag_file_content = self._file_handler.read_file(
+    #             "project_tags_folder", f"{tag['name']}.json")
+    #         tag_file_content['type'] = tag['name']
+    #         self._file_handler.write_file(
+    #             key="project_tags_folder", data=tag_file_content, extension=f"{tag['name']}.json")
+    #     return tags
 
-        Returns:
-            Dict[str, Any]: The validated and potentially adjusted project data.
-        """
-        # Ensure project name is not empty
-        if not project_data.get("project_name"):
-            raise ValueError("Project name cannot be empty.")
+    # def _create_tag_group_file(self, project_data: Dict[str, Any]) -> None:
+    #     """
+    #     Creates a tag group file based on the provided project data.
+    #     Args:
+    #         project_data (Dict[str, Any]): The project data containing tag group information.
+    #     """
+    #     tags = project_data.get("selected_tags", [])
+    #     tag_group_file_name = project_data.get("tag_group_file_name", "")
+    #     tag_groups = project_data.get("tag_groups", {})
+    #     tag_groups = {group_name: [tag["name"] for tag in tags if tag["display_name"]
+    #                                in tag_display_names] for group_name, tag_display_names in tag_groups.items()}
 
-        # Ensure at least one tag is selected
-        if not project_data.get("selected_tags"):
-            raise ValueError("At least one tag must be selected.")
-
-        tags = project_data.get("selected_tags", [])
-        project_data["selected_tags"] = self._ensure_unique_tag_names(tags)
-
-        # Ensure tag group file name is provided
-        if not project_data.get("tag_group_file_name"):
-            raise ValueError("Tag group file name cannot be empty.")
-
-        return project_data
-
-    def _ensure_unique_tag_names(self, tags: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """
-        Ensures that all tag names in the provided list are unique by appending a counter to duplicate names.
-
-        Args:
-            tags (List[Dict[str, str]]): List of tags with 'name' keys.
-
-        Returns:
-            List[Dict[str, str]]: List of tags with unique 'name' values.
-        """
-        while True:
-            # search the duplicates
-            tags_by_name = {}
-            for tag in tags:
-                tags_by_name.setdefault(tag["name"], []).append(tag)
-            duplicates = {name: tag_list for name,
-                          tag_list in tags_by_name.items() if len(tag_list) > 1}
-            non_duplicates = [tag_list[0]
-                              for _, tag_list in tags_by_name.items() if len(tag_list) == 1]
-            if duplicates:
-                renamed_duplicate_tags = self._main_window.ask_user_for_tag_duplicates(
-                    duplicates)
-                if renamed_duplicate_tags is None:  # if user cancelled dialog
-                    return
-                tags = non_duplicates + renamed_duplicate_tags
-                continue  # recheck for duplicates
-            return tags  # loop until no duplicates are found
-
-    def _create_tag_files(self, tags: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """
-        Creates tag files for the given tags.
-        Args:
-            tags (List[Dict[str, str]]): List of tags to create files for in the current project.
-        Returns:
-            List[Dict[str, str]]: List of tags with updated unique tag names.
-        """
-        for tag in tags:
-            self._file_handler.copy_file(
-                source_key=tag["path"], target_key="project_tags_folder", target_file_name=tag["name"].lower())
-            tag_file_content = self._file_handler.read_file(
-                "project_tags_folder", f"{tag['name']}.json")
-            tag_file_content['type'] = tag['name']
-            self._file_handler.write_file(
-                key="project_tags_folder", data=tag_file_content, extension=f"{tag['name']}.json")
-        return tags
-
-    def _create_tag_group_file(self, project_data: Dict[str, Any]) -> None:
-        """
-        Creates a tag group file based on the provided project data.
-        Args:
-            project_data (Dict[str, Any]): The project data containing tag group information.
-        """
-        tags = project_data.get("selected_tags", [])
-        tag_group_file_name = project_data.get("tag_group_file_name", "")
-        tag_groups = project_data.get("tag_groups", {})
-        tag_groups = {group_name: [tag["name"] for tag in tags if tag["display_name"]
-                                   in tag_display_names] for group_name, tag_display_names in tag_groups.items()}
-
-        print(f"DEBUG after conversion {tag_groups=}")
-        tag_group_file_name = f"{tag_group_file_name}.json"
-        self._file_handler.write_file(
-            key="project_groups", data=tag_groups, extension=tag_group_file_name)
+    #     print(f"DEBUG after conversion {tag_groups=}")
+    #     tag_group_file_name = f"{tag_group_file_name}.json"
+    #     self._file_handler.write_file(
+    #         key="project_groups", data=tag_groups, extension=tag_group_file_name)
 
     def perform_project_update_project_data(self, update_data: Dict[str, Any]) -> None:
         """

@@ -599,14 +599,16 @@ class Controller(IController):
         pass
 
     # Project Management
-    def perform_project_add_tag_group(self, tag_group: dict) -> None:
+    def perform_project_add_tag_group(self, tag_group_file_name: str, tag_group: dict) -> None:
         """
         Adds a new tag group to the project.
         This method updates the project configuration by adding the specified tag group
         and notifies observers about the change.
         Args:
+            tag_group_file_name (str): The file_name for the tag group to be saved.
             tag_group (dict): The tag group to be added, containing group name and tags.
         """
+        self._project_wizard_model.set_tag_group_file_name(tag_group_file_name)
         self._project_wizard_model.add_tag_group(tag_group)
 
     def perform_project_remove_tag_group(self, group_name: str) -> None:
@@ -710,7 +712,6 @@ class Controller(IController):
 
     def perform_project_save_project(self) -> None:
         project_data = self._project_wizard_model.get_project_build_data()
-        print(f"DEBUG {project_data.keys()=}")
         # if directories not exist, create them
         project_name = project_data.get("project_name", "")
         project_type: ProjectWizardType = project_data.get(
@@ -771,10 +772,16 @@ class Controller(IController):
                 source_key=tag["path"], target_key="project_tags_folder", target_file_name=tag["name"])
         # todo rename type in tag data after renaming and copying
 
-        # tags /selected tags
+        # tag_groups
+        tag_group_file_name = project_data.get("tag_group_file_name", "")
+        tag_groups = project_data.get("tag_groups", {})
+        tag_groups = {group_name: [tag["name"] for tag in tags if tag["display_name"]
+                                   in tag_display_names] for group_name, tag_display_names in tag_groups.items()}
 
-        # groups
-
+        print(f"DEBUG after conversion {tag_groups=}")
+        tag_group_file_name = f"{tag_group_file_name}.json"
+        self._file_handler.write_file(
+            key="project_groups", data=tag_groups, extension=tag_group_file_name)
         # # database
 
         # color

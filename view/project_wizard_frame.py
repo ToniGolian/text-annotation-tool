@@ -255,12 +255,14 @@ class ProjectWizardFrame(ttk.Frame, IObserver):
                     child_id, "text") for child_id in self._tree_created_groups.get_children(parent_id)]
                 tag_groups[group_name] = tags
             data["tag_groups"] = tag_groups
+            print(f"DEBUG view collect_current_page_data: {tag_groups=}")
         return data
 
     def _on_button_pressed_add_tag_group(self) -> None:
         """
         Adds a new tag group based on the current entries and selected tags.
         """
+        tag_group_file_name = self._entry_tag_group_file_name.get().strip()
         group_name = self._entry_tag_group_name.get().strip()
         if not group_name:
             tk.messagebox.showerror(
@@ -277,8 +279,8 @@ class ProjectWizardFrame(ttk.Frame, IObserver):
             return
 
         new_group = {"name": group_name, "tags": selected_tags}
-        self._controller.perform_project_add_tag_group(
-            new_group)
+        self._controller.perform_project_add_tag_group(tag_group_file_name,
+                                                       new_group)
 
     def _on_button_pressed_delete_tag_group(self) -> None:
         """

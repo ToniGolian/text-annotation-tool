@@ -68,16 +68,16 @@ class FileHandler:
         strategy = self._get_strategy(file_extension)
         return strategy.read(file_path)
 
-    def write_file(self, file_path: str, data: Dict, extension: str = "") -> None:
+    def write_file(self, key: str, data: Dict, extension: str = "") -> None:
         """
         Writes data to a file using the appropriate strategy based on file extension.
 
         Args:
-            file_path (str): Path to the file or key to be resolved.
+            key (str): Path to the file or key to be resolved.
             data (Dict): Data to write to the file.
             extension (str, optional): Optional extension to append before writing.
         """
-        file_path = self._load_path(file_path, extension)
+        file_path = self._load_path(key, extension)
         file_extension = os.path.splitext(file_path)[1]
         strategy = self._get_strategy(file_extension)
         strategy.write(file_path, data)
@@ -96,15 +96,15 @@ class FileHandler:
         """
         tag_type = tag_type.lower()
         file_key = "project_db_dictionaries_folder"
-        filename = f"{tag_type}_db_dict.json"
-        path = self._load_path(file_key, filename)
+        file_name = f"{tag_type}_db_dict.json"
+        path = self._load_path(file_key, file_name)
 
         if not os.path.exists(path):
             db_data = self._csv_db_converter.create_dict(tag_type)
-            self.write_file(file_key, db_data, filename)
+            self.write_file(file_key, db_data, file_name)
             return db_data
 
-        return self.read_file(file_key, filename)
+        return self.read_file(file_key, file_name)
 
     def _load_path(self, file_path: str, extension: str = "") -> str:
         """
@@ -196,8 +196,8 @@ class FileHandler:
 
     def copy_file(self, source_key: str, target_key: str, source_file_name: str = None, target_file_name: str = None, source_extension: str = "", target_extension: str = "") -> None:
         source_path = self.resolve_path(source_key, extension=source_extension)
-        target_filename = target_file_name if target_file_name else os.path.basename(
+        target_file_name = target_file_name if target_file_name else os.path.basename(
             source_path)
         target_path = os.path.join(self.resolve_path(
-            target_key, extension=target_extension), target_filename)
+            target_key, extension=target_extension), target_file_name)
         shutil.copy2(source_path, target_path)

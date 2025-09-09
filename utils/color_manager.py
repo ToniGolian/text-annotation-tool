@@ -135,6 +135,6 @@ class ColorManager:
         }
 
         suffix = "_comp_search" if complementary_search_color else ""
-        filename = f"{colorset_name}{suffix}_color_scheme.json"
+        file_name = f"{colorset_name}{suffix}_color_scheme.json"
         self._file_handler.write_file(
-            "project_color_scheme_folder", output, filename)
+            "project_color_scheme_folder", output, file_name)

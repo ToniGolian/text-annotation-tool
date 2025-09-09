@@ -190,10 +190,10 @@ class ProjectConfigurationManager:
                 if not project_name:
                     continue
 
-                for filename in os.listdir(tags_dir):
-                    if filename.endswith(".json"):
-                        tag_name = os.path.splitext(filename)[0]
-                        tag_path = os.path.join(tags_dir, filename)
+                for file_name in os.listdir(tags_dir):
+                    if file_name.endswith(".json"):
+                        tag_name = os.path.splitext(file_name)[0]
+                        tag_path = os.path.join(tags_dir, file_name)
                         results.append({
                             "name": tag_name.upper(),
                             "path": tag_path,

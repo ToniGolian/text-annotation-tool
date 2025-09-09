@@ -104,7 +104,7 @@ class ProjectWizardModel(IPublisher):
                 {
                     "project_name": str,
                     "tag_group_file_name": str,
-                    "groups": dict[str, list[str]],
+                    "tag_groups": dict[str, list[str]],
                     "selected_tags": list[dict[str, str]]  # List of selected tag dictionaries
                 }
         """
@@ -120,7 +120,7 @@ class ProjectWizardModel(IPublisher):
         return {
             "project_name": self._project_name,
             "tag_group_file_name": self._tag_group_file_name,
-            "groups": self._tag_groups,
+            "tag_groups": self._tag_groups,
             "selected_tags": selected_tags
         }
 

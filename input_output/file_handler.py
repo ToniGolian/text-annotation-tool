@@ -32,6 +32,7 @@ class FileHandler:
             '.txt': TxtReadWriteStrategy(encoding=self.encoding)
         }
         self._csv_db_converter = CSVDBConverter(self)
+        self._current_project: str = None
 
     def _get_strategy(self, file_extension: str) -> IReadWriteStrategy:
         """
@@ -206,3 +207,35 @@ class FileHandler:
             target_path = os.path.join(target_path, target_file_name)
         print(f"DEBUG {source_path=},\n {target_path=}")
         shutil.copy2(source_path, target_path)
+
+    def change_context(self, project_name: str):
+        """ Changes the current context to the specified project name. Updates paths accordingly.
+        Args:
+            project_name (str): The name of the project to switch context to.
+        """
+        self._current_project = project_name
+        self._path_manager.update_paths(project_name)
+
+    def use_project(self, project_name: str):
+        """
+        Context manager for temporarily switching the project.
+
+        Args:
+            project_name: The name of the project to switch into.
+        """
+        filehandler = self
+
+        class _ProjectContext:
+            def __enter__(self_inner) -> FileHandler:
+                self_inner._prev = filehandler.get_current_project()
+                filehandler.change_context(project_name)
+                return filehandler
+
+            def __exit__(self_inner, exc_type, exc_value, traceback) -> None:
+                filehandler.change_context(self_inner._prev)
+
+        return _ProjectContext()
+
+    def test(self):
+        print("FileHandler test")
+        print(f"DEBUG {self._current_project=}")

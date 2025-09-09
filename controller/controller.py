@@ -26,6 +26,7 @@ from utils.project_configuration_manager import ProjectConfigurationManager
 from utils.path_manager import PathManager
 from utils.pdf_extraction_manager import PDFExtractionManager
 from utils.project_directory_manager import ProjectDirectoryManager
+from utils.project_file_manager import ProjectFileManager
 from utils.search_manager import SearchManager
 from utils.search_model_manager import SearchModelManager
 from utils.settings_manager import SettingsManager
@@ -65,6 +66,8 @@ class Controller(IController):
         self._file_handler = FileHandler(path_manager=self._path_manager)
         self._project_directory_manager = ProjectDirectoryManager(
             self._file_handler)
+        self._project_file_manager = ProjectFileManager(
+            self, self._file_handler)
         self._project_configuration_manager = ProjectConfigurationManager(
             self._file_handler)
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
@@ -654,7 +657,9 @@ class Controller(IController):
 
         # update the project settings model and path manager with the new project name
         self._project_settings_model.set_project_name(project_name)
-        self._path_manager.update_paths(project_name)
+        self._file_handler.change_context(project_name)
+        #! changed
+        # self._path_manager.update_paths(project_name)
 
     def project_name_exists(self, project_name: str) -> bool:
         """
@@ -712,13 +717,14 @@ class Controller(IController):
 
     def perform_project_save_project(self) -> None:
         project_data = self._project_wizard_model.get_project_build_data()
+        project_data = self._validate_project_data(project_data)
+
         # if directories not exist, create them
         project_name = project_data.get("project_name", "")
         project_type: ProjectWizardType = project_data.get(
             "project_wizard_type", ProjectWizardType.NEW)
         if project_type == ProjectWizardType.NEW:
             self._create_project_directories(project_name)
-            # todo reactivate
             self._create_project_files(project_name, project_data)
         elif project_type == ProjectWizardType.EDIT:
             # update project files
@@ -742,38 +748,45 @@ class Controller(IController):
             project_name (str): The name of the project for which to create files.
             project_data (Dict[str, Any]): The data to be saved in the project configuration file.
         """
-        # store current project name to go back if changed
-        current_project_name = self._project_settings_model.get_project_name()
-        self._path_manager.update_paths(project_name)
+        self._project_file_manager.create_project_files(
+            project_name, project_data)
 
-        # # config
-        # tags
-        tags = project_data.get("selected_tags", [])
-        project_data["selected_tags"] = self._create_tag_files(tags)
-        # tag_groups
-        self._create_tag_group_file(project_data)
-
-        # # database
-
-        # color
-
-        # settings
-
-        # databases
-
-        # # csv
-
-        # # dictionarie
-
-        self._path_manager.update_paths(current_project_name)
-
-    def _create_tag_files(self, tags: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    def _validate_project_data(self, project_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Creates tag files for the given tags.
+        Validates and adjusts the project data to ensure it meets required criteria.
+
         Args:
-            tags (List[Dict[str, str]]): List of tags to create files for in the current project.
+            project_data (Dict[str, Any]): The project data to validate.
+
         Returns:
-            List[Dict[str, str]]: List of tags with updated unique tag names.
+            Dict[str, Any]: The validated and potentially adjusted project data.
+        """
+        # Ensure project name is not empty
+        if not project_data.get("project_name"):
+            raise ValueError("Project name cannot be empty.")
+
+        # Ensure at least one tag is selected
+        if not project_data.get("selected_tags"):
+            raise ValueError("At least one tag must be selected.")
+
+        tags = project_data.get("selected_tags", [])
+        project_data["selected_tags"] = self._ensure_unique_tag_names(tags)
+
+        # Ensure tag group file name is provided
+        if not project_data.get("tag_group_file_name"):
+            raise ValueError("Tag group file name cannot be empty.")
+
+        return project_data
+
+    def _ensure_unique_tag_names(self, tags: List[Dict[str, str]]) -> List[Dict[str, str]]:
+        """
+        Ensures that all tag names in the provided list are unique by appending a counter to duplicate names.
+
+        Args:
+            tags (List[Dict[str, str]]): List of tags with 'name' keys.
+
+        Returns:
+            List[Dict[str, str]]: List of tags with unique 'name' values.
         """
         while True:
             # search the duplicates
@@ -791,8 +804,16 @@ class Controller(IController):
                     return
                 tags = non_duplicates + renamed_duplicate_tags
                 continue  # recheck for duplicates
-            break  # loop until no duplicates are found
+            return tags  # loop until no duplicates are found
 
+    def _create_tag_files(self, tags: List[Dict[str, str]]) -> List[Dict[str, str]]:
+        """
+        Creates tag files for the given tags.
+        Args:
+            tags (List[Dict[str, str]]): List of tags to create files for in the current project.
+        Returns:
+            List[Dict[str, str]]: List of tags with updated unique tag names.
+        """
         for tag in tags:
             self._file_handler.copy_file(
                 source_key=tag["path"], target_key="project_tags_folder", target_file_name=tag["name"].lower())

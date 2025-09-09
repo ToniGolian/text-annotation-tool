@@ -745,10 +745,36 @@ class Controller(IController):
         # store current project name to go back if changed
         current_project_name = self._project_settings_model.get_project_name()
         self._path_manager.update_paths(project_name)
-        tags = project_data.get("selected_tags", [])
 
-        # config
+        # # config
         # tags
+        tags = project_data.get("selected_tags", [])
+        project_data["selected_tags"] = self._create_tag_files(tags)
+        # tag_groups
+        self._create_tag_group_file(project_data)
+
+        # # database
+
+        # color
+
+        # settings
+
+        # databases
+
+        # # csv
+
+        # # dictionarie
+
+        self._path_manager.update_paths(current_project_name)
+
+    def _create_tag_files(self, tags: List[Dict[str, str]]) -> List[Dict[str, str]]:
+        """
+        Creates tag files for the given tags.
+        Args:
+            tags (List[Dict[str, str]]): List of tags to create files for in the current project.
+        Returns:
+            List[Dict[str, str]]: List of tags with updated unique tag names.
+        """
         while True:
             # search the duplicates
             tags_by_name = {}
@@ -769,10 +795,21 @@ class Controller(IController):
 
         for tag in tags:
             self._file_handler.copy_file(
-                source_key=tag["path"], target_key="project_tags_folder", target_file_name=tag["name"])
-        # todo rename type in tag data after renaming and copying
+                source_key=tag["path"], target_key="project_tags_folder", target_file_name=tag["name"].lower())
+            tag_file_content = self._file_handler.read_file(
+                "project_tags_folder", f"{tag['name']}.json")
+            tag_file_content['type'] = tag['name']
+            self._file_handler.write_file(
+                key="project_tags_folder", data=tag_file_content, extension=f"{tag['name']}.json")
+        return tags
 
-        # tag_groups
+    def _create_tag_group_file(self, project_data: Dict[str, Any]) -> None:
+        """
+        Creates a tag group file based on the provided project data.
+        Args:
+            project_data (Dict[str, Any]): The project data containing tag group information.
+        """
+        tags = project_data.get("selected_tags", [])
         tag_group_file_name = project_data.get("tag_group_file_name", "")
         tag_groups = project_data.get("tag_groups", {})
         tag_groups = {group_name: [tag["name"] for tag in tags if tag["display_name"]
@@ -782,19 +819,6 @@ class Controller(IController):
         tag_group_file_name = f"{tag_group_file_name}.json"
         self._file_handler.write_file(
             key="project_groups", data=tag_groups, extension=tag_group_file_name)
-        # # database
-
-        # color
-
-        # settings
-
-        # databases
-
-        # # csv
-
-        # # dictionarie
-
-        self._path_manager.update_paths(current_project_name)
 
     def perform_project_update_project_data(self, update_data: Dict[str, Any]) -> None:
         """

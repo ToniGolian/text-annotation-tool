@@ -198,6 +198,11 @@ class FileHandler:
         source_path = self.resolve_path(source_key, extension=source_extension)
         target_file_name = target_file_name if target_file_name else os.path.basename(
             source_path)
-        target_path = os.path.join(self.resolve_path(
-            target_key, extension=target_extension), target_file_name)
+        target_path = self.resolve_path(
+            target_key, extension=target_extension)
+        if not target_extension:
+            target_extension = os.path.splitext(source_path)[1]
+            target_file_name = target_file_name + target_extension
+            target_path = os.path.join(target_path, target_file_name)
+        print(f"DEBUG {source_path=},\n {target_path=}")
         shutil.copy2(source_path, target_path)

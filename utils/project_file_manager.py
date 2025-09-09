@@ -13,9 +13,11 @@ class ProjectFileManager:
     def create_project_files(self, project_name: str, project_data: Dict[str, Any]):
         with self._file_handler.use_project(project_name):
             self._project_data = project_data
+            print(f"DEBUG {self._project_data=}")
             self._create_tag_files()
             self._create_tag_group_file()
             self._create_database_config_files()
+
             self._create_default_color_file()
             self._create_project_settings_files()
             self._create_csv_database_files()
@@ -34,9 +36,11 @@ class ProjectFileManager:
         for tag in tags:
             self._file_handler.copy_file(
                 source_key=tag["path"], target_key="project_tags_folder", target_file_name=tag["name"].lower())
+            # todo how to move this to the normalization step?
             tag_file_content = self._file_handler.read_file(
                 "project_tags_folder", f"{tag['name']}.json")
             tag_file_content['type'] = tag['name']
+            # todo end
             self._file_handler.write_file(
                 key="project_tags_folder", data=tag_file_content, extension=f"{tag['name']}.json")
 
@@ -46,27 +50,28 @@ class ProjectFileManager:
         Args:
             project_data (Dict[str, Any]): The project data containing tag group information.
         """
-        tags = self.project_data.get("selected_tags", [])
-        tag_group_file_name = self.project_data.get("tag_group_file_name", "")
         tag_groups = self.project_data.get("tag_groups", {})
-        tag_groups = {group_name: [tag["name"] for tag in tags if tag["display_name"]
-                                   in tag_display_names] for group_name, tag_display_names in tag_groups.items()}
-
+        tag_group_file_name = self.project_data.get("tag_group_file_name", "")
         tag_group_file_name = f"{tag_group_file_name}.json"
         self._file_handler.write_file(
             key="project_groups", data=tag_groups, extension=tag_group_file_name)
 
     def _create_database_config_files(self) -> None:
-        pass
+        raise NotImplementedError(
+            "_create_database_config_files method not implemented yet.")
 
     def _create_default_color_file(self) -> None:
-        pass
+        raise NotImplementedError(
+            "_create_default_color_file method not implemented yet.")
 
     def _create_project_settings_files(self) -> None:
-        pass
+        raise NotImplementedError(
+            "_create_project_settings_files method not implemented yet.")
 
     def _create_csv_database_files(self) -> None:
-        pass
+        raise NotImplementedError(
+            "_create_csv_database_files method not implemented yet.")
 
     def _create_database_dictionary_files(self) -> None:
-        pass
+        raise NotImplementedError(
+            "_create_database_dictionary_files method not implemented yet.")

@@ -7,3 +7,4 @@ class ProjectDataError(Enum):
     EMPTY_TAG_GROUP_FILE_NAME = auto()
     EMPTY_TAG_GROUPS = auto()
     DUPLICATE_PROJECT_NAME = auto()
+    TAG_NAME_DUPLICATES = auto()

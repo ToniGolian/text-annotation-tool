@@ -72,7 +72,8 @@ class Controller(IController):
             self, self._file_handler)
         self._project_configuration_manager = ProjectConfigurationManager(
             self._file_handler)
-        self._project_data_processor = ProjectDataProcessor(self._file_handler)
+        self._project_data_processor = ProjectDataProcessor(
+            controller=self, file_handler=self._file_handler)
         self._suggestion_manager = SuggestionManager(self, self._file_handler)
         self._settings_manager = SettingsManager(self._file_handler)
         self._tag_processor = TagProcessor(self)
@@ -660,9 +661,8 @@ class Controller(IController):
 
         # update the project settings model and path manager with the new project name
         self._project_settings_model.set_project_name(project_name)
+        #! changed from direct path change to context change
         self._file_handler.change_context(project_name)
-        #! changed
-        # self._path_manager.update_paths(project_name)
 
     def project_name_exists(self, project_name: str) -> bool:
         """
@@ -755,7 +755,7 @@ class Controller(IController):
         self._project_file_manager.create_project_files(
             project_name, project_data)
 
-    def handle_project_data_error(self, error: ProjectDataError) -> None:
+    def handle_project_data_error(self, error: ProjectDataError, data: Any = None) -> Any:
         if error == ProjectDataError.EMPTY_PROJECT_NAME:
             pass
         elif error == ProjectDataError.DUPLICATE_PROJECT_NAME:
@@ -766,6 +766,8 @@ class Controller(IController):
             pass
         elif error == ProjectDataError.EMPTY_TAG_GROUPS:
             pass
+        elif error == ProjectDataError.TAG_NAME_DUPLICATES:
+            return self._main_window.ask_user_for_tag_duplicates(data)
 
     # def _create_tag_files(self, tags: List[Dict[str, str]]) -> List[Dict[str, str]]:
     #     """

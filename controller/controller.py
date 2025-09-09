@@ -717,7 +717,7 @@ class Controller(IController):
 
     def perform_project_save_project(self) -> None:
         project_data = self._project_wizard_model.get_project_build_data()
-        project_data = self._validate_project_data(project_data)
+        project_data = self._validate_and_complete_project_data(project_data)
 
         # if directories not exist, create them
         project_name = project_data.get("project_name", "")
@@ -751,7 +751,7 @@ class Controller(IController):
         self._project_file_manager.create_project_files(
             project_name, project_data)
 
-    def _validate_project_data(self, project_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_and_complete_project_data(self, project_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Validates and adjusts the project data to ensure it meets required criteria.
 

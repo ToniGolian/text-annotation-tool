@@ -1,0 +1,22 @@
+{
+    "name": "test_project_copy",
+    "color_scheme": "magma_comp_search_color_scheme.json",
+    "search_normalization": "search_normalization_rules.json",
+    "tags": [
+        "alink.json",
+        "event.json",
+        "makeinstance.json",
+        "place.json",
+        "timex3.json",
+        "tlink.json"
+    ],
+    "groups": "groups01.json",
+    "db_config": [
+        "place.json"
+    ],
+    "are_all_search_results_highlighted": true,
+    "current_language": "german",
+    "abbreviations": "abbreviations.json",
+    "suggestions": "suggestions.json",
+    "wrong_suggestions": "wrong_suggestions.json"
+}

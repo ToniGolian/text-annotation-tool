@@ -236,6 +236,11 @@ class FileHandler:
 
         return _ProjectContext()
 
-    def test(self):
-        print("FileHandler test")
-        print(f"DEBUG {self._current_project=}")
+    def get_current_project(self) -> str:
+        """
+        Retrieves the name of the current project context.
+
+        Returns:
+            str: The name of the current project, or None if no project is set.
+        """
+        return self._current_project

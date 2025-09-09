@@ -12,7 +12,7 @@
     ],
     "groups": "groups01.json",
     "db_config": [
-        "place_config.json"
+        "place.json"
     ],
     "are_all_search_results_highlighted": true,
     "current_language": "german",

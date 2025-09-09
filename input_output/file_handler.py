@@ -194,9 +194,10 @@ class FileHandler:
             return True
         return False
 
-    def copy_file(self, source_key: str, target_key: str, source_extension: str = "", target_extension: str = "") -> None:
+    def copy_file(self, source_key: str, target_key: str, source_file_name: str = None, target_file_name: str = None, source_extension: str = "", target_extension: str = "") -> None:
         source_path = self.resolve_path(source_key, extension=source_extension)
-        filename = os.path.basename(source_path)
+        target_filename = target_file_name if target_file_name else os.path.basename(
+            source_path)
         target_path = os.path.join(self.resolve_path(
-            target_key, extension=target_extension), filename)
+            target_key, extension=target_extension), target_filename)
         shutil.copy2(source_path, target_path)

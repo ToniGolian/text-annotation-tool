@@ -746,6 +746,8 @@ class Controller(IController):
         self._path_manager.update_paths(project_name)
         tags = project_data.get("selected_tags", [])
 
+        # config
+        # tags
         while True:
             # search the duplicates
             tags_by_name = {}
@@ -758,15 +760,16 @@ class Controller(IController):
             if duplicates:
                 renamed_duplicate_tags = self._main_window.ask_user_for_tag_duplicates(
                     duplicates)
-                if renamed_duplicate_tags is None:
+                if renamed_duplicate_tags is None:  # if user cancelled dialog
                     return
                 tags = non_duplicates + renamed_duplicate_tags
-            break
-        # todo check stop logic
+                continue  # recheck for duplicates
+            break  # loop until no duplicates are found
 
         for tag in tags:
-            self._file_handler.copy_file(tag["path"], "project_tags_folder")
-        # config
+            self._file_handler.copy_file(
+                source_key=tag["path"], target_key="project_tags_folder", target_file_name=tag["name"])
+        # todo rename type in tag data after renaming and copying
 
         # tags /selected tags
 

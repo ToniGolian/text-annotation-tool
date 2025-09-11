@@ -157,25 +157,6 @@ class FileHandler:
         """
         return self._load_path(key, extension)
 
-    def resolve_project_dependend_path(self, key: str, project_name: str, extension: str = "") -> str:
-        """
-        Resolves a configuration key to a full file path within the context of a specific project.
-
-        Args:
-            key (str): Key from config or already-resolved file path.
-            project_name (str): The name of the project context to use for resolution.
-            extension (str, optional): Optional extension to append.
-
-        Returns:
-            str: Fully resolved and normalized file path within the specified project context.
-        """
-        if not self._path_manager:
-            raise RuntimeError(
-                "PathManager is required for path resolution but not set.")
-
-        with self.use_project(project_name):
-            return self._load_path(key, extension)
-
     def derive_file_name(self, file_path: str) -> str:
         """
         Extracts the base name (without extension) from a given file path.
@@ -199,7 +180,7 @@ class FileHandler:
             raise FileExistsError(f"Directory already exists: {dir_path}")
         os.makedirs(dir_path, exist_ok=True)
 
-    def check_overwriting(self, file_path: str) -> bool:
+    def does_path_exist(self, file_path: str) -> bool:
         """
         Checks whether the given file path already exists.
 

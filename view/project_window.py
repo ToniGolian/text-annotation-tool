@@ -3,7 +3,7 @@ from tkinter import ttk
 from controller.interfaces import IController
 from enums.menu_pages import MenuPage
 from view.edit_project_wizard_frame import EditProjectWizardFrame
-from view.project_wizard_frame import ProjectWizardFrame
+from view.new_project_wizard_frame import NewProjectWizardFrame
 
 
 class ProjectWindow(tk.Toplevel):
@@ -38,7 +38,7 @@ class ProjectWindow(tk.Toplevel):
 
     def _init_tabs(self) -> None:
         """Initializes the notebook tabs with empty frames."""
-        self._new_project_frame = ProjectWizardFrame(
+        self._new_project_frame = NewProjectWizardFrame(
             controller=self._controller, master=self._notebook)
         self._edit_project_frame = EditProjectWizardFrame(
             controller=self._controller, master=self._notebook)

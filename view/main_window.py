@@ -354,7 +354,7 @@ class MainWindow(tk.Tk, IObserver):
         dialog = DuplicatesDialog(duplicates, master=self)
         return dialog.show()
 
-    def prompt_save(self, view_id: str) -> bool:
+    def ask_user_for_save(self, view_id: str) -> bool:
         """
         Prompts the user with a dialog asking whether to save changes for a specific view.
 

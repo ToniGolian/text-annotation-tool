@@ -1,0 +1,11 @@
+{
+    "temporalTags": [
+        "PLACE",
+        "TIMEX3"
+    ],
+    "eventTags": [
+        "EVENT",
+        "MAKEINSTANCE",
+        "ALINK"
+    ]
+}

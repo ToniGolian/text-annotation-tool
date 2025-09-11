@@ -1,0 +1,9 @@
+{
+    "search_normalization": "search_normalization_rules.json",
+    "color_scheme": "magma_comp_search_color_scheme.json",
+    "are_all_search_results_highlighted": true,
+    "current_language": "english",
+    "abbreviations": "abbreviations.json",
+    "suggestions": "suggestions.json",
+    "wrong_suggestions": "wrong_suggestions.json"
+}

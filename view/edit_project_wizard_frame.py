@@ -5,10 +5,10 @@ from tkinter import ttk
 from controller.interfaces import IController
 from enums.menu_pages import MenuPage
 from observer.interfaces import IPublisher
-from view.project_wizard_frame import ProjectWizardFrame
+from view.new_project_wizard_frame import NewProjectWizardFrame
 
 
-class EditProjectWizardFrame(ProjectWizardFrame):
+class EditProjectWizardFrame(NewProjectWizardFrame):
     """
     A specialized version of the ProjectWizard used for editing existing projects.
     Adds an initial page for selecting a project from a list and adapts labels to reflect editing.
@@ -75,7 +75,8 @@ class EditProjectWizardFrame(ProjectWizardFrame):
         last_page = self._notebook.nametowidget(self._notebook.tabs()[-1])
         for child in last_page.winfo_children():
             if isinstance(child, ttk.Button) and child.cget("text") == "Finish":
-                child.config(text="Edit Project")
+                child.config(text="Edit Project",
+                             command=self._on_button_pressed_edit_project)
 
     def _populate_projects_listbox(self, projects: List[str]) -> None:
         """Populates the projects listbox with the given project names.
@@ -99,3 +100,11 @@ class EditProjectWizardFrame(ProjectWizardFrame):
         projects = state.get("projects", [])
         project_names = [project["name"] for project in projects]
         self._populate_projects_listbox(project_names)
+
+    def _on_button_pressed_edit_project(self) -> None:
+        """
+        Handles the 'Edit Project' button press.
+        Validates and completes the project data, then instructs the controller to save changes.
+        """
+        self._controller.perform_project_edit_project(
+            self._selected_project, self._project_data)

@@ -176,7 +176,7 @@
             }
         }
     },
-    "ProjectWizardFrame": {
+    "NewProjectWizardFrame": {
         "ProjectWizardModel": {
             "needs_finalization": false,
             "needs_deregistration_on_reload": false,

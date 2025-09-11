@@ -320,7 +320,6 @@ class Controller(IController):
 
         # Iterate through all publishers by extracting keys from `source_keys`
         for config in observer_config.values():
-            print(f"DEBUG {config.keys()=}")
             needs_finalization = config["needs_finalization"]
             source_keys = config["source_keys"]
 
@@ -665,7 +664,7 @@ class Controller(IController):
         #! changed from direct path change to context change
         self._file_handler.change_context(project_name)
 
-    def project_name_exists(self, project_name: str) -> bool:
+    def does_project_exist(self, project_name: str) -> bool:
         """
         Checks if a project with the given name already exists.
 
@@ -719,21 +718,18 @@ class Controller(IController):
         # update all project wizards accordingly
         self.perform_project_update_projects()
 
-    def perform_project_save_project(self) -> None:
+    def perform_project_create_new_project(self) -> None:
         project_data = self._project_wizard_model.get_project_build_data()
         project_data = self._project_data_processor.validate_and_complete(
             project_data)
 
         # if directories not exist, create them
         project_name = project_data.get("project_name", "")
-        project_type: ProjectWizardType = project_data.get(
-            "project_wizard_type", ProjectWizardType.NEW)
-        if project_type == ProjectWizardType.NEW:
-            self._create_project_directories(project_name)
-            self._create_project_files(project_name, project_data)
-        elif project_type == ProjectWizardType.EDIT:
-            # update project files
-            raise NotImplementedError("Project editing not implemented yet.")
+        project_file_information = project_data.get(
+            "project_file_information", {})
+
+        self._create_project_directories(project_name)
+        self._create_project_files(project_name, project_file_information)
 
     def _create_project_directories(self, project_name: str) -> None:
         """
@@ -745,16 +741,16 @@ class Controller(IController):
         self._project_directory_manager.create_project_structure(
             project_name)
 
-    def _create_project_files(self, project_name: str, project_data: Dict[str, Any]) -> None:
+    def _create_project_files(self, project_name: str, project_file_information: Dict[str, Any]) -> None:
         """
         Creates the necessary project files for a new project.
 
         Args:
             project_name (str): The name of the project for which to create files.
-            project_data (Dict[str, Any]): The data to be saved in the project configuration file.
+            project_file_information (Dict[str, Any]): The data to be saved in the project configuration file.
         """
         self._project_file_manager.create_project_files(
-            project_name, project_data)
+            project_name, project_file_information)
 
     def handle_project_data_error(self, error: ProjectDataError, data: Any = None) -> Any:
         if error == ProjectDataError.EMPTY_PROJECT_NAME:
@@ -1269,7 +1265,7 @@ class Controller(IController):
             self.perform_save_as()
             return
 
-        if self._file_handler.check_overwriting(file_path):
+        if self._file_handler.does_path_exist(file_path):
             if not self._main_window.ask_user_for_overwrite_confirmation(file_path):
                 self.perform_save_as()
                 return
@@ -1337,14 +1333,14 @@ class Controller(IController):
 
         Assumes:
             - self._save_state_model provides get_dirty_keys()
-            - self._main_window has method prompt_save(view_id: str) -> bool
+            - self._main_window has method ask_user_for_save(view_id: str) -> bool
             - self.perform_save(view_id: str) exists and handles saving
         """
         dirty_keys = self._save_state_model.get_dirty_keys()
         if not enforce_check and self._active_view_id not in dirty_keys:
             return
         for view_id in dirty_keys:
-            should_save = self._main_window.prompt_save(view_id)
+            should_save = self._main_window.ask_user_for_save(view_id)
             if should_save:
                 self.perform_save(view_id=view_id)
 
@@ -1436,7 +1432,7 @@ class Controller(IController):
         Returns:
             str: The resolved file path, which may be updated based on user input.
         """
-        if self._file_handler.check_overwriting(file_path):
+        if self._file_handler.does_path_exist(file_path):
             if not self._main_window.ask_user_for_overwrite_confirmation(file_path):
                 initial_dir = self._file_handler.resolve_path(
                     f"default_{self._active_view_id}_save_folder")
@@ -1913,7 +1909,7 @@ class Controller(IController):
             KeyError: If the "align_option" key is missing from the settings.
             FileNotFoundError: If the comparison settings file cannot be found.
         """
-        key = "default_comparison_settings"
+        key = "comparison_settings_defaults"
         comparison_settings_path = self._file_handler.resolve_path(key)
         comparison_settings = self._file_handler.read_file(
             comparison_settings_path)

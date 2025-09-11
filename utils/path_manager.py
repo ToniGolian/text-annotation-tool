@@ -16,7 +16,7 @@ class PathManager:
         and building the expanded path mapping.
 
         """
-        self._app_paths_file = "app_data/app_paths.json"
+        self._app_paths_file = "app_data/app/config/app_paths.json"
         self._paths: dict = {}
 
     def get_last_project_name(self) -> str:

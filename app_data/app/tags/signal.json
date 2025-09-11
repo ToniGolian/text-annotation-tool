@@ -1,0 +1,12 @@
+{
+    "type": "SIGNAL",
+    "id_prefix": "s",
+    "attributes": {
+        "sid": {
+            "type": "ID"
+        },
+        "comment": {
+            "type": "CDATA"
+        }
+    }
+}

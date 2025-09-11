@@ -320,7 +320,8 @@ class Controller(IController):
 
         # Iterate through all publishers by extracting keys from `source_keys`
         for config in observer_config.values():
-            finalize = config["finalize"]
+            print(f"DEBUG {config.keys()=}")
+            needs_finalization = config["needs_finalization"]
             source_keys = config["source_keys"]
 
             # Extract publisher instances dynamically based on `source_keys`
@@ -335,7 +336,7 @@ class Controller(IController):
                     publisher_instance.add_observer(observer)
 
             # Add observer to finalize list if required
-            if finalize and observer not in self._views_to_finalize:
+            if needs_finalization and observer not in self._views_to_finalize:
                 self._views_to_finalize.append(observer)
 
     def remove_observer(self, observer: IObserver) -> None:
@@ -482,7 +483,7 @@ class Controller(IController):
         """
         for observer_name, publisher_configs in self._source_mapping.items():
             for _, config in publisher_configs.items():
-                if not config.get("deregister_on_reload", False):
+                if not config.get("needs_deregistration_on_reload", False):
                     continue  # Skip if not marked for deregistration
 
                 # Get all publisher keys from source_keys (same as in add_observer)

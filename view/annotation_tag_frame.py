@@ -59,7 +59,7 @@ class AnnotationTagFrame(tk.Frame):
                           padx=10, pady=(0, 10), sticky="w")
         row += 1
 
-        is_db = self._template.get("db", False)
+        is_db = self._template.get("has_database", False)
         if is_db:
             annotation_control_frame = tk.Frame(self)
             annotation_control_frame.grid(

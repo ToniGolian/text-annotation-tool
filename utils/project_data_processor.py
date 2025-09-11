@@ -75,6 +75,9 @@ class ProjectDataProcessor:
         Ensures that all tag names in the provided list are unique by appending a counter to duplicate names.
         """
         tags = self._project_data.get("selected_tags", [])
+        for tag in tags:
+            # store original name to find data configs later
+            tag.setdefault("original_name", tag.get("name", "unknown"))
         while True:
             # search the duplicates
             tags_by_name = {}
@@ -105,32 +108,22 @@ class ProjectDataProcessor:
                                                          in tag_display_names] for group_name, tag_display_names in tag_groups.items()}
 
     def _collect_database_info(self) -> None:
-        """
-        Collects all relevant database information from the project data.
-        Note: Adds a new field 'database_info' to self._project_data with structure 
-        {database_name:{csv_source_path:...,config:...}}
-        """
-        self._project_data["database_info"] = {}
-        self._list_project_databases()
-        self._complete_database_info()
-
-    def _list_project_databases(self) -> None:
         for tag in self._project_data.get("selected_tags", []):
-            tag_path = tag.get("path", None)
-            if not tag_path:
-                raise ValueError(
-                    f"Tag path is missing for tag: {tag.get('name', 'unknown')}")
-            tag_info = self._file_handler.read_file(tag_path)
-            if tag_info.get("db", None):
-                tag_file_name = self._file_handler.derive_file_name(
-                    tag_path).lower()+".json"
-                self._project_data["database_info"][tag["name"]] = {
-                    "config": tag_file_name
-                }  # todo continue here
-        print(f"DEBUG end {self._project_data=}")
-        raise NotImplementedError(
-            "_list_project_databases method not implemented yet.")
+            pass
+            # def _collect_database_info(self) -> None:
+            #     """
+            #     Collects all relevant database information from the project data.
+            #     Note: Adds a new field 'database_info' to self._project_data with structure
+            #     {database_name:{csv_source_path:...,config:...}}
+            #     """
+            #     self._project_data["database_info"] = {}
+            #     self._list_project_databases()
+            #     self._complete_database_info()
 
-    def _complete_database_info(self) -> None:
-        raise NotImplementedError(
-            "_complete_database_info method not implemented yet.")
+            # def _list_project_databases(self) -> None:
+            #     raise NotImplementedError(
+            #         "_list_project_databases method not implemented yet.")
+
+            # def _complete_database_info(self) -> None:
+            #     raise NotImplementedError(
+            #         "_complete_database_info method not implemented yet.")

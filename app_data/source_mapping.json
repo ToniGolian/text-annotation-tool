@@ -1,8 +1,8 @@
 {
     "PreviewTextDisplayFrame": {
         "ExtractionDocumentModel": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "extraction_document_model": [
                     "text"
@@ -12,8 +12,8 @@
     },
     "AnnotationTextDisplayFrame": {
         "AnnotationDocumentModel": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "annotation_document_model": [
                     "text"
@@ -21,15 +21,15 @@
             }
         },
         "SearchModelManager": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "search_model_manager": []
             }
         },
         "SearchModel": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "current_search_model": [
                     "current_search_result"
@@ -37,8 +37,8 @@
             }
         },
         "HighlightModel": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "highlight_model": [
                     "highlight_data"
@@ -48,15 +48,15 @@
     },
     "SearchFrame": {
         "SearchModelManager": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "search_model_manager": []
             }
         },
         "SearchModel": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "current_search_model": [
                     "index",
@@ -67,8 +67,8 @@
     },
     "MetaTagsFrame": {
         "AnnotationDocumentModel": {
-            "finalize": true,
-            "deregister_on_reload": true,
+            "needs_finalization": true,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "annotation_document_model": [
                     "file_name",
@@ -77,8 +77,8 @@
             }
         },
         "LayoutConfigurationModel": {
-            "finalize": true,
-            "deregister_on_reload": true,
+            "needs_finalization": true,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "layout_configuration_model": [
                     "tag_types"
@@ -88,8 +88,8 @@
     },
     "ComparisonTextDisplays": {
         "ComparisonModel": {
-            "finalize": true,
-            "deregister_on_reload": true,
+            "needs_finalization": true,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "comparison_model": [
                     "file_names"
@@ -97,8 +97,8 @@
             }
         },
         "LayoutConfigurationModel": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "layout_configuration_model": [
                     "num_comparison_displays"
@@ -108,8 +108,8 @@
     },
     "ComparisonHeaderFrame": {
         "ComparisonModel": {
-            "finalize": true,
-            "deregister_on_reload": true,
+            "needs_finalization": true,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "comparison_model": [
                     "file_names",
@@ -121,8 +121,8 @@
     },
     "AnnotationMenuFrame": {
         "SelectionModel": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "selection_model": [
                     "selected_text",
@@ -131,8 +131,8 @@
             }
         },
         "AnnotationDocumentModel": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "annotation_document_model": [
                     "tags"
@@ -140,15 +140,15 @@
             }
         },
         "SearchModelManager": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "search_model_manager": []
             }
         },
         "SearchModel": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "current_search_model": [
                     "current_search_result"
@@ -156,8 +156,8 @@
             }
         },
         "LayoutConfigurationModel": {
-            "finalize": true,
-            "deregister_on_reload": true,
+            "needs_finalization": true,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "layout_configuration_model": [
                     "template_groups"
@@ -167,8 +167,8 @@
     },
     "ExtractionFrame": {
         "ExtractionDocumentModel": {
-            "finalize": false,
-            "deregister_on_reload": true,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": true,
             "source_keys": {
                 "extraction_document_model": [
                     "file_path"
@@ -178,8 +178,8 @@
     },
     "ProjectWizardFrame": {
         "ProjectWizardModel": {
-            "finalize": false,
-            "deregister_on_reload": false,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": false,
             "source_keys": {
                 "project_wizard_model": [
                     "project_name",
@@ -194,8 +194,8 @@
     },
     "EditProjectWizardFrame": {
         "ProjectWizardModel": {
-            "finalize": false,
-            "deregister_on_reload": false,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": false,
             "source_keys": {
                 "project_wizard_model": [
                     "projects",
@@ -211,8 +211,8 @@
     },
     "LoadProjectWindow": {
         "ProjectWizardModel": {
-            "finalize": false,
-            "deregister_on_reload": false,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": false,
             "source_keys": {
                 "project_wizard_model": [
                     "projects"
@@ -222,8 +222,8 @@
     },
     "GlobalSettings": {
         "GlobalSettingsModel": {
-            "finalize": false,
-            "deregister_on_reload": false,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": false,
             "source_keys": {
                 "global_settings_model": [
                     "default_folders",
@@ -235,8 +235,8 @@
     },
     "ProjectSettings": {
         "ProjectSettingsModel": {
-            "finalize": false,
-            "deregister_on_reload": false,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": false,
             "source_keys": {
                 "project_settings_model": [
                     "project_name",
@@ -250,8 +250,8 @@
     },
     "MainWindow": {
         "LayoutConfigurationModel": {
-            "finalize": false,
-            "deregister_on_reload": false,
+            "needs_finalization": false,
+            "needs_deregistration_on_reload": false,
             "source_keys": {
                 "layout_configuration_model": [
                     "active_notebook_index"
@@ -259,8 +259,8 @@
             }
         },
         "ProjectSettingsModel": {
-            "finalize": true,
-            "deregister_on_reload": false,
+            "needs_finalization": true,
+            "needs_deregistration_on_reload": false,
             "source_keys": {
                 "project_settings_model": [
                     "project_name"

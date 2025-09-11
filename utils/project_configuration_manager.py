@@ -102,7 +102,8 @@ class ProjectConfigurationManager:
             JSONDecodeError: If a file is not in valid JSON format.
         """
         project_data = self._file_handler.read_file("project_settings")
-        group_file_name = project_data.get("groups", "default_groups")
+        group_file_name = project_data.get(
+            "current_group_file", "default_groups")
         groups: Dict[str, List[str]
                      ] = self._file_handler.read_file("project_groups_folder", group_file_name)
         template_groups: List[Dict[str, List[Dict]]] = []

@@ -1,6 +1,6 @@
 {
     "type": "PLACE",
-    "db": true,
+    "has_database": true,
     "id_prefix": "p",
     "attributes": {
         "pid": {

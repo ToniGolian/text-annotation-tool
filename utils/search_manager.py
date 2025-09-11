@@ -8,7 +8,7 @@ from model.search_model import SearchModel
 
 
 class SearchManager:
-    def __init__(self,file_handler: FileHandler = None) -> None:
+    def __init__(self, file_handler: FileHandler = None) -> None:
         """        Initializes the search manager with an optional file handler.
         Args:
             file_handler (FileHandler, optional): An instance of FileHandler for file operations.
@@ -30,7 +30,7 @@ class SearchManager:
             SearchModel: A new instance of SearchModel with the calculated results.
         """
         search_model = SearchModel()
-        db_dict = self._file_handler.read_db_dict(tag_type=tag_type)
+        db_dict = self._file_handler.read_database_dict(tag_type=tag_type)
         text = document_model.get_text()
 
         # Improved tokenization: keeps XML elements together

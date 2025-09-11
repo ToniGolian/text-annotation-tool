@@ -1,7 +1,7 @@
 {
   "type": "TIMEX3",
   "id_prefix": "t",
-  "db": false,
+  "has_database": false,
   "attributes": {
     "tid": {
       "type": "ID"

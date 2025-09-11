@@ -83,7 +83,7 @@ class FileHandler:
         strategy = self._get_strategy(file_extension)
         strategy.write(file_path, data)
 
-    def read_db_dict(self, tag_type: str) -> Dict:
+    def read_database_dict(self, tag_type: str) -> Dict:
         """
         Loads the database dictionary for a given tag_type.
 
@@ -97,9 +97,8 @@ class FileHandler:
         """
         tag_type = tag_type.lower()
         file_key = "project_db_dictionaries_folder"
-        file_name = f"{tag_type}_db_dict.json"
+        file_name = f"{tag_type}.json"  # todo refactor for different names
         path = self._load_path(file_key, file_name)
-
         if not os.path.exists(path):
             db_data = self._csv_db_converter.create_dict(tag_type)
             self.write_file(file_key, db_data, file_name)
@@ -227,6 +226,7 @@ class FileHandler:
         print(f"DEBUG {source_path=},\n {target_path=}")
         shutil.copy2(source_path, target_path)
 
+    # context methods for project switching
     def change_context(self, project_name: str):
         """ Changes the current context to the specified project name. Updates paths accordingly.
         Args:

@@ -21,7 +21,7 @@ class PathManager:
 
     def get_last_project_name(self) -> str:
         """
-        Resolves the project name from config or falls back to first existing folder.
+        Resolves the project name from config or falls back to first existing directory.
 
         Returns:
             str: The name of the last project.
@@ -44,7 +44,7 @@ class PathManager:
                 if project_name:
                     return project_name
 
-        project_root = os.path.join("app_data", "project_folder")
+        project_root = os.path.join("app_data", "project_directory")
         try:
             projects = [
                 name for name in os.listdir(project_root)

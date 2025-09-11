@@ -766,41 +766,6 @@ class Controller(IController):
         elif error == ProjectDataError.TAG_NAME_DUPLICATES:
             return self._main_window.ask_user_for_tag_duplicates(data)
 
-    # def _create_tag_files(self, tags: List[Dict[str, str]]) -> List[Dict[str, str]]:
-    #     """
-    #     Creates tag files for the given tags.
-    #     Args:
-    #         tags (List[Dict[str, str]]): List of tags to create files for in the current project.
-    #     Returns:
-    #         List[Dict[str, str]]: List of tags with updated unique tag names.
-    #     """
-    #     for tag in tags:
-    #         self._file_handler.copy_file(
-    #             source_key=tag["path"], target_key="project_tags_folder", target_file_name=tag["name"].lower())
-    #         tag_file_content = self._file_handler.read_file(
-    #             "project_tags_folder", f"{tag['name']}.json")
-    #         tag_file_content['type'] = tag['name']
-    #         self._file_handler.write_file(
-    #             key="project_tags_folder", data=tag_file_content, extension=f"{tag['name']}.json")
-    #     return tags
-
-    # def _create_tag_group_file(self, project_data: Dict[str, Any]) -> None:
-    #     """
-    #     Creates a tag group file based on the provided project data.
-    #     Args:
-    #         project_data (Dict[str, Any]): The project data containing tag group information.
-    #     """
-    #     tags = project_data.get("selected_tags", [])
-    #     tag_group_file_name = project_data.get("tag_group_file_name", "")
-    #     tag_groups = project_data.get("tag_groups", {})
-    #     tag_groups = {group_name: [tag["name"] for tag in tags if tag["display_name"]
-    #                                in tag_display_names] for group_name, tag_display_names in tag_groups.items()}
-
-    #     print(f"DEBUG after conversion {tag_groups=}")
-    #     tag_group_file_name = f"{tag_group_file_name}.json"
-    #     self._file_handler.write_file(
-    #         key="project_groups", data=tag_groups, extension=tag_group_file_name)
-
     def perform_project_update_project_data(self, update_data: Dict[str, Any]) -> None:
         """
         Updates the project data in the project wizard model.
@@ -1191,7 +1156,7 @@ class Controller(IController):
         if self._active_view_id == "extraction":
             load_config = {
                 "config": {
-                    "initialdir": self._file_handler.resolve_path("default_extraction_load_folder"),
+                    "initialdir": self._file_handler.resolve_path("default_extraction_load_directory"),
                     "filetypes": [("PDF Files", "*.pdf")],
                     "title": "Open PDF for Extraction"
                 },
@@ -1199,7 +1164,7 @@ class Controller(IController):
         elif self._active_view_id == "annotation":
             load_config = {
                 "config": {
-                    "initialdir": self._file_handler.resolve_path("default_annotation_load_folder"),
+                    "initialdir": self._file_handler.resolve_path("default_annotation_load_directory"),
                     "filetypes": [("JSON Files", "*.json")],
                     "title": "Open JSON for Annotation"
                 },
@@ -1208,7 +1173,7 @@ class Controller(IController):
         elif self._active_view_id == "comparison":
             load_config = {
                 "config": {
-                    "initialdir": self._file_handler.resolve_path("default_comparison_load_folder"),
+                    "initialdir": self._file_handler.resolve_path("default_comparison_load_directory"),
                     "filetypes": [("JSON Files", "*.json")],
                     "title": "Open JSON for Comparison"
                 },
@@ -1317,7 +1282,7 @@ class Controller(IController):
         Opens a save-as dialog to let the user choose a file path, then saves the current document.
         """
         initial_dir = self._file_handler.resolve_path(
-            f"default_{self._active_view_id}_save_folder")
+            f"default_{self._active_view_id}_save_directory")
         file_path = self._main_window.ask_user_for_save_path(
             initial_dir=initial_dir)
         if file_path:
@@ -1372,7 +1337,7 @@ class Controller(IController):
         document = state
         file_name = document.get("file_name", "")
         file_path = self._file_handler.resolve_path(
-            "default_extraction_save_folder", file_name + ".json")
+            "default_extraction_save_directory", file_name + ".json")
         file_path = self._solve_overwriting(file_path)
         save_document = {
             "document_type": "annotation",
@@ -1402,7 +1367,7 @@ class Controller(IController):
         file_path = merged_document.get_file_path()
         if not file_path:
             initial_dir = self._file_handler.resolve_path(
-                f"default_merged_save_folder")
+                f"default_merged_save_directory")
             file_path = self._main_window.ask_user_for_save_path(
                 initial_dir=initial_dir)
             file_name = self._file_handler.derive_file_name(
@@ -1435,7 +1400,7 @@ class Controller(IController):
         if self._file_handler.does_path_exist(file_path):
             if not self._main_window.ask_user_for_overwrite_confirmation(file_path):
                 initial_dir = self._file_handler.resolve_path(
-                    f"default_{self._active_view_id}_save_folder")
+                    f"default_{self._active_view_id}_save_directory")
                 file_path = self._main_window.ask_user_for_save_path(
                     initial_dir=initial_dir)
         return file_path

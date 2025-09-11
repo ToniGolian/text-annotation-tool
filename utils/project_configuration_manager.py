@@ -105,14 +105,14 @@ class ProjectConfigurationManager:
         group_file_name = project_data.get(
             "current_group_file", "default_groups")
         groups: Dict[str, List[str]
-                     ] = self._file_handler.read_file("project_groups_folder", group_file_name)
+                     ] = self._file_handler.read_file("project_groups_directory", group_file_name)
         template_groups: List[Dict[str, List[Dict]]] = []
 
         for group_name, group_members in groups.items():
             templates: List[Dict] = []
             for group_member in group_members:
                 file_path = os.path.join(self._file_handler.resolve_path(
-                    "project_config_folder"),
+                    "project_config_directory"),
                     f"tags/{group_member.lower()}.json"
                 )
                 templates.append(
@@ -137,11 +137,11 @@ class ProjectConfigurationManager:
             FileNotFoundError: If a project.json file is missing in a subdirectory.
             JSONDecodeError: If a project.json is not a valid JSON file.
         """
-        projects_path = self._file_handler.resolve_path("project_folder")
+        projects_path = self._file_handler.resolve_path("project_directory")
         results: List[Dict[str, str]] = []
 
-        for folder in os.listdir(projects_path):
-            subdir_path = os.path.join(projects_path, folder)
+        for directory in os.listdir(projects_path):
+            subdir_path = os.path.join(projects_path, directory)
             if os.path.isdir(subdir_path):
                 project_file = os.path.join(
                     subdir_path, "config/settings/project.json")  # hardcoded since the filehandler would need project context
@@ -172,11 +172,11 @@ class ProjectConfigurationManager:
             FileNotFoundError: If a required file or directory is missing.
             JSONDecodeError: If project.json is invalid.
         """
-        projects_path = self._file_handler.resolve_path("project_folder")
+        projects_path = self._file_handler.resolve_path("project_directory")
         results: List[Dict[str, str]] = []
 
-        for folder in os.listdir(projects_path):
-            subdir_path = os.path.join(projects_path, folder)
+        for directory in os.listdir(projects_path):
+            subdir_path = os.path.join(projects_path, directory)
             if os.path.isdir(subdir_path):
                 project_file = os.path.join(
                     subdir_path, "config/settings/project.json")

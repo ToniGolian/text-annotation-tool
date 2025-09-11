@@ -31,7 +31,7 @@ class CSVDBConverter:
         self._load_options_and_columns(tag_type)
         # get the file path for the csv file
         file_path = self._file_handler.resolve_path(
-            "project_db_csv_folder", f"{tag_type}.csv")  # todo refactor to use different names
+            "project_db_csv_directory", f"{tag_type}.csv")  # todo refactor to use different names
         # build dict with the csv file
         dictionary = self._build_dict(file_path=file_path)
 
@@ -209,7 +209,7 @@ class CSVDBConverter:
         """
         try:
             config = self._file_handler.read_file(
-                "project_db_config_folder", f"{tag_type}.json"
+                "project_db_config_directory", f"{tag_type}.json"
             )  # todo refactor to use different names
             self._initialize_config_fields(config)
         except FileNotFoundError:

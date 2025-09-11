@@ -96,10 +96,12 @@ class FileHandler:
             Dict: The loaded or generated database dictionary.
         """
         tag_type = tag_type.lower()
-        file_key = "project_db_dictionaries_folder"
+        file_key = "project_database_directory"
         file_name = f"{tag_type}.json"  # todo refactor for different names
-        path = self._load_path(file_key, file_name)
+        registry_lock_path = self._load_path(file_key, file_name)
+        registry_lock = self._read_path("registry_path")
         if not os.path.exists(path):
+            # todo continue here. refactor to registry db pathfinding
             db_data = self._csv_db_converter.create_dict(tag_type)
             self.write_file(file_key, db_data, file_name)
             return db_data

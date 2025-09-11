@@ -61,7 +61,7 @@ class SettingsManager:
 
         color_scheme_file_name = self._project_settings.get("color_scheme")
         return self._file_handler.read_file(
-            "project_color_scheme_folder", color_scheme_file_name)
+            "project_color_scheme_directory", color_scheme_file_name)
 
     def get_abbreviations(self) -> dict:
         """
@@ -99,10 +99,12 @@ class SettingsManager:
         """
         Loads the current settings from the settings file.
         """
-        self._project_settings = self._file_handler.read_file("project_settings")
+        self._project_settings = self._file_handler.read_file(
+            "project_settings")
 
     def export_settings(self) -> None:
         """
         Exports the current settings to the settings file.
         """
-        self._file_handler.write_file("project_settings", self._project_settings)
+        self._file_handler.write_file(
+            "project_settings", self._project_settings)

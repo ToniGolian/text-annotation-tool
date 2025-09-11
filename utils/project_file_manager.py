@@ -35,14 +35,14 @@ class ProjectFileManager:
 
         for tag in tags:
             self._file_handler.copy_file(
-                source_key=tag["path"], target_key="project_tags_folder", target_file_name=tag["name"].lower())
+                source_key=tag["path"], target_key="project_tags_directory", target_file_name=tag["name"].lower())
             # todo how to move this to the normalization step?
             tag_file_content = self._file_handler.read_file(
-                "project_tags_folder", f"{tag['name']}.json")
+                "project_tags_directory", f"{tag['name']}.json")
             tag_file_content['type'] = tag['name']
             # todo end
             self._file_handler.write_file(
-                key="project_tags_folder", data=tag_file_content, extension=f"{tag['name']}.json")
+                key="project_tags_directory", data=tag_file_content, extension=f"{tag['name']}.json")
 
     def _create_tag_group_file(self) -> None:
         """

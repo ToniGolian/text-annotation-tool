@@ -226,7 +226,7 @@
             "needs_deregistration_on_reload": false,
             "source_keys": {
                 "global_settings_model": [
-                    "default_folders",
+                    "default_directories",
                     "available_align_options",
                     "align_option"
                 ]

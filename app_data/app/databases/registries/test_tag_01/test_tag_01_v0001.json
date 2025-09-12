@@ -1,0 +1,92 @@
+{
+    "Oak Tree": {
+        "display": [
+            "1 | Oak Tree | OAK"
+        ],
+        "output": [
+            "OAK"
+        ],
+        "children": {}
+    },
+    "Pine Tree": {
+        "display": [
+            "2 | Pine Tree | PIN"
+        ],
+        "output": [
+            "PIN"
+        ],
+        "children": {}
+    },
+    "Birch Tree": {
+        "display": [
+            "3 | Birch Tree | BIR"
+        ],
+        "output": [
+            "BIR"
+        ],
+        "children": {}
+    },
+    "Maple Tree": {
+        "display": [
+            "4 | Maple Tree | MAP"
+        ],
+        "output": [
+            "MAP"
+        ],
+        "children": {}
+    },
+    "Rose": {
+        "display": [
+            "5 | Rose | ROS"
+        ],
+        "output": [
+            "ROS"
+        ],
+        "children": {}
+    },
+    "Tulip": {
+        "display": [
+            "6 | Tulip | TUL"
+        ],
+        "output": [
+            "TUL"
+        ],
+        "children": {}
+    },
+    "Daisy": {
+        "display": [
+            "7 | Daisy | DAI"
+        ],
+        "output": [
+            "DAI"
+        ],
+        "children": {}
+    },
+    "Lily": {
+        "display": [
+            "8 | Lily | LIL"
+        ],
+        "output": [
+            "LIL"
+        ],
+        "children": {}
+    },
+    "Cat": {
+        "display": [
+            "9 | Cat | CAT"
+        ],
+        "output": [
+            "CAT"
+        ],
+        "children": {}
+    },
+    "Dog": {
+        "display": [
+            "10 | Dog | DOG"
+        ],
+        "output": [
+            "DOG"
+        ],
+        "children": {}
+    }
+}

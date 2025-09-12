@@ -254,7 +254,6 @@ class NewProjectWizardFrame(ttk.Frame, IObserver):
                     child_id, "text") for child_id in self._tree_created_groups.get_children(parent_id)]
                 tag_groups[group_name] = tags
             data["tag_groups"] = tag_groups
-            print(f"DEBUG view collect_current_page_data: {tag_groups=}")
         return data
 
     def _on_button_pressed_add_tag_group(self) -> None:

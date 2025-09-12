@@ -13,7 +13,6 @@ class ProjectFileManager:
     def create_project_files(self, project_name: str, project_file_information: Dict[str, Any]):
         with self._file_handler.use_project(project_name):
             self._project_file_information = project_file_information
-            print(f"DEBUG {self._project_file_information=}")
             self._create_tag_files()
             self._create_tag_group_file()
             self._create_database_config_files()

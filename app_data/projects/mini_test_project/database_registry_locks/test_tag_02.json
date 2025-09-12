@@ -1,0 +1,13 @@
+{
+    "name": "test_tag_02",
+    "database_registry": "test_tag_02",
+    "source_registry": "mini_test",
+    "source": "test_tag.csv",
+    "current_db": "",
+    "dbs": [],
+    "current_config_file": "test_tag_02.json",
+    "config_files": [
+        "test_tag_02.json"
+    ],
+    "count": 0
+}

@@ -94,6 +94,13 @@ class FileHandler:
 
         Returns:
             Dict: The loaded or generated database dictionary.
+
+        Raises:
+            ValueError: If the tag_type is not configured or if required files are missing.
+
+        Note:
+            This method relies on the project settings and registry lock files to determine
+            the correct database file to read. If no current database exists, a new one is created.
         """
         tag_type = tag_type.lower()
         project_settings = self.read_file("project_settings")
@@ -102,28 +109,59 @@ class FileHandler:
         if not registry_lock_file_name:
             raise ValueError(
                 f"No registry lock file configured for tag type: {tag_type}")
-
-        registry_lock = self.read_file(
+        registry_lock_path = self._load_path(
             "project_databases_registry_locks", registry_lock_file_name)
-        registry_name = registry_lock.get("registry", "")
-        database_file_name = registry_lock.get("current_db")
-        print(f"DEBUG {database_file_name=}")
-
-        if not database_file_name:
+        registry_lock = self.read_file(registry_lock_path)
+        if not registry_lock:
             raise ValueError(
-                f"No current_db specified in registry lock file: {registry_lock_file_name}")
+                f"Registry lock file is empty or missing: {registry_lock_file_name}")
 
-        relative_database_path = self._load_path(
-            registry_name, database_file_name)
+        registry_name = registry_lock.get("database_registry", "")
+        registry_path = self._load_path(
+            "app_database_registries", registry_name)
+
+        # if no dbs exist, create the first one
+        is_new_database_needed = (registry_lock.get("count", 0) < 1
+                                  or not registry_lock.get("current_db", "")
+                                  or not os.path.exists(self._load_path(
+                                      registry_path, registry_lock.get("current_db", "unknown_db"))))
+        if is_new_database_needed:
+            return self._create_new_database(registry_lock_path)
+
+        database_file_name = registry_lock.get("current_db")
+
         database_file_path = self._load_path(
-            "app_database_registries", relative_database_path)
-
-        if not os.path.exists(database_file_path):
-            database_data = self._csv_db_converter.create_dict(tag_type)
-            self.write_file(database_file_path, database_data)
-            return database_data
+            registry_path, database_file_name)
 
         return self.read_file(database_file_path)
+
+    def _create_new_database(self, registry_lock_path: str) -> Dict:
+        """
+        Creates a new database file based on the provided registry lock file path.
+        Args:
+            registry_lock_path (str): The path to the registry lock file.
+
+        Returns:
+            Dict: The created database dictionary.
+
+        Note:
+            This method modifies the registry lock file to update the current database information.
+        """
+        registry_lock = self.read_file(registry_lock_path)
+        registry_name = registry_lock.get("database_registry", "")
+        registry_path = self._load_path(
+            "app_database_registries", registry_name)
+        database_data = self._csv_db_converter.create_dict(registry_lock)
+        version = registry_lock.get("count", 0)+1
+        database_file_name = f"{registry_lock.get('name', '')}_v{version:04d}.json"
+        database_file_path = self._load_path(
+            registry_path, database_file_name)
+        self.write_file(database_file_path, database_data)
+        registry_lock["current_db"] = database_file_name
+        registry_lock["dbs"].append(database_file_name)
+        registry_lock["count"] = version
+        self.write_file(key=registry_lock_path, data=registry_lock)
+        return database_data
 
     def _load_path(self, file_path: str, extension: str = "") -> str:
         """
@@ -223,7 +261,6 @@ class FileHandler:
             target_extension = os.path.splitext(source_path)[1]
             target_file_name = target_file_name + target_extension
             target_path = os.path.join(target_path, target_file_name)
-        print(f"DEBUG {source_path=},\n {target_path=}")
         shutil.copy2(source_path, target_path)
 
     # context methods for project switching

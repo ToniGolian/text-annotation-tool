@@ -17,23 +17,26 @@ class CSVDBConverter:
         self._postfixes = None
         self._infixes = None
 
-    def create_dict(self, tag_type: str):
+    def create_dict(self, registry_lock: dict):
         """Creates a dictionary for the specified tag type using data from a CSV file.
 
         Args:
-            tag_type (str): The type of tag for which the dictionary is created.
+            registry_lock (dict): The registry lock information for the tag type.
 
         Returns:
             dict: A dictionary containing the data for the specified tag type.
         """
-        tag_type = tag_type.lower()
+        registry = registry_lock.get("source_registry", "").lower()
+        source = registry_lock.get("source", "").lower()
         # load columns and options
-        self._load_options_and_columns(tag_type)
+        self._load_options_and_columns(registry_lock)
         # get the file path for the csv file
-        file_path = self._file_handler.resolve_path(
-            "project_db_csv_directory", f"{tag_type}.csv")  # todo refactor to use different names
+        relative_source_file_path = self._file_handler.resolve_path(
+            registry, source)
+        source_file_path = self._file_handler.resolve_path(
+            "app_database_sources", relative_source_file_path)
         # build dict with the csv file
-        dictionary = self._build_dict(file_path=file_path)
+        dictionary = self._build_dict(file_path=source_file_path)
 
         return dictionary
 
@@ -59,7 +62,6 @@ class CSVDBConverter:
                 - "children" is a sub-dictionary with recursively nested entries.
         """
         our_dict: dict = {}
-
         with open(file_path, "r", encoding="utf-8") as file:
             reader = csv.reader(file)
 
@@ -196,21 +198,22 @@ class CSVDBConverter:
         self._postfixes = config["options"]["postfixes"]
         self._infixes = config["options"]["infixes"]
 
-    def _load_options_and_columns(self, tag_type: str) -> None:
+    def _load_options_and_columns(self, registry_lock: dict) -> None:
         """
         Loads the dictionary configuration for a given tag type and initializes internal fields.
 
         Args:
-            tag_type (str): The tag type whose config file should be loaded.
+            registry_lock (dict): The registry lock containing configuration options.
 
         Raises:
             FileNotFoundError: If the configuration file is not found.
             ValueError: If the file content is malformed or unreadable.
         """
+        config_file_path = registry_lock.get("current_config_file", "")
         try:
             config = self._file_handler.read_file(
-                "project_db_config_directory", f"{tag_type}.json"
-            )  # todo refactor to use different names
+                "project_db_config_directory", config_file_path
+            )
             self._initialize_config_fields(config)
         except FileNotFoundError:
             raise FileNotFoundError(

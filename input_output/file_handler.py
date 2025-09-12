@@ -96,17 +96,34 @@ class FileHandler:
             Dict: The loaded or generated database dictionary.
         """
         tag_type = tag_type.lower()
-        file_key = "project_database_directory"
-        file_name = f"{tag_type}.json"  # todo refactor for different names
-        registry_lock_path = self._load_path(file_key, file_name)
-        registry_lock = self._read_path("registry_path")
-        if not os.path.exists(path):
-            # todo continue here. refactor to registry db pathfinding
-            db_data = self._csv_db_converter.create_dict(tag_type)
-            self.write_file(file_key, db_data, file_name)
-            return db_data
+        project_settings = self.read_file("project_settings")
+        registry_lock_file_name = project_settings.get(
+            "tags", {}).get(tag_type, {}).get("database", {}).get("registry_lock", "")
+        if not registry_lock_file_name:
+            raise ValueError(
+                f"No registry lock file configured for tag type: {tag_type}")
 
-        return self.read_file(file_key, file_name)
+        registry_lock = self.read_file(
+            "project_databases_registry_locks", registry_lock_file_name)
+        registry_name = registry_lock.get("registry", "")
+        database_file_name = registry_lock.get("current_db")
+        print(f"DEBUG {database_file_name=}")
+
+        if not database_file_name:
+            raise ValueError(
+                f"No current_db specified in registry lock file: {registry_lock_file_name}")
+
+        relative_database_path = self._load_path(
+            registry_name, database_file_name)
+        database_file_path = self._load_path(
+            "app_database_registries", relative_database_path)
+
+        if not os.path.exists(database_file_path):
+            database_data = self._csv_db_converter.create_dict(tag_type)
+            self.write_file(database_file_path, database_data)
+            return database_data
+
+        return self.read_file(database_file_path)
 
     def _load_path(self, file_path: str, extension: str = "") -> str:
         """

@@ -17,18 +17,11 @@
                 "config_files": [
                     "place.json"
                 ],
-                "csv_file": "place.csv",
-                "current_json_file": "place.json",
-                "json_files": [
-                    "place.json"
-                ]
+                "registry_lock": "place.json"
             }
         },
         "timex3": {
             "file_name": "timex3.json"
-        },
-        "tlink": {
-            "file_name": "tlink.json"
         }
     },
     "current_group_file": "groups01.json",

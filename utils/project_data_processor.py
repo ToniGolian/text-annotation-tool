@@ -14,7 +14,6 @@ class ProjectDataProcessor:
 
     def validate_and_complete(self, project_data: Dict[str, Any]) -> Dict[str, Any]:
         self._project_data = project_data
-        print(f"DEBUG start {self._project_data=}")
         self._validate_initial()
         self._fix_validation_errors()
         self._normalize()
@@ -102,6 +101,7 @@ class ProjectDataProcessor:
             break  # loop until no duplicates are found
         self._project_data["selected_tags"] = tags
         self._project_data["are_tag_names_modified"] = are_tag_names_modified
+        print(f"DEBUG {self._project_data=}")
 
     def _normalize_tag_groups(self) -> None:
         """

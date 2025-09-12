@@ -173,15 +173,19 @@ class ProjectConfigurationManager:
             JSONDecodeError: If project.json is invalid.
         """
         projects_path = self._file_handler.resolve_path("project_directory")
+        print("\n", "#"*20)
+        print(f"DEBUG {projects_path=}")
         results: List[Dict[str, str]] = []
-
         for directory in os.listdir(projects_path):
             subdir_path = os.path.join(projects_path, directory)
+            print(f"DEBUG {subdir_path=}")
             if os.path.isdir(subdir_path):
                 project_file = os.path.join(
-                    subdir_path, "config/settings/project.json")
-                tags_dir = os.path.join(subdir_path, "config/tags/")
-
+                    subdir_path, "config", "settings", "project.json")
+                print(f"DEBUG {project_file=}")
+                tags_dir = os.path.join(subdir_path, "config", "tags")
+                print(f"DEBUG {tags_dir=}")
+                print("#"*20, "\n")
                 if not os.path.isfile(project_file) or not os.path.isdir(tags_dir):
                     continue
 

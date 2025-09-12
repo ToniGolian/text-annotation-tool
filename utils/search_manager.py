@@ -30,7 +30,6 @@ class SearchManager:
             SearchModel: A new instance of SearchModel with the calculated results.
         """
         search_model = SearchModel()
-        print(f"DEBUG {tag_type=}")
         db_dict = self._file_handler.read_database_dict(tag_type=tag_type)
         text = document_model.get_text()
 

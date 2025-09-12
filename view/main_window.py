@@ -5,7 +5,7 @@ from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import simpledialog
 from typing import Any, List, Optional
-from enums.menu_pages import MenuPage
+from enums.menu_pages import MenuPage, MenuSubpage
 from observer.interfaces import IObserver, IPublisher
 from typing import Dict
 from view.duplicates_dialog import DuplicatesDialog
@@ -216,7 +216,7 @@ class MainWindow(tk.Tk, IObserver):
                 f"Text Annotation Tool ({project_name})" if project_name else "Text Annotation Tool")
 
     # Helpers
-    def open_project_window(self, tab: MenuPage = MenuPage.NEW_PROJECT) -> None:
+    def open_project_window(self, tab: MenuPage = MenuPage.NEW_PROJECT, subtab: MenuSubpage = MenuSubpage.PROJECT_NAME) -> None:
         """
         Opens the project window and focuses the requested tab.
 
@@ -233,7 +233,7 @@ class MainWindow(tk.Tk, IObserver):
         self._project_window.lift()
 
         # Switch to the specified tab
-        self._project_window.select_tab(tab)
+        self._project_window.select_tab(tab, subtab)
 
     def open_load_project_dialog(self) -> None:
         """
@@ -282,6 +282,16 @@ class MainWindow(tk.Tk, IObserver):
         self._settings_window.select_tab(0)
 
     # popup dialogs
+    def show_error_message(self, message: str, title: str = "Error") -> None:
+        """
+        Displays an error message dialog.
+
+        Args:
+            message (str): The error message to display.
+            title (str): The title of the error dialog.
+        """
+        messagebox.showerror(title, message)
+
     def ask_user_for_save_path(self, initial_dir: str = None) -> Optional[str]:
         """
         Opens a file dialog to let the user choose a file path for saving.
@@ -369,6 +379,16 @@ class MainWindow(tk.Tk, IObserver):
         view_name = view_id.capitalize().replace("_", " ")
         message = f"The document in view '{view_name}' has unsaved changes.\nDo you want to save it?"
         return messagebox.askyesno("Unsaved Changes", message)
+
+    def set_project_manager_to(self, tab: MenuPage, subtab: MenuSubpage = None) -> None:
+        """
+        Opens the project window and focuses the requested tab.
+        Args:
+            tab (MenuPage): The tab to activate upon opening.
+            subtab (MenuSubpage): The subtab to activate upon opening.
+        """
+        self.open_project_window(
+            tab=tab, subtab=subtab)
 
     def finalize_view(self) -> None:
         """ 

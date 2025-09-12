@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from controller.interfaces import IController
-from enums.menu_pages import MenuPage
+from enums.menu_pages import MenuPage, MenuSubpage
 from view.edit_project_wizard_frame import EditProjectWizardFrame
 from view.new_project_wizard_frame import NewProjectWizardFrame
 
@@ -54,12 +54,14 @@ class ProjectWindow(tk.Toplevel):
         self._notebook.add(self._project_settings_frame,
                            text="Project Settings")
 
-    def select_tab(self, tab: MenuPage) -> None:
+    def select_tab(self, tab: MenuPage, subtab: MenuSubpage) -> None:
         """
         Programmatically selects a tab by name.
 
         Args:
             tab (ProjectWizardTab): The tab to select. One of 'NEW_PROJECT', 'EDIT_PROJECT', or 'PROJECT_SETTINGS'.
+            subtab (MenuSubpage): The subtab to select within the chosen tab.
+
         """
         notebook_page = {MenuPage.NEW_PROJECT: self._new_project_frame,
                          MenuPage.EDIT_PROJECT: self._edit_project_frame,
@@ -68,6 +70,9 @@ class ProjectWindow(tk.Toplevel):
             self._notebook.select(notebook_page)
         else:
             raise ValueError(f"Unknown tab: {tab}")
+
+        if subtab:
+            notebook_page.select_subtab(subtab)
 
     def _on_save_project(self):
         raise NotImplementedError("Save project dialog not implemented yet.")

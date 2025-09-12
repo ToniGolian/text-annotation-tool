@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from controller.interfaces import IController
+from enums.menu_pages import MenuSubpage
 from observer.interfaces import IObserver, IPublisher
 
 
@@ -324,19 +325,20 @@ class NewProjectWizardFrame(ttk.Frame, IObserver):
         Finalizes the project creation or editing process.
         This method should gather all data and notify the controller.
         """
-        project_name = self._entry_project_name.get().strip()
-        if not project_name:
-            tk.messagebox.showerror(
-                "Error", "Project name cannot be empty.", parent=self)
-            # Switch back to "Project Name" tab
-            self._notebook.select(self._tab_project_name)
-            return
+        # project_name = self._entry_project_name.get().strip()
+        # if not project_name:
+        #     tk.messagebox.showerror(
+        #         "Error", "Project name cannot be empty.", parent=self)
+        #     # Switch back to "Project Name" tab
+        #     self._notebook.select(self._page_project_name)
+        #     return
 
-        if self._controller.does_project_exist(project_name):
-            tk.messagebox.showerror(
-                "Error", f"A project named '{project_name}' already exists.", parent=self)
-            self._notebook.select(self._tab_project_name)
-            return
+        # if self._controller.does_project_exist(project_name):
+        #     tk.messagebox.showerror(
+        #         "Error", f"A project named '{project_name}' already exists.", parent=self)
+        #     self._notebook.select(self._page_project_name)
+        #     return
+        #! maybe this is not nessary here, since the controller checks again before creating the project
         self._controller.perform_project_create_new_project()
 
     def _on_button_pressed_next_tab(self) -> None:
@@ -356,6 +358,23 @@ class NewProjectWizardFrame(ttk.Frame, IObserver):
         self._controller.perform_project_update_project_data(current_page_data)
         index = self._notebook.index(self._notebook.select())
         self._notebook.select(index - 1)
+
+    def select_subtab(self, subtab: MenuSubpage) -> None:
+        """
+        Selects a subtab within the current tab.
+
+        Args:
+            subtab (MenuSubpage): The subtab to select.
+        """
+        notebook_page = {
+            MenuSubpage.PROJECT_NAME: self._page_project_name,
+            MenuSubpage.TAG_SELECTION: self._page_tag_selection,
+            MenuSubpage.TAG_GROUPS: self._page_tag_groups
+        }.get(subtab)
+        if notebook_page is not None:
+            self._notebook.select(notebook_page)
+        else:
+            raise ValueError(f"Unknown subtab: {subtab}")
 
     def destroy(self) -> None:
         """

@@ -11,3 +11,12 @@ class MenuPage(Enum):
     EDIT_TAG = auto()
     HELP = auto()
     ABOUT = auto()
+
+
+class MenuSubpage(Enum):
+    PROJECT_NAME = auto()
+    PROJECT_TAGS = auto()
+    PROJECT_TAG_GROUPS = auto()
+    EDIT_NAME = auto()
+    EDIT_TAGS = auto()
+    EDIT_TAG_GROUPS = auto()

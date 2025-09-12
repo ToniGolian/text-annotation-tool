@@ -13,6 +13,7 @@ class ProjectDataProcessor:
         # self._build_data: dict[str, any] = None
 
     def validate_and_complete(self, project_data: Dict[str, Any]) -> Dict[str, Any]:
+        print(f"DEBUG validate_and_complete")
         self._project_data = project_data
         self._validate_initial()
         self._fix_validation_errors()
@@ -41,6 +42,7 @@ class ProjectDataProcessor:
         # check for duplicate project name
         if self._controller.does_project_exist(self._project_data.get("project_name", None)):
             self._errors.append(ProjectDataError.DUPLICATE_PROJECT_NAME)
+        print(f"DEBUG {self._errors=}")
 
     def _fix_validation_errors(self) -> None:
         """
@@ -101,7 +103,6 @@ class ProjectDataProcessor:
             break  # loop until no duplicates are found
         self._project_data["selected_tags"] = tags
         self._project_data["are_tag_names_modified"] = are_tag_names_modified
-        print(f"DEBUG {self._project_data=}")
 
     def _normalize_tag_groups(self) -> None:
         """

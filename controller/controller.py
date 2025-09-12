@@ -5,7 +5,7 @@ from commands.edit_tag_command import EditTagCommand
 from enums.failure_reasons import FailureReason
 from controller.interfaces import IController
 from commands.interfaces import ICommand
-from enums.menu_pages import MenuPage
+from enums.menu_pages import MenuPage, MenuSubpage
 from enums.project_data_error import ProjectDataError
 from enums.wizard_types import ProjectWizardType, TagWizardType
 from enums.search_types import SearchType
@@ -753,16 +753,35 @@ class Controller(IController):
             project_name, project_file_information)
 
     def handle_project_data_error(self, error: ProjectDataError, data: Any = None) -> Any:
+        """
+        Handles project data errors by displaying appropriate messages and navigating to relevant sections.
+        Args:
+            error (ProjectDataError): The type of error encountered.
+            data (Any, optional): Additional data related to the error, if needed. Defaults to None.
+        Returns:
+            Any: Additional data or user input if required by the error handling process.
+        """
+        # todo refactor to distinguish between new and edit project wizard
         if error == ProjectDataError.EMPTY_PROJECT_NAME:
-            pass
+            self._main_window.show_error_message(
+                "Project name cannot be empty.")
+            self._main_window.set_project_manager_to(
+                tab=MenuPage.NEW_PROJECT, subtab=MenuSubpage.PROJECT_NAME)
         elif error == ProjectDataError.DUPLICATE_PROJECT_NAME:
-            pass
+            self._main_window.show_error_message(
+                "Project name already exists. Please choose a different name.")
+            self._main_window.set_project_manager_to(
+                tab=MenuPage.NEW_PROJECT, subtab=MenuSubpage.PROJECT_NAME)
         elif error == ProjectDataError.EMPTY_SELECTED_TAGS:
-            pass
-        elif error == ProjectDataError.EMPTY_TAG_GROUP_FILE_NAME:
-            pass
+            self._main_window.show_error_message(
+                "Selected tags cannot be empty.")
+            self._main_window.set_project_manager_to(
+                tab=MenuPage.NEW_PROJECT, subtab=MenuSubpage.PROJECT_TAGS)
         elif error == ProjectDataError.EMPTY_TAG_GROUPS:
-            pass
+            self._main_window.show_error_message(
+                "Tag groups cannot be empty.")
+            self._main_window.set_project_manager_to(
+                tab=MenuPage.NEW_PROJECT, subtab=MenuSubpage.PROJECT_TAG_GROUPS)
         elif error == ProjectDataError.TAG_NAME_DUPLICATES:
             return self._main_window.ask_user_for_tag_duplicates(data)
 

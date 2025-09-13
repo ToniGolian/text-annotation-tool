@@ -1,0 +1,252 @@
+######################### Grundfunktionalität ####################
+    -controller.handle_project_data_error muss unterscheiden können zwischen new und edit
+    -bug search iteriert nicht mehr, wenn tag gesetzt wird
+    -bug check for save bei dokumenten funktioniert nicht mehr. fragt trotz speichern
+
+    -New Project
+        -allgemeiner tagpool
+    -Edit Project
+        -Änderungen speichern 
+
+    -settings menu
+
+    -User Manual schreiben
+    -Beispieldateien erstellen
+
+######Convinience######
+    -suggestions speichern wenn tags gesetzt werden.
+
+    -nested tags verbieten
+
+    -seiten und margins setzen für die extraction
+    
+    -bug: db search nicht im searchframe navigieren
+    
+    -tagwizards erstellen
+##############################################
+##############################################
+##############################################
+    DONE
+    -save
+        -speicherorte projektspezifisch machen
+    -bei new project direkt checken ob projektname vergeben ist 
+    -bugfix: programm crash, bei neustart, wenn letztes projekt gelöscht wurde
+    -projekt fenster schließen wenn projekt erfolgreich erstellt
+    -bug: search normalization leer
+    -bug: keine tag_groups gespeichert   
+    -project data bauen
+    -projects
+        -Erstellen
+            -abfangen, wenn gleicher tag aus verschiedenen projekten gewählt wird. 
+            -tags Erstellen
+            -gruppen Erstellen
+            -db einlesen
+        -laden
+    -project overwrite check im controller implementieren
+    -csv converter soll settingsbasiert laden
+    -project directory manager
+    -projects verschwinden aus dem loadmenu nach einmal project wechsel
+    -Alle projektbezogenen models bei projektwechsel resetten
+    -decorator vor load project testen
+    -controller loadproject implementieren (finalize_view nutzen?)
+    -wizard id vergeben
+    -controller methoden auf wizard ids umstellen
+    -projectwizards bei ihren models registrieren
+    -apperancemodel und layout_configuration_model zusammen bringen 
+    -bug: Keine Searchhighlights im comparisonmode
+    -command 
+        -checken ob bei allen commands und undo redo die searchmodels korrekt aktualisiert werden. decorator vor den commandmethoden im controller
+    -bug: fragt nach dem speichern in annotation vor load in comparison
+    -bug: geteiltes undoredo für annotation und comparison
+    -bug: falsche search highlights nach undoredo
+    -bug: keine highlights nach undo redo
+    -bug: indexfehler beim adopten von comparison sentences 1 einfügen auf 2. 2 einfügen zurück auf 1
+    -bug: die sourcepath im comparison werden fälschlicherweise in annotation gespeichert
+    -bug: keine highlights beim comparison iterieren der liste
+    -save
+        -exportbutton für comparison
+        -export für comparison testen 
+        -speichern für comparison testen
+        -loadmethode testen bzw umbauen
+        -alle speicherorte checken
+        -beim beenden nach speichern fragen
+        -export vom merged document in perform_export umbauen
+    -bug: letztes suchergebnis im bd search tag setzen crasht
+    -bug: getaggte ausdrücke mit mehr als 2 wörtern werdne nciht gefunden in der suche
+        <PLACE pid="p1" nnid="DEBKGGND00005B65">Berlin Botanischer Garten</PLACE>
+    -bug: kein fallback auf letzten korrekten eintrag im search lookahead
+    -bug: <PLACE pid="p3" nnid="DEBKGGND00005B3F">Berlin:+ Alexanderplatz</PLACE> wird nciht in der suche gefunden
+    -highlights:
+        -bg und font color
+        -farbpalette noch etwas bearbeiten
+    -bug: doppelte notebookseiten im annotationmenu
+    -search:
+        -anzahl der manual searchmodels begrenzen
+        -chars_to_strip und suffixe aus den options laden
+        -bug: searchmodel gesetzt. Flags geändert, searchmodel nicht erneuert
+        -suggestions in dem annotation menu anzeigen
+        -bug: keine highlights im comparisonmode
+        -beim reaktivieren des db search am alten index beginnen, nicht beim nächsten 
+        -tooltip für die search buttons
+        -tag erzeugen
+        -korrekte highlights in der suche  
+            -im manual search alles highlighten
+            -nach dem deaktivierne highlights abschalten
+    -searchobserver lässt sich nicht im annotationmenuframe registrieren und daher kommen die display unt output values nicht an
+    -bug: highlights im comparison werdne beim manual search nciht gesetzt
+    -observer über den searchmodelmanager registrieren und deregistrieren.
+    -datenbank einbinden
+    methoden im controller implementieren
+    -filehandler anpassen an den neuen pathmanager
+    -farben im comparison
+    -bug:absturz wenn nach laden markierter satz erneut adopted werden soll. 
+    -höhe der einzelnen Displays anpassen
+    -comparison view
+        -tags erstelle
+        -tags_markieren
+        -nur in einem display markieren
+        -highlighting
+    -iterieren
+    -filter und comparisonbutton disablen
+    -comparisondata->comparison_model->comparison_view
+    -Radiobuttons an anzahl der docs anpassen
+    -comp und anno werdnen auf das gleiche model geschickt
+    -Anzahl der Fenster dynamisch abhängig von geladenen Dokumenten. Default 1
+
+-document_type in den document models löschen? (oder braucht extraction das, wenn man nicht aus pdf sondern doc lädt?)
+-"num_files" im configmodel löschen?
+
+-warnnachricht, wenn geschützter tag gelöscht werden soll
+-Tags ohne id nicht löschbar 
+
+-verschachtelte tags blocken 
+-warnnachricht verschachtelter Tag
+
+-save on exit
+
+-suche
+    -in der View links neben dem button "update meta tags"
+
+-Datenbank anbindung 
+
+-vorschläge aus annotiertem text extrahieren
+-suggestions aktualisieren
+
+-configdateien aufräumen
+-config menu
+    -Projekt anlegen
+        -Projekt speichern/laden
+        -Templates laden
+            -default values
+
+        -settings
+            -Farben
+            -Standardpfade
+
+-global settings
+    -shortcuts
+
+
+######################### Bugs ####################
+Wichtig:
+-bug: text mit tag geladen. geladenen tag gelöscht. strg-z -> fehler (evtl keine/falsche id vergeben?)
+
+Unwichtig:
+-Extractionprobleme
+    -mehrzeilige stark versetzte überschriften werden nicht als zusammenhängend erkannt. beispiel Grundwasser S12 Überschrift 1.2
+
+    -grundwasserüberwachungsprogram S8 Indentproblem
+    Die Daten des jährlichen Grundwasser-Überwachungsprogramms Baden-Württemberg geben Auskunft sowohl über die Qualität (Grundwas- machen unerwünschte Entwicklungen und schädliche erlauben es, geeignete Maßnahmen zur Minimierung sind die Grundlage für die Erfüllung von Berichtspflich- serbeschaffenheit) als auch über die Quantität (Grundwasserstand und Quellschüttung) des Grundwassers, Einflüsse sichtbar, von schädlichen Einflüssen zu definieren und ihre Wirksamkeit zu überprüfen, ten für Bundesvorgaben sowie für europäische Richtlinien wie insbesondere die Wasserrahmenrichtlinie (WRRL), die Grundwasserrichtlinie (GWRL) und die Nitratrichtlinie.
+
+######################### Convinience ####################
+
+-seiten und margins setzen für die extraction
+-disable attributes. z.b. comment bei timex3
+
+######################### Optional ####################
+-höhe der comparison displays. (vermutlich ist die höhe in zeilen angegeben)
+-comparison nach tags filtern
+-Tags über markierung im text löschbar 
+-undo/redo für PreviewDocumentDisply
+-zusätzliche regex suggestions
+-mapping von observer zu publisher wird nur noch benutzt wenn kein publisher übergeben, also eigentlich nur bei finalize(?). evtl mapping komplet eliminieren und eigene logik für finalize bauen. 
+
+######################### Anleitung #########################
+-Projekte
+    -Erstellen der Tagtemplates
+        -default values für tags definieren unter key default
+    -Laden der Templates 
+    -Laden der Datenbank
+    -Projektsettings
+        -Margins
+        -Farben
+        -Defaultpfade
+        -align_options (comparison)
+
+    -Projekt speichern/laden
+
+-Extraktion
+-Annotation
+-Comparison
+
+-Globale Settings
+    -Shortcuts
+
+HINTS
+-einstellungen bezüglich default pfade sind im confoguration model
+
+######################### Erledigt #########################
+-markierung farblich hervorheben
+-metatags speichern
+-filename anzeigen
+-metatags anzeigen
+-metatags minimieren
+-z&y bug wenn doc mit geladenen tags
+-highlight bug wenn doc mit tags geladen wird
+-vorschläge machen
+    starten in annotation menu frame mit def update(self):
+-vorschlagsdict anlegen
+-referenzierte tags gegen löschen sperren. 
+- liste der referenzierbaren tags mit leerzeile setzen
+-referenzen auf andere tags aktualisieren
+-tags editieren
+    -bug wenn man während editieren was markeirt passt die id nciht mehr
+-verschiebungen bei edit tag berücksichtigen
+-tags löschen
+-nur die zugehörigen tags anzeigen in lösch und edit combobox
+-id präfixe setzen. 
+-tags einlesen
+-vorschläge (schon in allgemeine suggestions einbetten)
+-tags farbig anzeigen
+    -tagmanager gibt positions für start und ende raus
+    -positions erst am ende abrufen
+-save document
+-document_type überall setzen
+-tags einfügen
+-open document
+-default choice im annotationmenu ändern
+-selection in widgets anzeigen
+-stoffstrommanagement lässt sich nicht extrahieren
+
+-button breite im extraction menu ist uneinheitlich
+
+-update Observermapping: Unknown Data Observer <class 'view.annotation_menu_frame.AnnotationMenuFrame'> registered
+
+-controller.get_abbreviations implementieren
+
+-aktualisieren des previewmodels
+
+-annotation text display sperren
+-extrahierten text als vorschau in gui anzeigen
+-vorschau bearbeiten
+-vorschau in bearbeitung verschieben
+
+-fehler suchen: controller.get_data_state wird ausgeführt, aber dadrin liefert das PreviewDocumentModel nur leere Daten zurück
+
+-configurationmodel lädt menubar nicht korrekt. beim mockconfigurationmodel hat es geklappt. 
+
+-url umbruch bei zeilenumbruch im originaldokument
+Seit 2011 wird die Deklaratorische Liste jährlich auf der Internetseite der LUBW veröffentlicht: www.lubw.
+baden-wuerttemberg.de/wasser/wasserschutzgebiete.
+
+

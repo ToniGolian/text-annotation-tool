@@ -163,7 +163,6 @@ cython_debug/
 #.idea/
 
 /.VSCodeCounter
-todo.txt
 /test_data
 /test_img
 comparison_main.py

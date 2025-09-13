@@ -17,7 +17,8 @@ class PathManager:
 
         """
         self._app_paths_file = "app_data/app/config/app_paths.json"
-        self._paths: dict = {}
+        # initial load without project context to be able to read some files in init
+        self._paths: dict = self._load_project_independent_paths()
 
     def get_last_project_name(self) -> str:
         """
@@ -88,3 +89,18 @@ class PathManager:
         if key_or_path in self._paths:
             return self._paths[key_or_path]
         return os.path.normpath(key_or_path)
+
+    def _load_project_independent_paths(self) -> dict:
+        """
+        Loads paths from app_paths.json without expanding <project>.
+
+        This is used during initialization before any project is selected.
+
+        Returns:
+            dict: Raw path templates from app_paths.json.
+        """
+        with open(self._app_paths_file, "r", encoding="utf-8") as f:
+            raw_paths = json.load(f)
+        project_independent_paths = {
+            key: path for key, path in raw_paths.items() if "<project>" not in path}
+        return project_independent_paths

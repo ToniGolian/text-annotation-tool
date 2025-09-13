@@ -649,20 +649,25 @@ class Controller(IController):
         """
         self._project_wizard_model.remove_selected_tags(selected_indices)
 
-    def update_project_name(self, project_name: str = None) -> None:
+    def update_project_name(self, project_name: str = None) -> bool:
         """
         Updates the project name in the project settings model.
 
         Args:
             project_name (str, optional): The new project name. If None, the last project name is used.
+        Returns:
+            bool: True if the project name was updated successfully, False otherwise.
         """
         if not project_name:
             project_name = self._path_manager.get_last_project_name()
+            if not project_name or not self.does_project_exist(project_name):
+                return False
 
         # update the project settings model and path manager with the new project name
         self._project_settings_model.set_project_name(project_name)
         #! changed from direct path change to context change
         self._file_handler.change_context(project_name)
+        return True
 
     def does_project_exist(self, project_name: str) -> bool:
         """
@@ -681,17 +686,21 @@ class Controller(IController):
     @reset_project_relevant_models
     def perform_project_load_project(self, reload: bool = False, project_name: str = None) -> None:
         """
-        Loads the project configuration and updates all relevant models and views.
+        Loads the project configuration and updates all relevant models and views. If no project name is provided,
+        the last project path is used. If it does not exist, no project is loaded.
+
         Args:
             project_name (str, optional): The name of the project to load. If None,
                                           the current project path is used. Defaults to None.
             reload (bool, optional): Whether to reload the project. Defaults to False.
+
         Raises:
             FileNotFoundError: If the project configuration file does not exist.
         """
         # update the project name in the project settings model and path manager
-        self.update_project_name(project_name)
-
+        success = self.update_project_name(project_name)
+        if not success:
+            return
         # update the suggestion manager with the new tag suggestions accordingly to the current project
         self._suggestion_manager.update_suggestions()
         self._settings_manager.update_settings()

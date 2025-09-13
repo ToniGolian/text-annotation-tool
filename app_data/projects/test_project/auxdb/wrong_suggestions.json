@@ -1,4 +1,11 @@
 {
-    "TEST_TAG_01": [],
-    "SIGNAL": []
+    "TIMEX3": [],
+    "TLINK": [],
+    "EVENT": [],
+    "MAKEINSTANCE": [],
+    "ALINK": [],
+    "SLINK": [],
+    "SIGNAL": [],
+    "CONFIDENCE": [],
+    "PLACE": []
 }

@@ -14,7 +14,7 @@
     "project_tags_directory": "app_data/projects/<project>/config/tags/",
     "project_groups_directory": "app_data/projects/<project>/config/groups/",
     "project_db_config_directory": "app_data/projects/<project>/config/database/",
-    "project_database_directory": "app_data/projects/<project>/databases/",
+    "project_database_registry_locks_directory": "app_data/projects/<project>/database_registry_locks/",
     "project_search_normalization": "app_data/projects/<project>/config/settings/search_normalization_rules.json",
     "project_settings": "app_data/projects/<project>/config/settings/project.json",
     "project_saved_layout": "app_data/projects/<project>/databases/saved_layout.json",

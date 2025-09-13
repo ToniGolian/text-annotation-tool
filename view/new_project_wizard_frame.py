@@ -338,6 +338,7 @@ class NewProjectWizardFrame(ttk.Frame, IObserver):
         self._controller.perform_project_update_project_data(current_page_data)
         index = self._notebook.index(self._notebook.select())
         self._notebook.select(index + 1)
+        self._set_focus_on_default_widget()
 
     def _on_button_pressed_previous_tab(self) -> None:
         """
@@ -347,6 +348,7 @@ class NewProjectWizardFrame(ttk.Frame, IObserver):
         self._controller.perform_project_update_project_data(current_page_data)
         index = self._notebook.index(self._notebook.select())
         self._notebook.select(index - 1)
+        self._set_focus_on_default_widget()
 
     def select_subtab(self, subtab: MenuSubpage) -> None:
         """

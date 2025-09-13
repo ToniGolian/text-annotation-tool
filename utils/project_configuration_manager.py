@@ -195,11 +195,6 @@ class ProjectConfigurationManager:
                         tag_path = os.path.join(tags_dir, file_name)
                         has_database = self._file_handler.read_file(
                             file_path=tag_path).get("has_database", False)
-                        # DEBUG
-                        tag_file = self._file_handler.read_file(
-                            file_path=tag_path)
-                        print(f"DEBUG {tag_file=}")
-                        # END DEBUG
                         results.append({
                             "name": tag_name.upper(),
                             "path": tag_path,

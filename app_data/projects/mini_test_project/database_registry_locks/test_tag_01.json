@@ -1,5 +1,5 @@
 {
-    "name": "test_tag_01",
+    "name": "TEST_TAG_01",
     "database_registry": "test_tag_01",
     "source_registry": "mini_test",
     "source": "test_tag.csv",

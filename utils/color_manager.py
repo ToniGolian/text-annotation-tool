@@ -63,7 +63,7 @@ class ColorManager:
         b = min(int(b * factor), 255)
         return "#{:02x}{:02x}{:02x}".format(r, g, b)
 
-    def create_color_scheme(self, tag_keys: List[str], colorset_name: str, complementary_search_color: bool) -> None:
+    def create_color_scheme(self, tag_keys: List[str], colorset_name: str, complementary_search_color: bool) -> dict[str, dict | str]:
         """
         Creates and stores a color scheme for a given project and color set.
 
@@ -71,6 +71,28 @@ class ColorManager:
             tag_keys (List[str]): A list of tag type strings.
             colorset_name (str): The name of the color palette to use.
             complementary_search_color (bool): Whether to use a contrasting color for search highlights.
+        Returns:
+            dict: A dictionary containing the color scheme and the file name it was saved as. 
+        Example:
+            {
+                "color_scheme": {
+                    "tags": {
+                        "tag1": {
+                            "background_color": "#ff0000",
+                            "font_color": "#ffffff"
+                        }
+                    },
+                    "search": {
+                        "background_color": "#00ff00",
+                        "font_color": "#000000"
+                    },
+                    "current_search": {
+                        "background_color": "#0000ff",
+                        "font_color": "#ffffff"
+                    }
+                },
+                "file_name": "tag_colors.json"
+            }
         """
         color_sets = self._file_handler.read_file("color_sets")
         palette = color_sets.get(colorset_name)
@@ -128,13 +150,14 @@ class ColorManager:
                 }
 
         # Build output dictionary
-        output = {
-            "tags": {key: color_scheme[key] for key in tag_keys},
-            "search": color_scheme["search"],
-            "current_search": color_scheme["current_search"]
-        }
-
         suffix = "_comp_search" if complementary_search_color else ""
         file_name = f"{colorset_name}{suffix}_color_scheme.json"
-        self._file_handler.write_file(
-            "project_color_scheme_directory", output, file_name)
+        output = {
+            "color_scheme": {
+                "tags": {key: color_scheme[key] for key in tag_keys},
+                "search": color_scheme["search"],
+                "current_search": color_scheme["current_search"]
+            },
+            "file_name": file_name
+        }
+        return output

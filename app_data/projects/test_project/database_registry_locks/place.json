@@ -1,5 +1,5 @@
 {
-    "name": "place",
+    "name": "PLACE",
     "database_registry": "place",
     "source_registry": "place",
     "source": "place.csv",

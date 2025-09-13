@@ -102,7 +102,6 @@ class FileHandler:
             This method relies on the project settings and registry lock files to determine
             the correct database file to read. If no current database exists, a new one is created.
         """
-        tag_type = tag_type.lower()
         project_settings = self.read_file("project_settings")
         registry_lock_file_name = project_settings.get(
             "tags", {}).get(tag_type, {}).get("database", {}).get("registry_lock", "")

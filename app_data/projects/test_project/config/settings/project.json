@@ -1,16 +1,16 @@
 {
     "name": "test_project",
     "tags": {
-        "alink": {
+        "ALINK": {
             "file_name": "alink.json"
         },
-        "event": {
+        "EVENT": {
             "file_name": "event.json"
         },
-        "makeinstance": {
+        "MAKEINSTANCE": {
             "file_name": "makeinstance.json"
         },
-        "place": {
+        "PLACE": {
             "file_name": "place.json",
             "database": {
                 "current_config_file": "place.json",
@@ -20,7 +20,7 @@
                 "registry_lock": "place.json"
             }
         },
-        "timex3": {
+        "TIMEX3": {
             "file_name": "timex3.json"
         }
     },

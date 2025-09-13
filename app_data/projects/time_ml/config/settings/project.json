@@ -1,22 +1,47 @@
 {
     "name": "time_ml",
-    "color_scheme": "magma_comp_search_color_scheme.json",
-    "search_normalization": "search_normalization_rules.json",
-    "tags": [
-        "alink.json",
-        "confidence.json",
-        "event.json",
-        "makeinstance.json",
-        "place.json",
-        "signal.json",
-        "slink.json",
-        "timex3.json",
-        "tlink.json"
-    ],
+    "tags": {
+        "ALINK": {
+            "file_name": "alink.json"
+        },
+        "CONFIDENCE": {
+            "file_name": "confidence.json"
+        },
+        "EVENT": {
+            "file_name": "event.json"
+        },
+        "MAKEINSTANCE": {
+            "file_name": "makeinstance.json"
+        },
+        "PLACE": {
+            "file_name": "place.json",
+            "database": {
+                "current_config_file": "place_config.json",
+                "config_files": [
+                    "place_config.json"
+                ],
+                "registry_lock": "place.json"
+            }
+        },
+        "SIGNAL": {
+            "file_name": "signal.json"
+        },
+        "SLINK": {
+            "file_name": "slink.json"
+        },
+        "TIMEX3": {
+            "file_name": "timex3.json"
+        },
+        "TLINK": {
+            "file_name": "tlink.json"
+        }
+    },
     "groups": "groups01.json",
     "db_config": [
-        "place_config.json"
+        "place.json"
     ],
+    "color_scheme": "magma_comp_search_color_scheme.json",
+    "search_normalization": "search_normalization_rules.json",
     "are_all_search_results_highlighted": true,
     "current_language": "german",
     "abbreviations": "abbreviations.json",

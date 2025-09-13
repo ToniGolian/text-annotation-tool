@@ -797,7 +797,6 @@ class Controller(IController):
                 state[key] = value
 
         self._project_wizard_model.set_state(state)
-        state = self._project_wizard_model.get_state()
 
     def perform_project_update_projects(self) -> None:
         """
@@ -1610,18 +1609,58 @@ class Controller(IController):
         self._execute_command(command=command, caller_id="comparison")
         self.perform_next_sentence()
 
-    def perform_create_color_scheme(self, colorset_name: str = "viridis", complementary_search_color: bool = False) -> None:
+    def perform_create_color_scheme(self, tag_keys: list[str] = None, colorset_name: str = "viridis", complementary_search_color: bool = False, should_write_file: bool = True) -> dict[str, str | dict[str, str]]:
         """
         Creates a color scheme for the tag types defined in the configuration.
         This method uses the color manager to generate a color scheme based on the
         tag types specified in the current configuration.
         Args:
-            colorset_name (str): The name of the color set to use. Defaults to "viridis".
-        Raises:
-            ValueError: If the colorset_name is not recognized or supported.
+            tag_keys (list[str], optional): List of tag types to include in the color scheme.
+                                            If None, all tag types from the configuration are used. Defaults to None.
+            colorset_name (str, optional): Name of the color set to use for generating colors.
+                                           Defaults to "viridis".
+            complementary_search_color (bool, optional): Whether to include a complementary color for search highlights.
+                                                          Defaults to False.
+            should_write_file (bool, optional): Whether to write the generated color scheme to a file.
+                                               Defaults to True.
+        Returns:
+            dict: A dictionary containing the generated color scheme and the file name it was saved as.
+        Example:
+            {
+                "color_scheme": {
+                    "tags": {
+                        "tag1": {
+                            "background_color": "#ff0000",
+                            "font_color": "#ffffff"
+                        }
+                    },
+                    "search": {
+                        "background_color": "#00ff00",
+                        "font_color": "#000000"
+                    },
+                    "current_search": {
+                        "background_color": "#0000ff",
+                        "font_color": "#ffffff"
+                    }
+                },
+                "file_name": "tag_colors.json"
+            }
         """
-        self._color_manager.create_color_scheme(tag_keys=self._project_configuration_manager.load_configuration()['layout'][
-            'tag_types'], colorset_name=colorset_name, complementary_search_color=complementary_search_color)
+        if not tag_keys:
+            tag_keys = self._project_configuration_manager.load_configuration()[
+                'layout']['tag_types']
+
+        color_scheme_data = self._color_manager.create_color_scheme(
+            tag_keys=tag_keys, colorset_name=colorset_name, complementary_search_color=complementary_search_color)
+        color_scheme = color_scheme_data.get("color_scheme", {})
+        file_name = color_scheme_data.get(
+            "file_name", "default_color_scheme.json")
+
+        if should_write_file:
+            self._file_handler.write_file(
+                "project_color_scheme_directory", color_scheme, file_name)
+
+        return color_scheme_data
 
     # Helpers
 

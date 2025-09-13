@@ -53,7 +53,7 @@ class ProjectFileManager:
         tag_group_file_name = self.project_data.get("tag_group_file_name", "")
         tag_group_file_name = f"{tag_group_file_name}.json"
         self._file_handler.write_file(
-            key="project_groups", data=tag_groups, extension=tag_group_file_name)
+            key="project_tag_groups_directory", data=tag_groups, extension=tag_group_file_name)
 
     def _create_database_config_files(self) -> None:
         raise NotImplementedError(

@@ -87,10 +87,10 @@ class SettingsManager:
         """
         current_language = self._project_settings.get("current_language", [])
         search_normalization_rules = self._file_handler.read_file(
-            "project_search_normalization")
+            "project_search_normalization_rules")
         if not search_normalization_rules:
             raise KeyError(
-                "The key 'project_search_normalization' is missing in the settings file.")
+                "The key 'project_search_normalization_rules' is missing in the settings file.")
         search_normalization_rules["common_suffixes"] = search_normalization_rules.get(
             "common_suffixes", []).get(current_language, [])
         return search_normalization_rules

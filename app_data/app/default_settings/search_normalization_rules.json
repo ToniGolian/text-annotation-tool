@@ -1,0 +1,11 @@
+{
+    "common_suffixes": {
+        "english": [
+            "s"
+        ],
+        "german": [
+            "s"
+        ]
+    },
+    "chars_to_strip": ".,;:!?()[]{}\"'`~@#$%^&*_-+=|\\/<>"
+}

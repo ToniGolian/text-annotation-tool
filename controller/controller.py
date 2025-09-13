@@ -718,39 +718,58 @@ class Controller(IController):
         # update all project wizards accordingly
         self.perform_project_update_projects()
 
-    def perform_project_create_new_project(self) -> None:
+    def perform_project_create_new_project(self) -> bool:
+        """
+        Creates a new project based on the provided project data.
+        This method retrieves the project data from the project wizard model,
+        processes it to generate the necessary build data, and then creates the
+        required directories and files for the new project.
+        Returns:
+            bool: True if the project was created successfully, False otherwise.
+        """
         project_data = self._project_wizard_model.get_project_build_data()
-        project_data = self._project_data_processor.validate_and_complete(
-            project_data)
-
-        # if directories not exist, create them
         project_name = project_data.get("project_name", "")
-        project_file_information = project_data.get(
-            "project_file_information", {})
 
-        self._create_project_directories(project_name)
-        self._create_project_files(project_name, project_file_information)
+        build_data = self._project_data_processor.get_project_build_data(
+            project_data=project_data)
 
-    def _create_project_directories(self, project_name: str) -> None:
+        are_directories_created = self._create_project_directories(
+            project_name=project_name)
+        are_files_created = self._create_project_files(build_data=build_data)
+        return are_directories_created and are_files_created
+
+    def _create_project_directories(self, project_name: str) -> bool:
         """
         Creates the necessary directories for a new project.
 
         Args:
             project_name (str): The name of the project for which to create directories.
+        Returns:
+            bool: True if the directories were created successfully, False otherwise.
         """
-        self._project_directory_manager.create_project_structure(
+        are_directories_created = self._project_directory_manager.create_project_structure(
             project_name)
+        return are_directories_created
 
-    def _create_project_files(self, project_name: str, project_file_information: Dict[str, Any]) -> None:
+    def _create_project_files(self, build_data: dict[str, Any]) -> bool:
         """
         Creates the necessary project files for a new project.
 
         Args:
-            project_name (str): The name of the project for which to create files.
-            project_file_information (Dict[str, Any]): The data to be saved in the project configuration file.
+            build_data (dict[str, Any]): A dictionary containing the data needed to create project files.
+        Returns:
+            bool: True if the files were created successfully, False otherwise.
         """
-        self._project_file_manager.create_project_files(
-            project_name, project_file_information)
+        are_files_created = True
+        for build_data_chunk in build_data.values():
+            build_data_items = build_data_chunk if isinstance(
+                build_data_chunk, list) else [build_data_chunk]
+            for build_data_item in build_data_items:
+                is_file_created = self._file_handler.write_file(
+                    key=build_data_item["path"], data=build_data_item["payload"])
+                if not is_file_created:
+                    are_files_created = False
+        return are_files_created
 
     def handle_project_data_error(self, error: ProjectDataError, data: Any = None) -> Any:
         """
@@ -825,7 +844,7 @@ class Controller(IController):
         available_tags = self._get_available_tags()
         tag_group_file_name = project_data.get("groups", "")
         tag_groups = self._file_handler.read_file(
-            "project_groups", tag_group_file_name) if tag_group_file_name else {}
+            "project_tag_groups_directory", tag_group_file_name) if tag_group_file_name else {}
         editing_data = {
             "project_name": project_data.get("name", ""),
             "globally_available_tags": available_tags,

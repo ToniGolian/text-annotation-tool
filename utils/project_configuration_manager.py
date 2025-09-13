@@ -105,7 +105,7 @@ class ProjectConfigurationManager:
         group_file_name = project_data.get(
             "current_group_file", "default_groups")
         groups: Dict[str, List[str]
-                     ] = self._file_handler.read_file("project_groups_directory", group_file_name)
+                     ] = self._file_handler.read_file("project_tag_groups_directory", group_file_name)
         template_groups: List[Dict[str, List[Dict]]] = []
 
         for group_name, group_members in groups.items():

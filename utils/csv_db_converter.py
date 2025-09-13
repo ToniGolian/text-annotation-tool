@@ -212,7 +212,7 @@ class CSVDBConverter:
         config_file_path = registry_lock.get("current_config_file", "")
         try:
             config = self._file_handler.read_file(
-                "project_db_config_directory", config_file_path
+                "project_database_config_directory", config_file_path
             )
             self._initialize_config_fields(config)
         except FileNotFoundError:

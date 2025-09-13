@@ -16,9 +16,9 @@
         "PLACE": {
             "file_name": "place.json",
             "database": {
-                "current_config_file": "place_config.json",
+                "current_config_file": "place.json",
                 "config_files": [
-                    "place_config.json"
+                    "place.json"
                 ],
                 "registry_lock": "place.json"
             }

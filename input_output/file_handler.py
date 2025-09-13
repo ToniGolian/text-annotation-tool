@@ -69,7 +69,7 @@ class FileHandler:
         strategy = self._get_strategy(file_extension)
         return strategy.read(file_path)
 
-    def write_file(self, key: str, data: Dict, extension: str = "") -> None:
+    def write_file(self, key: str, data: Dict, extension: str = "") -> bool:
         """
         Writes data to a file using the appropriate strategy based on file extension.
 
@@ -77,11 +77,13 @@ class FileHandler:
             key (str): Path to the file or key to be resolved.
             data (Dict): Data to write to the file.
             extension (str, optional): Optional extension to append before writing.
+        Returns:
+            bool: True if the write operation was successful, False otherwise.
         """
         file_path = self._load_path(key, extension)
         file_extension = os.path.splitext(file_path)[1]
         strategy = self._get_strategy(file_extension)
-        strategy.write(file_path, data)
+        return strategy.write(file_path, data)
 
     def read_database_dict(self, tag_type: str) -> Dict:
         """

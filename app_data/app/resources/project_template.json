@@ -30,17 +30,12 @@
                                 },
                                 "files": []
                             },
-                            "databases": {
-                                "directories": {
-                                    "csv": {
-                                        "directories": {},
-                                        "files": []
-                                    },
-                                    "dictionaries": {
-                                        "directories": {},
-                                        "files": []
-                                    }
-                                },
+                            "database_registry_locks": {
+                                "directories": {},
+                                "files": []
+                            },
+                            "auxdb": {
+                                "directories": {},
                                 "files": []
                             },
                             "files": []

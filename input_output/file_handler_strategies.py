@@ -20,9 +20,13 @@ class JsonReadWriteStrategy(IReadWriteStrategy):
         with open(file_path, 'r', encoding=self.encoding) as file:
             return json.load(file)
 
-    def write(self, file_path: str, data: Dict) -> None:
-        with open(file_path, 'w', encoding=self.encoding) as file:
-            json.dump(data, file, ensure_ascii=False, indent=4)
+    def write(self, file_path: str, data: Dict) -> bool:
+        try:
+            with open(file_path, 'w', encoding=self.encoding) as file:
+                json.dump(data, file, ensure_ascii=False, indent=4)
+            return True
+        except Exception:
+            return False
 
 
 class CsvReadWriteStrategy(IReadWriteStrategy):
@@ -45,14 +49,19 @@ class CsvReadWriteStrategy(IReadWriteStrategy):
                 data.append(row)
         return {"data": data}
 
-    def write(self, file_path: str, data: Dict) -> None:
-        if "data" not in data:
-            raise ValueError(
-                "Data dictionary must contain a 'data' key with a list of rows.")
-        with open(file_path, 'w', encoding=self.encoding, newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=data["data"][0].keys())
-            writer.writeheader()
-            writer.writerows(data["data"])
+    def write(self, file_path: str, data: Dict) -> bool:
+        try:
+            if "data" not in data:
+                raise ValueError(
+                    "Data dictionary must contain a 'data' key with a list of rows.")
+            with open(file_path, 'w', encoding=self.encoding, newline='') as file:
+                writer = csv.DictWriter(
+                    file, fieldnames=data["data"][0].keys())
+                writer.writeheader()
+                writer.writerows(data["data"])
+            return True
+        except Exception:
+            return False
 
 
 class TxtReadWriteStrategy(IReadWriteStrategy):
@@ -72,8 +81,12 @@ class TxtReadWriteStrategy(IReadWriteStrategy):
             text = file.read()
         return {"text": text}
 
-    def write(self, file_path: str, data: Dict) -> None:
-        if "text" not in data:
-            raise ValueError("Data dictionary must contain a 'text' key.")
-        with open(file_path, 'w', encoding=self.encoding) as file:
-            file.write(data["text"])
+    def write(self, file_path: str, data: Dict) -> bool:
+        try:
+            if "text" not in data:
+                raise ValueError("Data dictionary must contain a 'text' key.")
+            with open(file_path, 'w', encoding=self.encoding) as file:
+                file.write(data["text"])
+            return True
+        except Exception:
+            return False

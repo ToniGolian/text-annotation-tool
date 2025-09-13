@@ -39,9 +39,9 @@ class ProjectWindow(tk.Toplevel):
     def _init_tabs(self) -> None:
         """Initializes the notebook tabs with empty frames."""
         self._new_project_frame = NewProjectWizardFrame(
-            controller=self._controller, master=self._notebook)
+            controller=self._controller, master=self._notebook, parent_window=self)
         self._edit_project_frame = EditProjectWizardFrame(
-            controller=self._controller, master=self._notebook)
+            controller=self._controller, master=self._notebook, parent_window=self)
         self._project_settings_frame = ttk.Frame(self._notebook)
 
         self._controller.add_observer(

@@ -14,9 +14,9 @@ class EditProjectWizardFrame(NewProjectWizardFrame):
     Adds an initial page for selecting a project from a list and adapts labels to reflect editing.
     """
 
-    def __init__(self, controller: IController, master=None) -> None:
+    def __init__(self, controller: IController, master=None, parent_window: tk.Toplevel = None) -> None:
 
-        super().__init__(controller=controller, master=master)
+        super().__init__(controller=controller, master=master, parent_window=parent_window)
         self._available_projects = []
         self._selected_project = None
 

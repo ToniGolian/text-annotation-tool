@@ -1,0 +1,16 @@
+{
+    "type": "TEST_TAG_01",
+    "has_database": true,
+    "id_prefix": "tt01",
+    "attributes": {
+        "pid": {
+            "type": "ID"
+        },
+        "place type": {
+            "type": "DISPLAY"
+        },
+        "nnid": {
+            "type": "OUTPUT"
+        }
+    }
+}

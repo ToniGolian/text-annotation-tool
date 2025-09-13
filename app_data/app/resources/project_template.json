@@ -50,19 +50,19 @@
         "directories": {
             "<project>": {
                 "directories": {
-                    "annotations": {
+                    "annotation": {
                         "directories": {},
                         "files": []
                     },
-                    "comparisons": {
+                    "comparison": {
                         "directories": {},
                         "files": []
                     },
-                    "extractions": {
+                    "extraction": {
                         "directories": {},
                         "files": []
                     },
-                    "merged_documents": {
+                    "merged_document": {
                         "directories": {},
                         "files": []
                     }

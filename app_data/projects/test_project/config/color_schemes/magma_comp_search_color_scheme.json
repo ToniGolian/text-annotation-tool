@@ -1,40 +1,12 @@
 {
     "tags": {
-        "PLACE": {
+        "TEST_TAG_01": {
             "background_color": "#000003",
             "font_color": "#ffffff"
         },
-        "TIMEX3": {
-            "background_color": "#170f3c",
-            "font_color": "#ffffff"
-        },
-        "TLINK": {
-            "background_color": "#430f75",
-            "font_color": "#ffffff"
-        },
-        "EVENT": {
-            "background_color": "#6f1e81",
-            "font_color": "#ffffff"
-        },
-        "MAKEINSTANCE": {
-            "background_color": "#9c2e7f",
-            "font_color": "#ffffff"
-        },
-        "ALINK": {
-            "background_color": "#ca3e72",
-            "font_color": "#ffffff"
-        },
-        "SLINK": {
-            "background_color": "#ee5d5d",
-            "font_color": "#000000"
-        },
         "SIGNAL": {
-            "background_color": "#fc9064",
-            "font_color": "#000000"
-        },
-        "CONFIDENCE": {
-            "background_color": "#fec488",
-            "font_color": "#000000"
+            "background_color": "#b63679",
+            "font_color": "#ffffff"
         }
     },
     "search": {

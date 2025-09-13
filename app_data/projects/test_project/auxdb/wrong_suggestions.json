@@ -1,11 +1,4 @@
 {
-    "TIMEX3": [],
-    "TLINK": [],
-    "EVENT": [],
-    "MAKEINSTANCE": [],
-    "ALINK": [],
-    "SLINK": [],
-    "SIGNAL": [],
-    "CONFIDENCE": [],
-    "PLACE": []
+    "TEST_TAG_01": [],
+    "SIGNAL": []
 }

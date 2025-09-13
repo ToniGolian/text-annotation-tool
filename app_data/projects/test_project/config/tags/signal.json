@@ -1,5 +1,6 @@
 {
     "type": "SIGNAL",
+    "has_database": false,
     "id_prefix": "s",
     "attributes": {
         "sid": {

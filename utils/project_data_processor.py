@@ -50,6 +50,7 @@ class ProjectDataProcessor:
         Performs initial validation checks on the provided project data.
         Populates self._errors with any validation issues found.
         """
+        print("\nDEBUG - Validating initial project data...")
         self._errors = []
         # check if data has required fields
         if not self._project_data.get("project_name", None):
@@ -69,10 +70,11 @@ class ProjectDataProcessor:
         This method will repeatedly prompt the controller to handle errors until
         there are no more errors left to address.
         """
-        while self._errors:
-            for error in self._errors:
-                self._controller.handle_project_data_error(error)
-            self._validate_initial()
+        print(f"DEBUG - Fixing validation errors...")
+        print(f"DEBUG - Initial validation errors: {self._errors}")
+        for error in self._errors:
+            print(f"DEBUG - Handling error: {error}")
+            self._controller.handle_project_data_error(error)
 
     def _normalize(self) -> None:
         """

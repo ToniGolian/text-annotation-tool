@@ -31,8 +31,9 @@ class NewProjectWizardFrame(ttk.Frame, IObserver):
         _listbox_created_groups (tk.Listbox): Listbox displaying created tag groups.
     """
 
-    def __init__(self, controller: IController,  master=None, project_data: dict = None) -> None:
+    def __init__(self, controller: IController,  parent_window: tk.Toplevel = None, master=None, project_data: dict = None) -> None:
         super().__init__(master)
+        self._parent_window = parent_window
 
         self._controller = controller
         self._controller.add_observer(self)
@@ -330,7 +331,7 @@ class NewProjectWizardFrame(ttk.Frame, IObserver):
         """
         success = self._controller.perform_project_create_new_project()
         if success:
-            self.master.destroy()
+            self._parent_window.destroy()
 
     def _on_button_pressed_next_tab(self) -> None:
         """

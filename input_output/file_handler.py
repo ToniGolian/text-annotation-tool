@@ -227,16 +227,23 @@ class FileHandler:
         """
         return os.path.splitext(os.path.basename(file_path))[0]
 
-    def create_directory(self, dir_path: str) -> None:
+    def create_directory(self, dir_path: str) -> bool:
         """
         Creates a directory at the specified path, including any necessary parent directories.
 
         Args:
             dir_path (str): The directory path to create.
+        Returns:
+            bool: True if the directory was created successfully, False otherwise.
         """
-        if os.path.exists(dir_path):
-            raise FileExistsError(f"Directory already exists: {dir_path}")
-        os.makedirs(dir_path, exist_ok=True)
+        try:
+            if os.path.exists(dir_path):
+                raise FileExistsError(f"Directory already exists: {dir_path}")
+            os.makedirs(dir_path, exist_ok=True)
+            return True
+        except Exception as e:
+            print(f"Error creating directory {dir_path}: {e}")
+            return False
 
     def does_path_exist(self, file_path: str) -> bool:
         """

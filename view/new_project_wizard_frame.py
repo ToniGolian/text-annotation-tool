@@ -328,7 +328,9 @@ class NewProjectWizardFrame(ttk.Frame, IObserver):
         Finalizes the project creation or editing process.
         This method should gather all data and notify the controller.
         """
-        self._controller.perform_project_create_new_project()
+        success = self._controller.perform_project_create_new_project()
+        if success:
+            self.master.destroy()
 
     def _on_button_pressed_next_tab(self) -> None:
         """

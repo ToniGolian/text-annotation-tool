@@ -36,9 +36,9 @@
             "file_name": "tlink.json"
         }
     },
-    "groups": "groups01.json",
-    "db_config": [
-        "place.json"
+    "current_group_file": "groups01.json",
+    "group_files": [
+        "groups01.json"
     ],
     "color_scheme": "magma_comp_search_color_scheme.json",
     "search_normalization": "search_normalization_rules.json",

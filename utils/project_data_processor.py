@@ -1,6 +1,3 @@
-from typing import Any, Dict
-from pprint import pprint
-
 from controller.interfaces import IController
 from enums.project_data_error import ProjectDataError
 from input_output.interfaces import IFileHandler
@@ -141,10 +138,6 @@ class ProjectDataProcessor:
                                                          in tag_display_names] for group_name, tag_display_names in tag_groups.items()}
         self._project_data["tag_group_file_name"] = self._derive_file_name(self._project_data.get(
             "tag_group_file_name", "groups01.json"))
-        print("Normalized tag groups:")
-        pprint(self._project_data["tag_groups"])
-        print("Derived tag group file name:")
-        pprint(self._project_data["tag_group_file_name"])
 
     # Additional data collection
     def _collect_additional_data(self) -> None:
@@ -376,7 +369,7 @@ class ProjectDataProcessor:
 
     # Build data
 
-    def _create_build_data(self) -> dict[str, Any]:
+    def _create_build_data(self) -> dict[str, any]:
         """
         Creates build data for the project based on the provided project data.
         This method constructs a build data dictionary that includes paths and payloads
@@ -501,14 +494,7 @@ class ProjectDataProcessor:
                 "path": search_normalization_rules_path,
                 "payload": self._project_data.get("search_normalization_rules", {})
             }
-        # DEBUG
-        print("Build data created:")
-        for name, value in build_data.items():
-            print(f"{name}:")
-            item_list = value if isinstance(value, list) else [value]
-            for item in item_list:
-                print(f"\tPath: {item['path']}")
-        # END DEBUG
+
         return build_data
 
     def _derive_file_name(self, tag_name: str) -> str:

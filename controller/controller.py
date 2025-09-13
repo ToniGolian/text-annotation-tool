@@ -736,6 +736,7 @@ class Controller(IController):
         are_directories_created = self._create_project_directories(
             project_name=project_name)
         are_files_created = self._create_project_files(build_data=build_data)
+
         return are_directories_created and are_files_created
 
     def _create_project_directories(self, project_name: str) -> bool:

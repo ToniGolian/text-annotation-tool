@@ -8,15 +8,25 @@ class ProjectDirectoryManager:
         self._file_handler = file_handler
         self._project_marker = "<project>"
 
-    def create_project_structure(self, project_name: str) -> None:
-        # paths = []
+    def create_project_structure(self, project_name: str) -> bool:
+        """
+        Create the project directory structure based on a predefined template.
+        Args:
+            project_name (str): The name of the project.
+        Returns:
+            bool: True if the directory structure was created successfully, False otherwise.
+        """
+        are_directories_created = True
         project_template = self._file_handler.read_file("project_template")
 
         for directory_name, directory in project_template.items():
-            base_path, target_directory = self._find_base(project_name=project_name,
-                                                          directory_name=directory_name,
+            base_path, target_directory = self._find_base(project_name=project_name, directory_name=directory_name,
                                                           directory=directory)
-            self._create_subdirectories(base_path, target_directory)
+            is_directory_created = self._create_subdirectories(
+                base_path, target_directory)
+            if not is_directory_created:
+                are_directories_created = False
+        return are_directories_created
 
     def _find_base(self, project_name: str, directory_name: str, directory: Dict) -> str:
         """
@@ -66,20 +76,27 @@ class ProjectDirectoryManager:
                 break  # Stop searching after the first match
         return target_path, target_directory
 
-    def _create_subdirectories(self, base_path: str, directory: Dict) -> None:
+    def _create_subdirectories(self, base_path: str, directory: Dict) -> bool:
         """
         Recursively create subdirectories based on the directory structure.
         Args:
             base_path (str): The base path where directories will be created.
             directory (Dict): The current directory structure.
+        Returns:
+            bool: True if all directories were created successfully, False otherwise.
         """
+        are_directories_created = True
         subdirectories = directory.get("directories", {})
         for subdirectory_name, subdirectory in subdirectories.items():
             if not isinstance(subdirectory, dict):
                 # Skip if it's not a dict (e.g. it's a list of files)
                 continue
             new_path = os.path.join(base_path, subdirectory_name)
-            self._file_handler.create_directory(new_path)
+            is_directory_created = self._file_handler.create_directory(
+                new_path)
+            if not is_directory_created:
+                are_directories_created = False
             if subdirectory.get("directories", {}):
-                self._create_subdirectories(
+                are_directories_created &= self._create_subdirectories(
                     base_path=new_path, directory=subdirectory)
+        return are_directories_created

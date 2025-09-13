@@ -47,6 +47,9 @@ class NewProjectWizardFrame(ttk.Frame, IObserver):
         if project_data:
             self.set_project_data(project_data)
 
+        self._notebook.select(self._page_project_name)
+        self._set_focus_on_default_widget()
+
     def _init_page_project_name(self) -> None:
         """Initializes the first wizard page for entering the project name."""
         self._page_project_name = ttk.Frame(self._notebook)
@@ -325,20 +328,6 @@ class NewProjectWizardFrame(ttk.Frame, IObserver):
         Finalizes the project creation or editing process.
         This method should gather all data and notify the controller.
         """
-        # project_name = self._entry_project_name.get().strip()
-        # if not project_name:
-        #     tk.messagebox.showerror(
-        #         "Error", "Project name cannot be empty.", parent=self)
-        #     # Switch back to "Project Name" tab
-        #     self._notebook.select(self._page_project_name)
-        #     return
-
-        # if self._controller.does_project_exist(project_name):
-        #     tk.messagebox.showerror(
-        #         "Error", f"A project named '{project_name}' already exists.", parent=self)
-        #     self._notebook.select(self._page_project_name)
-        #     return
-        #! maybe this is not nessary here, since the controller checks again before creating the project
         self._controller.perform_project_create_new_project()
 
     def _on_button_pressed_next_tab(self) -> None:
@@ -368,13 +357,26 @@ class NewProjectWizardFrame(ttk.Frame, IObserver):
         """
         notebook_page = {
             MenuSubpage.PROJECT_NAME: self._page_project_name,
-            MenuSubpage.TAG_SELECTION: self._page_tag_selection,
-            MenuSubpage.TAG_GROUPS: self._page_tag_groups
+            MenuSubpage.PROJECT_TAGS: self._page_tag_selection,
+            MenuSubpage.PROJECT_TAG_GROUPS: self._page_tag_groups
         }.get(subtab)
         if notebook_page is not None:
             self._notebook.select(notebook_page)
+            self._set_focus_on_default_widget()
         else:
             raise ValueError(f"Unknown subtab: {subtab}")
+
+    def _set_focus_on_default_widget(self) -> None:
+        """
+        Sets focus on the default widget of the current page.
+        """
+        current_tab = self._notebook.select()
+        if current_tab == str(self._page_project_name):
+            self._entry_project_name.focus_set()
+        elif current_tab == str(self._page_tag_selection):
+            self._listbox_available_tags.focus_set()
+        elif current_tab == str(self._page_tag_groups):
+            self._entry_tag_group_file_name.focus_set()
 
     def destroy(self) -> None:
         """

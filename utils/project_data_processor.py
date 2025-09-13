@@ -35,8 +35,7 @@ class ProjectDataProcessor:
             self._errors.append(ProjectDataError.EMPTY_PROJECT_NAME)
         if not self._project_data.get("selected_tags", []):
             self._errors.append(ProjectDataError.EMPTY_SELECTED_TAGS)
-        if not self._project_data.get("tag_group_file_name", None):
-            self._errors.append(ProjectDataError.EMPTY_TAG_GROUP_FILE_NAME)
+
         if not self._project_data.get("tag_groups", {}):
             self._errors.append(ProjectDataError.EMPTY_TAG_GROUPS)
         # check for duplicate project name
@@ -120,7 +119,8 @@ class ProjectDataProcessor:
         """
         for tag in self._project_data.get("selected_tags", []):
             # collect needed database
-            if not tag.get("needs_database", False):
+            print(f"DEBUG {tag=}")
+            if not tag.get("has_database", False):
                 continue
 
             tag_project = tag.get("project", "")
@@ -129,6 +129,7 @@ class ProjectDataProcessor:
                     f"Tag {tag['name']} needs database but has no project assigned.")
 
             tag_original_name = tag.get("original_name", "")
+
             with self._file_handler.use_project(tag_project):
                 project_settings = self._file_handler.read_file(
                     "project_Settings")
@@ -138,6 +139,7 @@ class ProjectDataProcessor:
                     raise ValueError(
                         f"Tag {tag['name']} needs database but no database info found in project settings of project {tag_project}.")
                 tag["database"] = tag_database
+                print(f"DEBUG {tag=}")
 
     def _create_project_settings(self) -> None:
         """

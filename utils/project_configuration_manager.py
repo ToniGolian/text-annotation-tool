@@ -193,9 +193,17 @@ class ProjectConfigurationManager:
                     if file_name.endswith(".json"):
                         tag_name = os.path.splitext(file_name)[0]
                         tag_path = os.path.join(tags_dir, file_name)
+                        has_database = self._file_handler.read_file(
+                            file_path=tag_path).get("has_database", False)
+                        # DEBUG
+                        tag_file = self._file_handler.read_file(
+                            file_path=tag_path)
+                        print(f"DEBUG {tag_file=}")
+                        # END DEBUG
                         results.append({
                             "name": tag_name.upper(),
                             "path": tag_path,
-                            "project": project_name
+                            "project": project_name,
+                            "has_database": has_database
                         })
         return results

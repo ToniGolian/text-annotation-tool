@@ -1,14 +1,15 @@
-depr_app_data.7z
-todo.txt
-/.VSCodeCounter
-/tests/
-/test_data/
-/test_img/
-/scripts/
-/mockclasses/
-/app_data/projects/mini_test_project/
-/app_data/projects/test_project/
-/app_data/projects/time_ml_template/
-/data/mini_test_project/
-/data/test_project/
-/data/time_ml_template/
+depr_app_data.7z export-ignore
+todo.txt export-ignore
+/.VSCodeCounter export-ignore
+/tests/ export-ignore
+/test_data/ export-ignore
+/tests/ export-ignore
+/test_img/ export-ignore
+/scripts/ export-ignore
+/mockclasses/ export-ignore
+/app_data/projects/mini_test_project/ export-ignore
+/app_data/projects/test_project/ export-ignore
+/app_data/projects/time_ml_template/ export-ignore
+/data/mini_test_project/ export-ignore
+/data/test_project/ export-ignore
+/data/time_ml_template/ export-ignore

@@ -157,6 +157,7 @@ class ProjectConfigurationManager:
 
         return results
 
+    # todo move to another class
     def get_available_tags(self) -> List[Dict[str, str]]:
         """
         Scans all project directories and collects tag definitions.

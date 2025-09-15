@@ -1,28 +1,34 @@
 ######################### Grundfunktionalität ####################
-    -controller.handle_project_data_error muss unterscheiden können zwischen new und edit
-    -bug search iteriert nicht mehr, wenn tag gesetzt wird
-    -bug check for save bei dokumenten funktioniert nicht mehr. fragt trotz speichern
-
+##### release 1.0 #####
     -New Project
         -allgemeiner tagpool
+        
+    -bug search iteriert nicht mehr, wenn tag gesetzt wird
+
+    -bug check for save bei dokumenten funktioniert nicht mehr. fragt trotz speichern
+
+
+    -bug: db search nicht im searchframe navigieren
+
+    -executable
+##### release 1.1 #####
+    -suggestions speichern wenn tags gesetzt werden.
+
     -Edit Project
         -Änderungen speichern 
+    -controller.handle_project_data_error muss unterscheiden können zwischen new und edit
 
     -settings menu
 
     -User Manual schreiben
     -Beispieldateien erstellen
 
-######Convinience######
-    -suggestions speichern wenn tags gesetzt werden.
+    -tagwizards erstellen
 
     -nested tags verbieten
 
     -seiten und margins setzen für die extraction
     
-    -bug: db search nicht im searchframe navigieren
-    
-    -tagwizards erstellen
 ##############################################
 ##############################################
 ##############################################

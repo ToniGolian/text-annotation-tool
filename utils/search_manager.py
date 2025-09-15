@@ -182,7 +182,7 @@ class SearchManager:
         Returns:
             SearchModel: A populated SearchModel containing all matches.
         """
-        search_model = SearchModel()
+        search_model = SearchModel(caller_id=caller_id)
         search_model.set_search_options(options)
 
         text = document_model.get_text()

@@ -967,30 +967,38 @@ class Controller(IController):
         self._current_search_model = None
 
     @with_highlight_update
-    def perform_next_suggestion(self) -> None:
+    def perform_next_suggestion(self, caller_id: str) -> None:
         """
         Moves to the next suggestion for the active search type.
 
+        Args:
+            caller_id (str): The unique identifier of the view requesting the next suggestion.
+
         Raises:
             RuntimeError: If no model is active or the active model does not match the tag type.
         """
         if not self._current_search_model:
             raise RuntimeError("No search model is currently active.")
-        self._current_search_model.next_result()
-        self._current_search_to_selection()
+        if caller_id == self._current_search_model.get_caller_id():
+            self._current_search_model.next_result()
+            self._current_search_to_selection()
 
     @with_highlight_update
-    def perform_previous_suggestion(self) -> None:
+    def perform_previous_suggestion(self, caller_id: str) -> None:
         """
         Moves to the previous suggestion for the active search type.
 
+        Args:
+            caller_id (str): The identifier of the view or component requesting the previous suggestion.
+
         Raises:
             RuntimeError: If no model is active or the active model does not match the tag type.
         """
         if not self._current_search_model:
             raise RuntimeError("No search model is currently active.")
-        self._current_search_model.previous_result()
-        self._current_search_to_selection()
+        if caller_id == self._current_search_model.get_caller_id():
+            self._current_search_model.previous_result()
+            self._current_search_to_selection()
 
     @with_highlight_update
     def mark_wrong_db_suggestion(self, tag_type: str) -> None:

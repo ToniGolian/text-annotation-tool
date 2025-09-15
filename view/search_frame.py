@@ -84,9 +84,9 @@ class SearchFrame(tk.Frame, IObserver):
         # Navigation buttons
         self._next_prev_frame = ttk.Frame(self)
         self._prev_button = ttk.Button(
-            self._next_prev_frame, text="<", command=lambda: self._controller.perform_previous_suggestion())
+            self._next_prev_frame, text="<", command=lambda: self._controller.perform_previous_suggestion(caller_id=self._search_id))
         self._next_button = ttk.Button(
-            self._next_prev_frame, text=">", command=lambda: self._controller.perform_next_suggestion())
+            self._next_prev_frame, text=">", command=lambda: self._controller.perform_next_suggestion(caller_id=self._search_id))
         self._prev_button.pack(side=tk.LEFT, padx=2)
         self._next_button.pack(side=tk.LEFT, padx=2)
         ToolTip(self._prev_button, text="Go to previous search result.")
@@ -140,7 +140,7 @@ class SearchFrame(tk.Frame, IObserver):
             "regex": self._regex_var.get()
         }
         self._controller.perform_manual_search(
-            search_options=options, caller_mode=self._root_view_id, caller_id=self.search_id)
+            search_options=options, caller_mode=self._root_view_id, caller_id=self._search_id)
 
     def reset_entry(self) -> None:
         """

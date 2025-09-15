@@ -168,7 +168,6 @@ cython_debug/
 /scripts
 comparison_main.py
 
-# csv
-*.csv
+
 # xlsx
 *.xlsx

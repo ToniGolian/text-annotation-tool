@@ -14,19 +14,25 @@ Author: Toni Golian
 1. Clone the repository:
    ```bash
    git clone git@github.com:ToniGolian/text-annotation-tool.git
-   ```  
-2. Navigate to the project directory:
+   ```
+2. Create and activate a virtual environment (optional but recommended):
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+3. Navigate to the project directory:
     ```bash
    cd text-annotation-tool
    ```
-3. Install the required dependencies:
+4. Install the required dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-4. Run the application:
+5. Run the application:
    ```bash
    python3 main.py
    ```
+   
 ### Windows
 1. Clone the repository:
    ```bash

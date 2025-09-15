@@ -86,7 +86,6 @@ Finally change the `current_config_file` field in the `app_data/projects/<projec
 - `source_registry`: (string) The name of the directory containing the csv source database files.
 
 ## Example
-
 ```json
 {
   "options": {

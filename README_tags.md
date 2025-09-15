@@ -1,12 +1,13 @@
-# Tag Definition Format
-
-This document describes how to define tags for annotation in the tool. Tag definitions are specified in JSON files and control which attributes are available for annotation, their types, and constraints.
+# Adding tags to the annotation tool
+This document describes how to define tags for annotation in the tool. Tag definitions are specified in JSON files and control which attributes are available for annotation, their types, and constraints. How the tag definition files are structured is explained below, along with an example for the TIMEX3 tag.
 
 ## Placement of the tag definition file
-<!-- todo continue -->
+The tag definition JSON file should be placed in the `app_data/app/tagpool` directory if you don't want to assign it to a specific project. If you want to use different tag definitions for different projects, place the file in the `app_data/projects/<PROJECT_NAME>/config/tags` directory.
+
+## Linking databases to tags
+How a database can be linked to a tag is described in the [Database Documentation](README_database.md).
 
 ## Structure
-
 A tag definition JSON file has the following structure:
 
 ```json
@@ -25,14 +26,12 @@ A tag definition JSON file has the following structure:
 ```
 
 ### Top-Level Fields
-
 - **type**: (string) The name of the tag type (e.g., `"TIMEX3"`, `"PLACE"`).
 - **id_prefix**: (string) Prefix for automatically generated tag IDs (e.g., `"t"` for `"t1"`, `"t2"`).
 - **has_database**: (boolean) If true, the tag is linked to a database for value selection.
 - **attributes**: (object) Defines the attributes available for this tag.
 
 ### Attribute Definition
-
 Each attribute is defined as an object with:
 
 - **type**: (string) The data type of the attribute. Common types:
@@ -46,14 +45,12 @@ Each attribute is defined as an object with:
 - **allowedValues**: (array, optional) Restricts the attribute value to the listed options.
 
 ### Notes
-
 - All attribute names must be unique within a tag definition.
 - If `allowedValues` is omitted, any value matching the attribute's type is accepted.
 - Custom types must be supported by the annotation tool.
 - Tag definitions are used to validate and guide annotation.
 
 ## Example: TIMEX3 Tag Definition
-
 Below is an example tag definition for the TIMEX3 tag, which annotates temporal expressions:
 
 ```json
@@ -80,7 +77,6 @@ Below is an example tag definition for the TIMEX3 tag, which annotates temporal 
 ```
 
 ### Example Tag Instances
-
 ```xml
 <TIMEX3 tid="t1" type="DURATION" value="P60D" mod="EQUAL_OR_LESS">no more than 60 days</TIMEX3>
 <TIMEX3 tid="t2" type="DATE" value="2000" mod="START">the dawn of 2000</TIMEX3>
@@ -96,5 +92,5 @@ Below is an example tag definition for the TIMEX3 tag, which annotates temporal 
 ```
 
 ## References
-
 - [TimeML Schema](https://timeml.github.io/site/publications/timeMLdocs/timeml_1.2.1.html#timex3)
+

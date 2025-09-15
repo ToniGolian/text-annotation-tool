@@ -1,0 +1,11 @@
+[project]
+name = "text-annotation-tool"
+authors = [
+    { name = "Toni Golian" }
+]
+description = "A lightweight text annotation tool for annotating spans of text with custom tags and attributes."
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.8"
+
+[tool.setuptools]

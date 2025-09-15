@@ -1,10 +1,6 @@
 ######################### Grundfunktionalität ####################
 ##### release 1.0 #####
 
-    -bei tagumbenennung bei projekterstellung die id prefixes anpassen
-
-    -bug: wenn man bei doppelten tags das renaming abbricht, wird trotzdem neues projekt erstellt
-
     -search color over tag highlightcolor
     
     -gitignore anpassen für release
@@ -33,6 +29,8 @@
 ##############################################
 ##############################################
     DONE
+    -bug: wenn man bei doppelten tags das renaming abbricht, wird trotzdem neues projekt erstellt
+    -bei tagumbenennung bei projekterstellung die id prefixes anpassen
     -bug: kein next search, nach tag setzen, wenn model gewechselt wurde. 
     -main aufräumen/ appbuilder
     -bug: db/manual search in gui trennen

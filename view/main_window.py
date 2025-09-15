@@ -235,6 +235,15 @@ class MainWindow(tk.Tk, IObserver):
         # Switch to the specified tab
         self._project_window.select_tab(tab, subtab)
 
+    def focus_project_window(self) -> None:
+        """
+        Brings the project window to the front if it exists.
+        """
+        if self._project_window and self._project_window.winfo_exists():
+            self._project_window.deiconify()
+            self._project_window.lift()
+            self._project_window.focus_set()
+
     def open_load_project_dialog(self) -> None:
         """
         Opens a dialog to select and load an existing project.

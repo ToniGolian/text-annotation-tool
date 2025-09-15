@@ -9,6 +9,7 @@ from enums.menu_pages import MenuPage, MenuSubpage
 from enums.project_data_error import ProjectDataError
 from enums.wizard_types import ProjectWizardType, TagWizardType
 from enums.search_types import SearchType
+from exceptions.project_creation_aborted import ProjectCreationAborted
 from input_output.file_handler import FileHandler
 from model.annotation_document_model import AnnotationDocumentModel
 from model.global_settings_model import GlobalSettingsModel
@@ -738,8 +739,14 @@ class Controller(IController):
         project_data = self._project_wizard_model.get_project_build_data()
         project_name = project_data.get("project_name", "")
 
-        build_data = self._project_data_processor.get_project_build_data(
-            project_data=project_data)
+        try:
+            build_data = self._project_data_processor.get_project_build_data(
+                project_data=project_data)
+        except ProjectCreationAborted:
+            self._main_window.show_error_message(
+                "Project creation was aborted due to duplicate tag names.")
+            self._main_window.focus_project_window()
+            return False
 
         are_directories_created = self._create_project_directories(
             project_name=project_name)
@@ -811,9 +818,6 @@ class Controller(IController):
             self._main_window.set_project_manager_to(
                 tab=MenuPage.NEW_PROJECT, subtab=MenuSubpage.PROJECT_TAG_GROUPS)
         elif error == ProjectDataError.TAG_NAME_DUPLICATES:
-            from pprint import pprint
-            print("DEBUG: Tag name duplicates found:")
-            pprint(data)
             return self._main_window.ask_user_for_tag_duplicates(data)
 
     def perform_project_update_project_data(self, update_data: Dict[str, Any]) -> None:

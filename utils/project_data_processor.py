@@ -1,5 +1,6 @@
 from controller.interfaces import IController
 from enums.project_data_error import ProjectDataError
+from exceptions.project_creation_aborted import ProjectCreationAborted
 from input_output.interfaces import IFileHandler
 
 
@@ -20,6 +21,9 @@ class ProjectDataProcessor:
 
         Returns:
             dict[str, any]: The processed build data ready for project creation.
+
+        Raises:
+            ProjectCreationAborted: If the user aborts the project creation process.
 
         Example:
             >>> get_project_build_data(project_data)
@@ -75,6 +79,10 @@ class ProjectDataProcessor:
     def _normalize(self) -> None:
         """
         Normalizes the project data by ensuring unique tag names and valid tag group references.
+
+        Raises:
+            ProjectCreationAborted: If the user aborts the project creation process.
+
         Note:
             This step modifies self._project_data in place to ensure consistency.
         """
@@ -96,6 +104,10 @@ class ProjectDataProcessor:
     def _ensure_unique_tag_names(self) -> None:
         """
         Ensures that all tag names in the provided list are unique by appending a counter to duplicate names.
+        This method modifies self._project_data in place by updating tag names to ensure uniqueness.
+
+        Raises:
+            ProjectCreationAborted: If the user aborts the project creation process.
         """
         tags = self._project_data.get("selected_tags", [])
         for tag in tags:
@@ -116,6 +128,9 @@ class ProjectDataProcessor:
             if duplicates:
                 renamed_duplicate_tags = self._controller.handle_project_data_error(ProjectDataError.TAG_NAME_DUPLICATES,
                                                                                     duplicates)
+                if renamed_duplicate_tags is None:
+                    raise ProjectCreationAborted(
+                        "User aborted duplicate tag renaming.")
                 are_tag_names_modified = True
                 if renamed_duplicate_tags is None:  # if user cancelled dialog
                     return

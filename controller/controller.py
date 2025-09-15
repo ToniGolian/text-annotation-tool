@@ -989,6 +989,15 @@ class Controller(IController):
             raise RuntimeError("No search model is currently active.")
         # If caller_id is None, the controller initiated the call (e.g., after a tag insertion)
         # If caller_id is provided, it must match the active search model's caller_id, since a view element tries to access the model
+        print(f"DEBUG {self._current_search_model=}")
+        print(
+            f"DEBUG caller_id")
+        print(
+            f"DEBUG {caller_id},")
+        print(
+            f"DEBUG caller_id stored in model: ")
+        print(
+            f"DEBUG {self._current_search_model.get_caller_id()}")
         if caller_id is None or caller_id == self._current_search_model.get_caller_id():
             self._current_search_model.next_result()
             self._current_search_to_selection()
@@ -1006,6 +1015,16 @@ class Controller(IController):
         """
         if not self._current_search_model:
             raise RuntimeError("No search model is currently active.")
+        print(f"DEBUG {self._current_search_model=}")
+
+        print(
+            f"DEBUG caller_id")
+        print(
+            f"DEBUG {caller_id},")
+        print(
+            f"DEBUG caller_id stored in model: ")
+        print(
+            f"DEBUG {self._current_search_model.get_caller_id()}")
         if caller_id is None or caller_id == self._current_search_model.get_caller_id():
             self._current_search_model.previous_result()
             self._current_search_to_selection()

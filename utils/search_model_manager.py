@@ -219,6 +219,7 @@ class SearchModelManager(IPublisher):
             tag_type=config["tag_type"],
             search_type=config["search_type"],
             document_model=config["document_model"],
+            caller_id=config["caller_id"],
             options=config["options"],
         )
 

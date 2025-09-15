@@ -26,6 +26,9 @@ class AnnotationTextDisplayFrame(TextDisplayFrame):
         if isinstance(publisher, HighlightModel):
             highlight_data = self._controller.get_observer_state(
                 self, publisher).get("highlight_data", [])
+            # from pprint import pprint
+            # print("DEBUG Highlight data:")
+            # pprint(highlight_data)
             self.unhighlight_text()
             self.highlight_text(highlight_data)
 

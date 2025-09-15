@@ -23,7 +23,6 @@ class SearchFrame(tk.Frame, IObserver):
         # to identify the mode in which the search is performed
         self._view_id = f"{root_view_id}_search"
         self._search_id = uuid.uuid4().hex  # to identify the search model
-        print(f"DEBUG {self._search_id=}")
         self._controller.add_observer(self)
         self._controller.register_view(self._view_id, self)
 

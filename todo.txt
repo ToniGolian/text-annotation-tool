@@ -1,10 +1,10 @@
 ######################### Grundfunktionalität ####################
 ##### release 1.0 #####
 
-    -main aufräumen/ appbuilder
-
     -bei tagumbenennung bei projekterstellung die id prefixes anpassen
 
+    -search color over tag highlightcolor
+    
     -gitignore anpassen für release
 
     -executable
@@ -25,11 +25,14 @@
     -nested tags verbieten
 
     -seiten und margins setzen für die extraction
+
     
 ##############################################
 ##############################################
 ##############################################
     DONE
+    -bug: kein next search, nach tag setzen, wenn model gewechselt wurde. 
+    -main aufräumen/ appbuilder
     -bug: db/manual search in gui trennen
     -bug: check for save bei dokumenten funktioniert nicht mehr. fragt trotz speichern
     -bug: überschrieben beim speichern nur im save_as abfragen

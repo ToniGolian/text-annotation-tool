@@ -967,24 +967,27 @@ class Controller(IController):
         self._current_search_model = None
 
     @with_highlight_update
-    def perform_next_suggestion(self, caller_id: str) -> None:
+    def perform_next_suggestion(self, caller_id: str = None) -> None:
         """
         Moves to the next suggestion for the active search type.
 
         Args:
-            caller_id (str): The unique identifier of the view requesting the next suggestion.
+            caller_id (str): The identifier of the view or component requesting the next suggestion.
+            Default is None.
 
         Raises:
             RuntimeError: If no model is active or the active model does not match the tag type.
         """
         if not self._current_search_model:
             raise RuntimeError("No search model is currently active.")
-        if caller_id == self._current_search_model.get_caller_id():
+        # If caller_id is None, the controller initiated the call (e.g., after a tag insertion)
+        # If caller_id is provided, it must match the active search model's caller_id, since a view element tries to access the model
+        if caller_id is None or caller_id == self._current_search_model.get_caller_id():
             self._current_search_model.next_result()
             self._current_search_to_selection()
 
     @with_highlight_update
-    def perform_previous_suggestion(self, caller_id: str) -> None:
+    def perform_previous_suggestion(self, caller_id: str = None) -> None:
         """
         Moves to the previous suggestion for the active search type.
 
@@ -996,7 +999,7 @@ class Controller(IController):
         """
         if not self._current_search_model:
             raise RuntimeError("No search model is currently active.")
-        if caller_id == self._current_search_model.get_caller_id():
+        if caller_id is None or caller_id == self._current_search_model.get_caller_id():
             self._current_search_model.previous_result()
             self._current_search_to_selection()
 
@@ -1036,9 +1039,6 @@ class Controller(IController):
         pdf_path = extraction_data["pdf_path"]
         file_name = self._file_handler.derive_file_name(pdf_path)
 
-        print(
-            f"Extracted text from {pdf_path} with {len(extracted_text)} characters.")
-        print(f"File name derived: {file_name}")
         document = {
             "file_name": file_name,
             "file_path": "",  # no path settet until save
@@ -1112,6 +1112,7 @@ class Controller(IController):
         command = AddTagCommand(
             self._tag_manager, tag_data, target_model=target_model, caller_id=caller_id)
         self._execute_command(command=command, caller_id=caller_id)
+        print("DEBUG: perform_add_tag - calling perform_next_suggestion")
         self.perform_next_suggestion()
 
     @with_highlight_update

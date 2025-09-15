@@ -1,15 +1,15 @@
 {
     "document_type": "comparison",
     "source_paths": [
-        "C:/Users/tonig/PythonProjects/text-annotation-tool/data/comparison/comp1.json",
-        "C:/Users/tonig/PythonProjects/text-annotation-tool/data/comparison/comp2.json"
+        "data\\TimeML\\comparison\\comp1.json",
+        "data\\TimeML\\comparison\\comp2.json"
     ],
     "source_file_names": [
         "",
         "comp1",
         "comp2"
     ],
-    "file_path": "C:/Users/tonig/PythonProjects/text-annotation-tool/data/comparison/pro1.json",
+    "file_path": "data\\TimeML\\comparison\\pro1.json",
     "num_sentences": 3,
     "current_sentence_index": 0,
     "comparison_sentences": [

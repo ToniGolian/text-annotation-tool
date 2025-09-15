@@ -60,7 +60,8 @@ Finally change the `current_config_file` field in the `app_data/projects/<projec
     "output_columns": [<int>, ...],
     "display_columns": [<int>, ...]
   },
-  "source": "<source_file>.csv"
+  "source": "<source_file>.csv",
+  "source_registry": "<source_registry>"
 }
 ```
 
@@ -81,6 +82,8 @@ Finally change the `current_config_file` field in the `app_data/projects/<projec
 
 ### source
 - `source`: (string) The name of the source CSV file placed in the `app_data/app/databases/sources` directory.
+### source_registry
+- `source_registry`: (string) The name of the directory containing the csv source database files.
 
 ## Example
 

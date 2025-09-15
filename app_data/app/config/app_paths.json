@@ -10,6 +10,7 @@
     "app_database_sources": "app_data/app/databases/sources/",
     "app_database_registries": "app_data/app/databases/registries/",
     "app_tagpool": "app_data/app/tagpool/",
+    "app_database_configs": "app_data/app/databases/config/",
     "project_directory": "app_data/projects/",
     "project_databases_registry_locks": "app_data/projects/<project>/database_registry_locks/",
     "project_config_directory": "app_data/projects/<project>/config/",

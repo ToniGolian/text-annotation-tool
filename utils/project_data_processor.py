@@ -189,16 +189,23 @@ class ProjectDataProcessor:
             }
             tag_source_project = tag.get("project", "")
             original_name = tag.get("original_name", tag_name)
-            with self._file_handler.use_project(tag_source_project):
-                project_settings = self._file_handler.read_file(
-                    "project_settings")
-                source_registry_lock_name = project_settings.get(
-                    "tags", {}).get(tag_name, {}).get(original_name, {}).get("database", {}).get("registry_lock", self._derive_file_name(original_name))
-                source_registry_lock = self._file_handler.read_file("project_database_registry_locks_directory",
-                                                                    source_registry_lock_name)
-                source_registry = source_registry_lock.get(
+            if tag_source_project == "tag_pool":
+                database_config = self._file_handler.read_file(
+                    "app_database_configs", self._derive_file_name(original_name))
+                source_registry = database_config.get(
                     "source_registry", "")
-                source = source_registry_lock.get("source", "")
+                source = database_config.get("source", "")
+            else:
+                with self._file_handler.use_project(tag_source_project):
+                    project_settings = self._file_handler.read_file(
+                        "project_settings")
+                    source_registry_lock_name = project_settings.get(
+                        "tags", {}).get(tag_name, {}).get(original_name, {}).get("database", {}).get("registry_lock", self._derive_file_name(original_name))
+                    source_registry_lock = self._file_handler.read_file("project_database_registry_locks_directory",
+                                                                        source_registry_lock_name)
+                    source_registry = source_registry_lock.get(
+                        "source_registry", "")
+                    source = source_registry_lock.get("source", "")
             if not source_registry or not source:
                 raise ValueError(
                     f"Missing source_registry or source for tag {tag_name} in project {tag_source_project}")
@@ -271,13 +278,19 @@ class ProjectDataProcessor:
 
             source_tag_name = tag.get("original_name", tag.get("name", ""))
             source_project = tag.get("project", "")
-            with self._file_handler.use_project(source_project):
-                project_settings = self._file_handler.read_file(
-                    "project_settings")
-                source_database_config_file = project_settings.get(
-                    "tags", {}).get(source_tag_name, {}).get("database", {}).get("current_config_file", self._derive_file_name(source_tag_name))
-                database_config = self._file_handler.read_file(
-                    "project_database_config_directory", source_database_config_file)
+            print(f"DEBUG {source_project=}")
+            if source_project == "tag_pool":
+                config_path = self._file_handler.resolve_path(
+                    "app_database_configs", self._derive_file_name(source_tag_name))
+            else:
+                with self._file_handler.use_project(source_project):
+                    project_settings = self._file_handler.read_file(
+                        "project_settings")
+                    source_database_config_file = project_settings.get(
+                        "tags", {}).get(source_tag_name, {}).get("database", {}).get("current_config_file", self._derive_file_name(source_tag_name))
+                    config_path = self._file_handler.resolve_path(
+                        "project_database_config_directory", source_database_config_file)
+                database_config = self._file_handler.read_file(config_path)
                 database_config_payloads[self._derive_file_name(
                     tag.get('name', ''))] = database_config
         self._project_data["database_config_payloads"] = database_config_payloads

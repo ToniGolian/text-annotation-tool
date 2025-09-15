@@ -28,5 +28,6 @@
             0
         ]
     },
+    "source_registry": "place",
     "source": "place.csv"
 }

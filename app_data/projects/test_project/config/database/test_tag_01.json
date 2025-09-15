@@ -24,5 +24,7 @@
             1,
             3
         ]
-    }
+    },
+    "source_registry": "mini_test",
+    "source": "test_tag.csv"
 }

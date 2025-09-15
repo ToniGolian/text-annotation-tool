@@ -1,13 +1,11 @@
 ######################### Grundfunktionalität ####################
 ##### release 1.0 #####
-    -test projects und test dokumente 
-    
+    -bug: Keine db config erzeugt nach erzeugung von project mit tags aus tagpool
+
     -gitignore anpassen für release
 
     -readme tags vervollständigen
 
-
-    -executable
 ##### release 1.1 #####
 
     -color settings und colorcreation
@@ -29,11 +27,13 @@
 
     -seiten und margins setzen für die extraction
 
+    -executable
     
 ##############################################
 ##############################################
 ##############################################
     DONE
+    -test projects und test dokumente 
     -search color over tag highlightcolor
     -bug: wenn man bei doppelten tags das renaming abbricht, wird trotzdem neues projekt erstellt
     -bei tagumbenennung bei projekterstellung die id prefixes anpassen

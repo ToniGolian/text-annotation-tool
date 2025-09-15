@@ -1,0 +1,33 @@
+{
+    "options": {
+        "delimiter": " | ",
+        "dict_delimiters": [
+            "|",
+            "/",
+            ",",
+            ";",
+            ":",
+            "_",
+            " "
+        ],
+        "prefixes": {
+            "2": [
+                "AX_"
+            ]
+        },
+        "postfixes": {},
+        "infixes": {}
+    },
+    "columns": {
+        "key_column": 4,
+        "output_columns": [
+            0
+        ],
+        "display_columns": [
+            2,
+            0
+        ]
+    },
+    "source_registry": "place",
+    "source": "place.csv"
+}

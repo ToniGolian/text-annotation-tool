@@ -9,3 +9,4 @@ A lightweight text annotation tool for annotating spans of text with custom tags
 - Collaborative annotation support
 
 ## Installation
+ 

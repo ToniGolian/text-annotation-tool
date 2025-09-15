@@ -278,7 +278,6 @@ class ProjectDataProcessor:
 
             source_tag_name = tag.get("original_name", tag.get("name", ""))
             source_project = tag.get("project", "")
-            print(f"DEBUG {source_project=}")
             if source_project == "tag_pool":
                 config_path = self._file_handler.resolve_path(
                     "app_database_configs", self._derive_file_name(source_tag_name))

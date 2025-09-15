@@ -1,8 +1,5 @@
 ######################### Grundfunktionalität ####################
 ##### release 1.0 #####
-
-    -search color over tag highlightcolor
-    
     -gitignore anpassen für release
 
     -executable
@@ -29,6 +26,7 @@
 ##############################################
 ##############################################
     DONE
+    -search color over tag highlightcolor
     -bug: wenn man bei doppelten tags das renaming abbricht, wird trotzdem neues projekt erstellt
     -bei tagumbenennung bei projekterstellung die id prefixes anpassen
     -bug: kein next search, nach tag setzen, wenn model gewechselt wurde. 

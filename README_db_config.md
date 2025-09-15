@@ -14,7 +14,7 @@ To enable database embedding for a tag type, you need to create three files:
 ### Placement of the tag definition file
 The tag definition file should be placed in the `app_data/projects/<project_name>/config/tags` directory.
 ### Placement of the database config file
-The database configuration file should be placed in the `app_data/projects/<project_name>/config/database` directory.
+The database configuration file should be placed in the `app_data/app/databases/config` directory.
 ### Placement of the source database file
 The source database file should be placed in the `app_data/app/databases/sources` directory. It must be a CSV file.
 
@@ -59,7 +59,8 @@ Finally change the `current_config_file` field in the `app_data/projects/<projec
     "key_column": <int>,
     "output_columns": [<int>, ...],
     "display_columns": [<int>, ...]
-  }
+  },
+  "source": "<source_file>.csv"
 }
 ```
 
@@ -77,6 +78,9 @@ Finally change the `current_config_file` field in the `app_data/projects/<projec
 - `infixes`: (dict) Maps column indices to substrings (infixes) to remove from inside the values. Similar to prefixes.
 
 **Note:** Column indices in `prefixes`, `postfixes`, and `infixes` must be strings due to JSON limitations. Also see Notes at the bottom.
+
+### source
+- `source`: (string) The name of the source CSV file placed in the `app_data/app/databases/sources` directory.
 
 ## Example
 

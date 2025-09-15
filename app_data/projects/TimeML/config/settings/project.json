@@ -1,0 +1,48 @@
+{
+    "name": "TimeML",
+    "tags": {
+        "ALINK": {
+            "file_name": "alink.json",
+            "database": {}
+        },
+        "CONFIDENCE": {
+            "file_name": "confidence.json",
+            "database": {}
+        },
+        "EVENT": {
+            "file_name": "event.json",
+            "database": {}
+        },
+        "MAKEINSTANCE": {
+            "file_name": "makeinstance.json",
+            "database": {}
+        },
+        "SIGNAL": {
+            "file_name": "signal.json",
+            "database": {}
+        },
+        "SLINK": {
+            "file_name": "slink.json",
+            "database": {}
+        },
+        "TIMEX3": {
+            "file_name": "timex3.json",
+            "database": {}
+        },
+        "TLINK": {
+            "file_name": "tlink.json",
+            "database": {}
+        }
+    },
+    "current_group_file": "groups1.json",
+    "group_files": [
+        "groups1.json"
+    ],
+    "search_normalization": "search_normalization_rules.json",
+    "color_scheme": "magma_comp_search_color_scheme.json",
+    "are_all_search_results_highlighted": true,
+    "current_language": "english",
+    "abbreviations": "abbreviations.json",
+    "suggestions": "suggestions.json",
+    "wrong_suggestions": "wrong_suggestions.json"
+}

@@ -1,0 +1,30 @@
+{
+    "name": "GREED",
+    "tags": {
+        "TIMEX3": {
+            "file_name": "timex3.json",
+            "database": {}
+        },
+        "PLACE": {
+            "file_name": "place.json",
+            "database": {
+                "current_config_file": "place.json",
+                "config_files": [
+                    "place.json"
+                ],
+                "registry_lock": "place.json"
+            }
+        }
+    },
+    "current_group_file": "group1.json",
+    "group_files": [
+        "group1.json"
+    ],
+    "search_normalization": "search_normalization_rules.json",
+    "color_scheme": "magma_comp_search_color_scheme.json",
+    "are_all_search_results_highlighted": true,
+    "current_language": "english",
+    "abbreviations": "abbreviations.json",
+    "suggestions": "suggestions.json",
+    "wrong_suggestions": "wrong_suggestions.json"
+}

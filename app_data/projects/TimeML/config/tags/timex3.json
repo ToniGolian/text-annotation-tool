@@ -1,0 +1,89 @@
+{
+    "type": "TIMEX3",
+    "has_database": false,
+    "id_prefix": "t",
+    "attributes": {
+        "tid": {
+            "type": "ID"
+        },
+        "type": {
+            "type": "string",
+            "allowedValues": [
+                "DATE",
+                "TIME",
+                "DURATION",
+                "SET"
+            ]
+        },
+        "functionInDocument": {
+            "type": "string",
+            "allowedValues": [
+                "CREATION_TIME",
+                "EXPIRATION_TIME",
+                "MODIFICATION_TIME",
+                "PUBLICATION_TIME",
+                "RELEASE_TIME",
+                "RECEPTION_TIME",
+                "NONE"
+            ]
+        },
+        "beginPoint": {
+            "type": "IDREF"
+        },
+        "endPoint": {
+            "type": "IDREF"
+        },
+        "quant": {
+            "type": "CDATA"
+        },
+        "freq": {
+            "type": "Duration"
+        },
+        "temporalFunction": {
+            "type": "boolean",
+            "allowedValues": [
+                "true",
+                "false"
+            ]
+        },
+        "value": {
+            "type": "union",
+            "allowedValues": [
+                "Duration",
+                "Date",
+                "Time",
+                "WeekDate",
+                "WeekTime",
+                "Season",
+                "PartOfYear",
+                "PaPrFu"
+            ]
+        },
+        "valueFromFunction": {
+            "type": "IDREF"
+        },
+        "mod": {
+            "type": "string",
+            "allowedValues": [
+                "BEFORE",
+                "AFTER",
+                "ON_OR_BEFORE",
+                "ON_OR_AFTER",
+                "LESS_THAN",
+                "MORE_THAN",
+                "EQUAL_OR_LESS",
+                "EQUAL_OR_MORE",
+                "START",
+                "MID",
+                "END",
+                "APPROX"
+            ]
+        },
+        "anchorTimeID": {
+            "type": "IDREF"
+        },
+        "comment": {
+            "type": "CDATA"
+        }
+    }
+}

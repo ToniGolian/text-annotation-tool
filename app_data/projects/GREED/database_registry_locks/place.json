@@ -1,0 +1,13 @@
+{
+    "name": "PLACE",
+    "database_registry": "place",
+    "source_registry": "place",
+    "source": "place.csv",
+    "current_db": "",
+    "dbs": [],
+    "current_config_file": "place.json",
+    "config_files": [
+        "place.json"
+    ],
+    "count": 0
+}

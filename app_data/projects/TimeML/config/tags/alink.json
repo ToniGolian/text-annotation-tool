@@ -1,0 +1,35 @@
+{
+    "type": "ALINK",
+    "has_database": false,
+    "id_prefix": "l",
+    "attributes": {
+        "lid": {
+            "type": "ID"
+        },
+        "eventInstanceID": {
+            "type": "ID"
+        },
+        "signalID": {
+            "type": "IDREF"
+        },
+        "relatedToEventInstance": {
+            "type": "IDREF"
+        },
+        "relType": {
+            "type": "string",
+            "allowedValues": [
+                "INITIATES",
+                "CULMINATES",
+                "TERMINATES",
+                "CONTINUES",
+                "REINITIATES"
+            ]
+        },
+        "comment": {
+            "type": "CDATA"
+        },
+        "syntax": {
+            "type": "CDATA"
+        }
+    }
+}

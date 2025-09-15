@@ -1,6 +1,11 @@
 ######################### Grundfunktionalität ####################
 ##### release 1.0 #####
+    -test projects und test dokumente 
+    
     -gitignore anpassen für release
+
+    -readme tags vervollständigen
+
 
     -executable
 ##### release 1.1 #####

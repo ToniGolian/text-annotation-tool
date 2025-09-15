@@ -1,0 +1,16 @@
+{
+    "TemporalTags": [
+        "TIMEX3",
+        "TLINK"
+    ],
+    "EventTags": [
+        "ALINK",
+        "EVENT",
+        "MAKEINSTANCE",
+        "SLINK"
+    ],
+    "HelperTags": [
+        "CONFIDENCE",
+        "SIGNAL"
+    ]
+}

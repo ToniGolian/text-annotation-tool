@@ -1,0 +1,28 @@
+{
+    "type": "CONFIDENCE",
+    "has_database": false,
+    "id_prefix": "",
+    "attributes": {
+        "cid": {
+            "type": "ID"
+        },
+        "tagType": {
+            "type": "CDATA"
+        },
+        "tagID": {
+            "type": "IDREF"
+        },
+        "attributeName": {
+            "type": "CDATA"
+        },
+        "confidenceValue": {
+            "type": "CDATA",
+            "constraints": {
+                "range": "0 < x < 1"
+            }
+        },
+        "comment": {
+            "type": "CDATA"
+        }
+    }
+}

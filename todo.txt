@@ -1,11 +1,12 @@
 ######################### Grundfunktionalität ####################
 ##### release 1.0 #####
-        
     -bug search iteriert nicht mehr, wenn tag gesetzt wird
 
     -bug check for save bei dokumenten funktioniert nicht mehr. fragt trotz speichern
 
-    -bug: db search nicht im searchframe navigieren
+    -bug: db/manual search in gui trennen
+
+    -main aufräumen/ appbuilder
 
     -executable
 ##### release 1.1 #####

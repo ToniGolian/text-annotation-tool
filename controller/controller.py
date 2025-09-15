@@ -129,8 +129,7 @@ class Controller(IController):
                 return result
             self._current_search_model = self._search_model_manager.update_model(
                 self._current_search_model)
-            if method.__name__ == "perform_add_tag":
-                self.perform_next_suggestion()
+
             return result
         return wrapper
 
@@ -1099,6 +1098,7 @@ class Controller(IController):
         command = AddTagCommand(
             self._tag_manager, tag_data, target_model=target_model, caller_id=caller_id)
         self._execute_command(command=command, caller_id=caller_id)
+        self.perform_next_suggestion()
 
     @with_highlight_update
     def perform_edit_tag(self, tag_id: str, tag_data: Dict, caller_id: str) -> None:

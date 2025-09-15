@@ -1,12 +1,9 @@
 ######################### Grundfunktionalität ####################
 ##### release 1.0 #####
-    -New Project
-        -allgemeiner tagpool
         
     -bug search iteriert nicht mehr, wenn tag gesetzt wird
 
     -bug check for save bei dokumenten funktioniert nicht mehr. fragt trotz speichern
-
 
     -bug: db search nicht im searchframe navigieren
 
@@ -33,6 +30,8 @@
 ##############################################
 ##############################################
     DONE
+    -New Project
+        -allgemeiner tagpool
     -save
         -speicherorte projektspezifisch machen
     -bei new project direkt checken ob projektname vergeben ist 

@@ -175,32 +175,46 @@ class ProjectConfigurationManager:
             JSONDecodeError: If project.json is invalid.
         """
         projects_path = self._file_handler.resolve_path("project_directory")
+        tag_directories: List[Dict[str, str]] = []
         results: List[Dict[str, str]] = []
         for directory in os.listdir(projects_path):
+            project = {}
             subdir_path = os.path.join(projects_path, directory)
             if os.path.isdir(subdir_path):
+                # Hardcoded path because FileHandler requires project context to resolve directories.
+                # We cannot assume that each directory name always matches a project name, so direct path construction is more robust here.
                 project_file = os.path.join(
                     subdir_path, "config", "settings", "project.json")
-                tags_dir = os.path.join(subdir_path, "config", "tags")
-                if not os.path.isfile(project_file) or not os.path.isdir(tags_dir):
+                project["tags_dir"] = os.path.join(
+                    subdir_path, "config", "tags")
+                if not os.path.isfile(project_file) or not os.path.isdir(project["tags_dir"]):
                     continue
 
                 project_data = self._file_handler.read_file(
                     file_path=project_file)
-                project_name = project_data.get("name")
-                if not project_name:
+                project["project_name"] = project_data.get("name")
+                if not project["project_name"]:
                     continue
+                tag_directories.append(project)
+        # Include the app's built-in tag pool
+        tag_pool = {}
+        tag_pool["project_name"] = "tag_pool"
+        tag_pool["tags_dir"] = self._file_handler.resolve_path(
+            "app_tagpool")
+        tag_directories.append(tag_pool)
 
-                for file_name in os.listdir(tags_dir):
-                    if file_name.endswith(".json"):
-                        tag_name = os.path.splitext(file_name)[0]
-                        tag_path = os.path.join(tags_dir, file_name)
-                        has_database = self._file_handler.read_file(
-                            file_path=tag_path).get("has_database", False)
-                        results.append({
-                            "name": tag_name.upper(),
-                            "path": tag_path,
-                            "project": project_name,
-                            "has_database": has_database
-                        })
+        # Now scan each project's tags directory for tag files
+        for project in tag_directories:
+            for file_name in os.listdir(project["tags_dir"]):
+                if file_name.endswith(".json"):
+                    tag_name = os.path.splitext(file_name)[0]
+                    tag_path = os.path.join(project["tags_dir"], file_name)
+                    has_database = self._file_handler.read_file(
+                        file_path=tag_path).get("has_database", False)
+                    results.append({
+                        "name": tag_name.upper(),
+                        "path": tag_path,
+                        "project": project["project_name"],
+                        "has_database": has_database
+                    })
         return results

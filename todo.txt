@@ -3,6 +3,8 @@
 
     -bei tagumbenennung bei projekterstellung die id prefixes anpassen
 
+    -bug: wenn man bei doppelten tags das renaming abbricht, wird trotzdem neues projekt erstellt
+
     -search color over tag highlightcolor
     
     -gitignore anpassen für release

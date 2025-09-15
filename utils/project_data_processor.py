@@ -101,6 +101,8 @@ class ProjectDataProcessor:
         for tag in tags:
             # store original name to find data configs later
             tag.setdefault("original_name", tag.get("name", "unknown"))
+            tag.setdefault("original_id_prefix",
+                           tag.get("id_prefix", "unknown"))
         are_tag_names_modified = False
         while True:
             # search the duplicates
@@ -236,12 +238,10 @@ class ProjectDataProcessor:
         for tag in self._project_data.get("selected_tags", []):
             source_path = tag.get("path", "")
             source_definition = self._file_handler.read_file(source_path)
-            id_prefix = tag.get(
-                "new_id_prefix", "") or source_definition.get("id_prefix", "")
             tag_definition = {
                 "type": tag.get("name", "UNKNOWN"),
                 "has_database": source_definition.get("has_database", False),
-                "id_prefix": id_prefix,
+                "id_prefix": tag.get("id_prefix", ""),
                 "attributes": source_definition.get("attributes", [])
             }
             tag_payloads[self._derive_file_name(

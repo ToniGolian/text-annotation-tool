@@ -209,12 +209,15 @@ class ProjectConfigurationManager:
                 if file_name.endswith(".json"):
                     tag_name = os.path.splitext(file_name)[0]
                     tag_path = os.path.join(project["tags_dir"], file_name)
-                    has_database = self._file_handler.read_file(
-                        file_path=tag_path).get("has_database", False)
+                    tag_file = self._file_handler.read_file(
+                        file_path=tag_path)
+                    has_database = tag_file.get("has_database", False)
+                    id_prefix = tag_file.get("id_prefix", "")
                     results.append({
                         "name": tag_name.upper(),
                         "path": tag_path,
                         "project": project["project_name"],
-                        "has_database": has_database
+                        "has_database": has_database,
+                        "id_prefix": id_prefix
                     })
         return results

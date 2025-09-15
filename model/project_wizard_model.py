@@ -114,7 +114,8 @@ class ProjectWizardModel(IPublisher):
                 "path": tag["path"],
                 "display_name": tag["display_name"],
                 "project": tag["project"],
-                "has_database": tag.get("has_database", False)
+                "has_database": tag.get("has_database", False),
+                "id_prefix": tag.get("id_prefix", "")
             } for tag in self._globally_available_tags
             if tag["display_name"] in self._selected_tags_display_names]
 

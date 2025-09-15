@@ -811,6 +811,9 @@ class Controller(IController):
             self._main_window.set_project_manager_to(
                 tab=MenuPage.NEW_PROJECT, subtab=MenuSubpage.PROJECT_TAG_GROUPS)
         elif error == ProjectDataError.TAG_NAME_DUPLICATES:
+            from pprint import pprint
+            print("DEBUG: Tag name duplicates found:")
+            pprint(data)
             return self._main_window.ask_user_for_tag_duplicates(data)
 
     def perform_project_update_project_data(self, update_data: Dict[str, Any]) -> None:

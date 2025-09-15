@@ -101,14 +101,22 @@ class DuplicatesDialog(tk.Toplevel):
             label.grid(row=0, column=0, sticky="w", padx=(0, 10), pady=(0, 5))
             label = ttk.Label(frame, text="New Name")
             label.grid(row=0, column=1, sticky="ew", pady=(0, 5))
+            label = ttk.Label(frame, text="Id Prefix")
+            label.grid(row=0, column=2, sticky="ew", pady=(0, 5))
             for i, tag in enumerate(tag_list):
                 ttk.Label(frame, text=tag["display_name"]).grid(
                     row=i+1, column=0, sticky="w", padx=(0, 10)
                 )
                 entry = ttk.Entry(frame)
-                tag["entry"] = entry  # Store entry ref for later retrieval
+                # Store name entry ref for later retrieval
+                tag["name_entry"] = entry
                 entry.insert(0, tag["name"])
-                entry.grid(row=i+1, column=1, sticky="ew")
+                entry.grid(row=i+1, column=1, sticky="ew", padx=(0, 5))
+                entry = ttk.Entry(frame)
+                # Store id prefix entry ref for later retrieval
+                tag["id_prefix_entry"] = entry
+                entry.insert(0, tag.get("id_prefix", ""))
+                entry.grid(row=i+1, column=2, sticky="ew")
 
         # Button row (fills width)
         button_frame = ttk.Frame(content)
@@ -135,7 +143,8 @@ class DuplicatesDialog(tk.Toplevel):
         result = []
         for _, tags in self._duplicates.items():
             for tag in tags:
-                tag["name"] = tag["entry"].get().strip()
+                tag["name"] = tag["name_entry"].get().strip()
+                tag["id_prefix"] = tag["id_prefix_entry"].get().strip()
                 result.append(tag)
         self.result = result
         self.destroy()

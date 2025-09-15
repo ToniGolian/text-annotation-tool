@@ -1,4 +1,3 @@
-from typing import List, Optional
 from data_classes.search_result import SearchResult
 from model.interfaces import ISearchModel
 
@@ -16,7 +15,7 @@ class SearchModel(ISearchModel):
         Initializes the search model with an empty result set and a valid, inactive state.
         """
         super().__init__()
-        self._results: List[SearchResult] = []
+        self._results: list[SearchResult] = []
         self._current_index: int = -1
         self._valid: bool = True
         self._is_active: bool = False
@@ -124,7 +123,7 @@ class SearchModel(ISearchModel):
         Returns:
             dict: A dictionary with the following keys:
                 - 'current_result' (Optional[SearchResult]): The selected result or None.
-                - 'results' (List[SearchResult]): The full list of results (can be empty).
+                - 'results' (list[SearchResult]): The full list of results (can be empty).
         """
         current_result = (
             self._results[self._current_index]

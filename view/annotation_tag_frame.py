@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from typing import Dict, List
+import uuid
 from controller.interfaces import IController
 from data_classes.search_result import SearchResult
 from view.tooltip import ToolTip
@@ -38,6 +39,7 @@ class AnnotationTagFrame(tk.Frame):
         self._output_widget = None
         self._display_widget = None
         self._current_search_result: SearchResult = None
+        self._db_id = None  # to identify for which db search this tag frame is used
         self._tooltips = []
         self._render()
         if self._display_widget:
@@ -61,6 +63,7 @@ class AnnotationTagFrame(tk.Frame):
 
         is_db = self._template.get("has_database", False)
         if is_db:
+            self._db_id = uuid.uuid4().hex
             annotation_control_frame = tk.Frame(self)
             annotation_control_frame.grid(
                 row=1, column=1, columnspan=2, pady=5, sticky="ew")
@@ -68,7 +71,7 @@ class AnnotationTagFrame(tk.Frame):
             start_annotation_button = ttk.Button(
                 annotation_control_frame,
                 text=f"Start {self._name} Annotation",
-                command=self._button_pressed_start_db_annotation
+                command=self._on_button_pressed_start_db_annotation
             )
             start_annotation_button.pack(
                 side=tk.LEFT, expand=True, fill=tk.X, padx=(5, 0))
@@ -80,7 +83,7 @@ class AnnotationTagFrame(tk.Frame):
             end_annotation_button = ttk.Button(
                 annotation_control_frame,
                 text=f"End {self._name} Annotation",
-                command=self._button_pressed_end_db_annotation
+                command=self._on_button_pressed_end_db_annotation
             )
             end_annotation_button.pack(
                 side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 5))
@@ -96,7 +99,7 @@ class AnnotationTagFrame(tk.Frame):
             previous_suggestion_button = ttk.Button(
                 navigation_control_frame,
                 text="Previous",
-                command=self._button_pressed_previous_db_suggestion_button
+                command=self._on_button_pressed_previous_db_suggestion_button
             )
             previous_suggestion_button.pack(
                 side=tk.LEFT, expand=True, fill=tk.X, padx=(5, 0))
@@ -108,7 +111,7 @@ class AnnotationTagFrame(tk.Frame):
             next_suggestion_button = ttk.Button(
                 navigation_control_frame,
                 text="Next",
-                command=self._button_pressed_next_db_suggestion_button
+                command=self._on_button_pressed_next_db_suggestion_button
             )
             next_suggestion_button.pack(
                 side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 5))
@@ -120,7 +123,7 @@ class AnnotationTagFrame(tk.Frame):
             wrong_suggestion_button = ttk.Button(
                 self,
                 text="Mark wrong suggestion",
-                command=self._button_pressed_mark_wrong_db_suggestion
+                command=self._on_button_pressed_mark_wrong_db_suggestion
             )
             wrong_suggestion_button.grid(
                 row=3, column=1, sticky="ew", padx=5, pady=5)
@@ -173,7 +176,7 @@ class AnnotationTagFrame(tk.Frame):
             row += 1
 
         add_tag_button = ttk.Button(
-            self, text="Add Tag", command=self._button_pressed_add_tag)
+            self, text="Add Tag", command=self._on_button_pressed_add_tag)
         add_tag_button.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
         row += 1
 
@@ -189,7 +192,7 @@ class AnnotationTagFrame(tk.Frame):
             row += 1
 
             edit_tag_button = ttk.Button(
-                self, text="Edit Tag", command=self._button_pressed_edit_tag)
+                self, text="Edit Tag", command=self._on_button_pressed_edit_tag)
             edit_tag_button.grid(
                 row=row, column=1, sticky="ew", padx=5, pady=5)
             row += 1
@@ -204,7 +207,7 @@ class AnnotationTagFrame(tk.Frame):
         row += 1
 
         delete_tag_button = ttk.Button(
-            self, text="Delete Tag", command=self._button_pressed_delete_tag)
+            self, text="Delete Tag", command=self._on_button_pressed_delete_tag)
         delete_tag_button.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
 
     def set_selected_text(self, text: str) -> None:
@@ -221,7 +224,7 @@ class AnnotationTagFrame(tk.Frame):
         self._selected_text_entry.insert(0, text)
         self._selected_text_entry.config(state="disabled")
 
-    def _button_pressed_add_tag(self) -> None:
+    def _on_button_pressed_add_tag(self) -> None:
         """
         Handles the action when the 'Add Tag' button is pressed.
         """
@@ -229,7 +232,7 @@ class AnnotationTagFrame(tk.Frame):
         self._controller.perform_add_tag(
             tag_data=tag_data, caller_id=self._root_view_id)
 
-    def _button_pressed_edit_tag(self) -> None:
+    def _on_button_pressed_edit_tag(self) -> None:
         """
         Handles the action when the 'Edit Tag' button is pressed.
         """
@@ -237,7 +240,7 @@ class AnnotationTagFrame(tk.Frame):
         self._controller.perform_edit_tag(
             tag_id=self.edit_id_combobox.get(), tag_data=tag_data, caller_id=self._root_view_id)
 
-    def _button_pressed_delete_tag(self) -> None:
+    def _on_button_pressed_delete_tag(self) -> None:
         """
         Handles the action when the 'Delete Tag' button is pressed.
         """
@@ -387,7 +390,7 @@ class AnnotationTagFrame(tk.Frame):
         for widget in self._idref_widgets:
             widget.config(values=idrefs)
 
-    def _button_pressed_start_db_annotation(self) -> None:
+    def _on_button_pressed_start_db_annotation(self) -> None:
         """
         Handles the event when the start annotation button is pressed.
         Initiates the annotation process for the current tag type.
@@ -395,28 +398,28 @@ class AnnotationTagFrame(tk.Frame):
         self._controller.perform_start_db_search(
             tag_type=self._name, caller_id=self._root_view_id)
 
-    def _button_pressed_end_db_annotation(self) -> None:
+    def _on_button_pressed_end_db_annotation(self) -> None:
         """
         Handles the event when the end annotation button is pressed.
         Ends the annotation process for the current tag type.
         """
         self._controller.perform_end_search()
 
-    def _button_pressed_previous_db_suggestion_button(self) -> None:
+    def _on_button_pressed_previous_db_suggestion_button(self) -> None:
         """
         Handles the event when the previous suggestion button is pressed.
         Requests the controller to show the previous suggestion for the tag type.
         """
         self._controller.perform_previous_suggestion()
 
-    def _button_pressed_next_db_suggestion_button(self) -> None:
+    def _on_button_pressed_next_db_suggestion_button(self) -> None:
         """
         Handles the event when the next suggestion button is pressed.
         Requests the controller to show the next suggestion for the tag type.
         """
         self._controller.perform_next_suggestion()
 
-    def _button_pressed_mark_wrong_db_suggestion(self) -> None:
+    def _on_button_pressed_mark_wrong_db_suggestion(self) -> None:
         """
         Handles the event when the mark-as-wrong-suggestion button is pressed.
         Informs the controller that the current suggestion should not be shown again.

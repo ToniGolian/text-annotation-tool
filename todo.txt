@@ -1,9 +1,10 @@
 ######################### Grundfunktionalität ####################
 ##### release 1.0 #####
-
     -bug: db/manual search in gui trennen
 
     -main aufräumen/ appbuilder
+
+    -bei tagumbenennung bei projekterstellung die id prefixes anpassen
 
     -gitignore anpassen für release
 

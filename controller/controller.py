@@ -1277,11 +1277,6 @@ class Controller(IController):
             self.perform_save_as()
             return
 
-        if self._file_handler.does_path_exist(file_path):
-            if not self._main_window.ask_user_for_overwrite_confirmation(file_path):
-                self.perform_save_as()
-                return
-
         # prepare data for saving
         if not view_id == "comparison":
             document_data = {"document_type": view_id,
@@ -1319,7 +1314,12 @@ class Controller(IController):
             }
 
         if document_data:
-            self._file_handler.write_file(file_path, document_data)
+            success = self._file_handler.write_file(file_path, document_data)
+            if not success:
+                raise IOError(
+                    f"Failed to save document to {file_path}. Please check the file path and permissions.")
+            self._save_state_model.reset_key(self._active_view_id)
+
         else:
             raise ValueError(
                 "No valid document data found for saving. Ensure the active view is set correctly.")
@@ -1332,6 +1332,11 @@ class Controller(IController):
             f"default_{self._active_view_id}_save_directory")
         file_path = self._main_window.ask_user_for_save_path(
             initial_dir=initial_dir)
+
+        if self._file_handler.does_path_exist(file_path):
+            if not self._main_window.ask_user_for_overwrite_confirmation(file_path):
+                return
+
         if file_path:
             self.perform_save(file_path=file_path)
 

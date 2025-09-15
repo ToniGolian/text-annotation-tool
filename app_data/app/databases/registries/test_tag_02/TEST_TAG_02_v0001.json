@@ -1,0 +1,92 @@
+{
+    "Oak Tree": {
+        "display": [
+            "1 | Oak Tree | PLT001 | OAK"
+        ],
+        "output": [
+            "PLT001"
+        ],
+        "children": {}
+    },
+    "Pine Tree": {
+        "display": [
+            "2 | Pine Tree | PLT002 | PIN"
+        ],
+        "output": [
+            "PLT002"
+        ],
+        "children": {}
+    },
+    "Birch Tree": {
+        "display": [
+            "3 | Birch Tree | PLT003 | BIR"
+        ],
+        "output": [
+            "PLT003"
+        ],
+        "children": {}
+    },
+    "Maple Tree": {
+        "display": [
+            "4 | Maple Tree | PLT004 | MAP"
+        ],
+        "output": [
+            "PLT004"
+        ],
+        "children": {}
+    },
+    "Rose": {
+        "display": [
+            "5 | Rose | FLR001 | ROS"
+        ],
+        "output": [
+            "FLR001"
+        ],
+        "children": {}
+    },
+    "Tulip": {
+        "display": [
+            "6 | Tulip | FLR002 | TUL"
+        ],
+        "output": [
+            "FLR002"
+        ],
+        "children": {}
+    },
+    "Daisy": {
+        "display": [
+            "7 | Daisy | FLR003 | DAI"
+        ],
+        "output": [
+            "FLR003"
+        ],
+        "children": {}
+    },
+    "Lily": {
+        "display": [
+            "8 | Lily | FLR004 | LIL"
+        ],
+        "output": [
+            "FLR004"
+        ],
+        "children": {}
+    },
+    "Cat": {
+        "display": [
+            "9 | Cat | ANM001 | CAT"
+        ],
+        "output": [
+            "ANM001"
+        ],
+        "children": {}
+    },
+    "Dog": {
+        "display": [
+            "10 | Dog | ANM002 | DOG"
+        ],
+        "output": [
+            "ANM002"
+        ],
+        "children": {}
+    }
+}

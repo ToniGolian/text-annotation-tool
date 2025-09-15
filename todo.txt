@@ -1,6 +1,5 @@
 ######################### Grundfunktionalität ####################
 ##### release 1.0 #####
-    -bug: db/manual search in gui trennen
 
     -main aufräumen/ appbuilder
 
@@ -21,7 +20,7 @@
     -User Manual schreiben
     -Beispieldateien erstellen
 
-    -tagwizards erstellen
+    -tag wizards erstellen
 
     -nested tags verbieten
 
@@ -31,6 +30,7 @@
 ##############################################
 ##############################################
     DONE
+    -bug: db/manual search in gui trennen
     -bug: check for save bei dokumenten funktioniert nicht mehr. fragt trotz speichern
     -bug: überschrieben beim speichern nur im save_as abfragen
     -bug: search iteriert nicht mehr, wenn tag gesetzt wird

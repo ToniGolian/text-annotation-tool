@@ -18,7 +18,7 @@ class SearchManager:
         # Characters to strip from words during search
         self._chars_to_strip: str = ""
 
-    def calculate_db_search_model(self, tag_type: str, document_model: IDocumentModel) -> SearchModel:
+    def calculate_db_search_model(self, tag_type: str, document_model: IDocumentModel, caller_id: str) -> SearchModel:
         """
         Calculates a new SearchModel for the specified tag type.
 
@@ -29,7 +29,7 @@ class SearchManager:
         Returns:
             SearchModel: A new instance of SearchModel with the calculated results.
         """
-        search_model = SearchModel()
+        search_model = SearchModel(caller_id=caller_id)
         db_dict = self._file_handler.read_database_dict(tag_type=tag_type)
         text = document_model.get_text()
 
@@ -163,7 +163,7 @@ class SearchManager:
 
         return search_model
 
-    def calculate_manual_search_model(self, options: Dict, document_model: IDocumentModel) -> SearchModel:
+    def calculate_manual_search_model(self, options: Dict, document_model: IDocumentModel, caller_id: str) -> SearchModel:
         """
         Calculates a SearchModel based on manual search parameters.
 
@@ -177,6 +177,7 @@ class SearchManager:
                 - "whole_word" (bool): Whether to match only whole words.
                 - "regex" (bool): Whether to interpret the search term as a regular expression.
             document_model (IDocumentModel): The model containing the text to search.
+            caller_id (str): The ID of the caller requesting the search.
 
         Returns:
             SearchModel: A populated SearchModel containing all matches.

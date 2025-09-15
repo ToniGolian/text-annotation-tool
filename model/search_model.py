@@ -10,9 +10,11 @@ class SearchModel(ISearchModel):
     Only one model is active at a time; inactive models suppress observer notifications.
     """
 
-    def __init__(self):
+    def __init__(self, caller_id: str) -> None:
         """
         Initializes the search model with an empty result set and a valid, inactive state.
+        Args:
+            caller_id (str): Identifier for the caller context of this search model.
         """
         super().__init__()
         self._results: list[SearchResult] = []
@@ -20,6 +22,7 @@ class SearchModel(ISearchModel):
         self._valid: bool = True
         self._is_active: bool = False
         self._search_options = {}
+        self._caller_id = caller_id
 
     def add_result(self, search_result: SearchResult) -> None:
         """
@@ -185,3 +188,12 @@ class SearchModel(ISearchModel):
             options (dict): A dictionary of search options.
         """
         self._search_options = options
+
+    def get_caller_id(self) -> str:
+        """
+        Returns the caller ID associated with this search model.
+
+        Returns:
+            str: The caller ID.
+        """
+        return self._caller_id

@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+import uuid
 from controller.interfaces import IController
 from observer.interfaces import IObserver, IPublisher
 from view.tooltip import ToolTip
@@ -19,7 +20,10 @@ class SearchFrame(tk.Frame, IObserver):
         self._controller = controller
         self._root_view_id = root_view_id
 
+        # to identify the mode in which the search is performed
         self._view_id = f"{root_view_id}_search"
+        self._search_id = uuid.uuid4().hex  # to identify the search model
+        print(f"DEBUG {self._search_id=}")
         self._controller.add_observer(self)
         self._controller.register_view(self._view_id, self)
 
@@ -136,7 +140,7 @@ class SearchFrame(tk.Frame, IObserver):
             "regex": self._regex_var.get()
         }
         self._controller.perform_manual_search(
-            search_options=options, caller_id=self._root_view_id)
+            search_options=options, caller_mode=self._root_view_id, caller_id=self.search_id)
 
     def reset_entry(self) -> None:
         """

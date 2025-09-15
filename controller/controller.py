@@ -877,7 +877,7 @@ class Controller(IController):
         return tags
 
     @with_highlight_update
-    def perform_manual_search(self, search_options: Dict, caller_id: str) -> None:
+    def perform_manual_search(self, search_options: Dict, caller_mode: str, caller_id: str) -> None:
         """
         Initiates a manual search with the specified parameters.
 
@@ -891,40 +891,46 @@ class Controller(IController):
                 - 'case_sensitive' (bool): Whether the search should be case-sensitive.
                 - 'whole_word' (bool): Whether to match only whole words.
                 - 'regex' (bool): Whether the search term should be treated as a regular expression.
-            caller_id (str): The identifier of the view or component initiating the search,
-                             used to select the appropriate document model.
+            caller_mode (str): The mode of the caller, either "annotation" or "comparison".
+            caller_id (str): The identifier of the view or component initiating the search.
         """
         # Load the current search model
         self._annotation_mode_model.set_manual_mode()
         document_model = self._comparison_model.get_raw_text_model(
-        ) if caller_id == "comparison" else self._document_source_mapping[caller_id]
+        ) if caller_mode == "comparison" else self._document_source_mapping[caller_mode]
         self._current_search_model = self._search_model_manager.get_active_model(
-            search_type=SearchType.MANUAL, document_model=document_model, options=search_options)
+            search_type=SearchType.MANUAL,
+            document_model=document_model,
+            options=search_options,
+            caller_id=caller_id
+        )
         self._current_search_model.next_result()
 
         # Update the selection model with the current search result
         self._current_search_to_selection()
 
     @with_highlight_update
-    def perform_start_db_search(self, tag_type: str, caller_id: str) -> None:
+    def perform_start_db_search(self, tag_type: str, caller_mode: str, caller_id: str) -> None:
         """
-        Starts the annotation mode for a specific tag type.
-
-        This method initializes the annotation mode for the specified tag type,
-        allowing the user to annotate text with tags of that type. It sets up
-        the necessary state and prepares the view for annotation.
+        Initiates the annotation mode for a specific tag type using database suggestions.
+        This method sets the annotation mode to automatic and initializes the search model
+        for the specified tag type. It also selects the appropriate document model based on
+        the caller mode.
 
         Args:
             tag_type (str): The type of tag to start annotating.
+            caller_mode (str): The mode of the caller, either "annotation" or "comparison".
+            caller_id (str): The identifier of the view or component initiating the annotation mode.
         """
         self._annotation_mode_model.set_auto_mode()
         document_model = self._comparison_model.get_raw_text_model(
-        ) if caller_id == "comparison" else self._document_source_mapping[caller_id]
+        ) if caller_mode == "comparison" else self._document_source_mapping[caller_mode]
 
         self._current_search_model = self._search_model_manager.get_active_model(
             tag_type=tag_type,
             search_type=SearchType.DB,
-            document_model=document_model
+            document_model=document_model,
+            caller_id=caller_id
         )
         self._current_search_model.next_result()
         # Update the selection model with the current search result

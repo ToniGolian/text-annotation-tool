@@ -396,7 +396,7 @@ class AnnotationTagFrame(tk.Frame):
         Initiates the annotation process for the current tag type.
         """
         self._controller.perform_start_db_search(
-            tag_type=self._name, caller_id=self._root_view_id)
+            tag_type=self._name, caller_mode=self._root_view_id, caller_db_id=self._db_id)
 
     def _on_button_pressed_end_db_annotation(self) -> None:
         """

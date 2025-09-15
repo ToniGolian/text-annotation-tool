@@ -33,8 +33,11 @@ class SearchModelManager(IPublisher):
         # Limit for manual search models #todo load from settings
         self._max_manual_search_dicts = 10
 
-    def get_active_model(self, tag_type: str = None, search_type: SearchType = SearchType.DB,
-                         document_model: IDocumentModel = None, options: Optional[Dict] = None) -> SearchModel:
+    def get_active_model(self, tag_type: str = None,
+                         search_type: SearchType = SearchType.DB,
+                         document_model: IDocumentModel = None,
+                         caller_id: str = None,
+                         options: Optional[Dict] = None) -> SearchModel:
         """
         Retrieves and activates a valid SearchModel for the specified search context.
 
@@ -51,6 +54,7 @@ class SearchModelManager(IPublisher):
             search_type (SearchType): The search strategy (DB or MANUAL).
             document_model (IDocumentModel, optional): The source document to search in.
             options (Dict, optional): Parameters for manual search (keys: 'search_term', 'case_sensitive', 'whole_word', 'regex').
+            caller_id (str, optional): The ID of the caller requesting the search.
 
         Returns:
             SearchModel: A valid, activated SearchModel instance.
@@ -60,6 +64,7 @@ class SearchModelManager(IPublisher):
             "search_type": search_type,
             "document_model": document_model,
             "options": options,
+            "caller_id": caller_id
         }
 
         if search_type == SearchType.MANUAL:
@@ -75,6 +80,7 @@ class SearchModelManager(IPublisher):
             if needs_recalculation:
                 model = self._search_manager.calculate_manual_search_model(
                     options=options,
+                    caller_id=caller_id,
                     document_model=document_model
                 )
                 self._register_observers_to_search_model(model)
@@ -96,7 +102,7 @@ class SearchModelManager(IPublisher):
             model = self._db_models.get(tag_type)
             if model is None or not model.is_valid():
                 model = self._search_manager.calculate_db_search_model(
-                    tag_type=tag_type, document_model=document_model)
+                    tag_type=tag_type, document_model=document_model, caller_id=caller_id)
                 self._register_observers_to_search_model(model)
                 self._db_models[tag_type] = model
             key = tag_type

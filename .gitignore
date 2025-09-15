@@ -165,6 +165,7 @@ cython_debug/
 /.VSCodeCounter
 /test_data
 /test_img
+/scripts
 comparison_main.py
 
 # csv

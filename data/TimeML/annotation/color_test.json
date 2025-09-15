@@ -1,7 +1,7 @@
 {
     "document_type": "annotation",
-    "file_path": "data\\TimeML\\annotation\\color_test.json",
+    "file_path": "C:/Users/tonig/PythonProjects/text-annotation-tool/data/TimeML/annotation/color_test.json",
     "file_name": "color_test",
     "meta_tags": {},
-    "text": "Color Highlight Test.\n\nColor Highlight Test.\n\nColor Highlight Test.\n\nColor Highlight Test.\n\nColor Highlight Test.\n\nColor Highlight Test.\n\nColor Highlight Test.\n\nColor Highlight Test.\n\n"
+    "text": "Color <TIMEX3 tid=\"t1\">Highlight</TIMEX3> Test.\n\nColor <TLINK lid=\"l1\">Highlight</TLINK> Test.\n\nColor <ALINK lid=\"l1\">Highlight</ALINK> Test.\n\nColor <EVENT eid=\"e1\">Highlight</EVENT> Test.\n\nColor <MAKEINSTANCE eiid=\"ei1\">Highlight</MAKEINSTANCE> Test.\n\nColor <SLINK lid=\"l1\">Highlight</SLINK> Test.\n\nColor <CONFIDENCE cid=\"1\">Highlight</CONFIDENCE> Test.\n\nColor <SIGNAL sid=\"s1\">Highlight</SIGNAL> Test.\n\n\n\nColor Search Highlight Test.\n\nColor Search Highlight Test."
 }

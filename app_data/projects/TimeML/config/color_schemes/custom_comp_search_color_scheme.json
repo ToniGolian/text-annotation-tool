@@ -1,0 +1,44 @@
+{
+    "tags": {
+        "ALINK": {
+            "background_color": "#2e7d32",
+            "font_color": "#ffffff"
+        },
+        "CONFIDENCE": {
+            "background_color": "#43a047",
+            "font_color": "#ffffff"
+        },
+        "EVENT": {
+            "background_color": "#7cb342",
+            "font_color": "#000000"
+        },
+        "MAKEINSTANCE": {
+            "background_color": "#c0ca33",
+            "font_color": "#000000"
+        },
+        "SIGNAL": {
+            "background_color": "#fbc02d",
+            "font_color": "#000000"
+        },
+        "SLINK": {
+            "background_color": "#ffa000",
+            "font_color": "#000000"
+        },
+        "TIMEX3": {
+            "background_color": "#ff8f00",
+            "font_color": "#000000"
+        },
+        "TLINK": {
+            "background_color": "#ff6f00",
+            "font_color": "#000000"
+        }
+    },
+    "search": {
+        "background_color": "#1976d2",
+        "font_color": "#ffffff"
+    },
+    "current_search": {
+        "background_color": "#0d47a1",
+        "font_color": "#ffffff"
+    }
+}

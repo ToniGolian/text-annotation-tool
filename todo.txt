@@ -9,6 +9,9 @@
 
     -executable
 ##### release 1.1 #####
+
+    -color settings und colorcreation
+
     -suggestions speichern wenn tags gesetzt werden.
 
     -Edit Project

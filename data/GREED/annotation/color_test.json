@@ -1,7 +1,7 @@
 {
     "document_type": "annotation",
-    "file_path": "data\\GREED\\annotation\\color_test.json",
+    "file_path": "C:/Users/tonig/PythonProjects/text-annotation-tool/data/GREED/annotation/color_test.json",
     "file_name": "color_test",
     "meta_tags": {},
-    "text": "Color Highlight Test.\n\nColor Highlight Test."
+    "text": "Color <TIMEX3 tid=\"t1\">Highlight</TIMEX3> Test.\n\nColor <PLACE pid=\"p1\">Highlight</PLACE> Test.\n\nColor Search Highlight Test.\n\nColor Search Highlight Test."
 }

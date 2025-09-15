@@ -21,7 +21,7 @@
         "group1.json"
     ],
     "search_normalization": "search_normalization_rules.json",
-    "color_scheme": "magma_comp_search_color_scheme.json",
+    "color_scheme": "custom_comp_search_color_scheme.json",
     "are_all_search_results_highlighted": true,
     "current_language": "english",
     "abbreviations": "abbreviations.json",

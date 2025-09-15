@@ -1,0 +1,20 @@
+{
+    "tags": {
+        "TIMEX3": {
+            "background_color": "#26d95c",
+            "font_color": "#000000"
+        },
+        "PLACE": {
+            "background_color": "#ffc000",
+            "font_color": "#000000"
+        }
+    },
+    "search": {
+        "background_color": "#7593ea",
+        "font_color": "#ffffff"
+    },
+    "current_search": {
+        "background_color": "#3361eb",
+        "font_color": "#ffffff"
+    }
+}

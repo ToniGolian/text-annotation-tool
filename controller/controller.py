@@ -253,7 +253,6 @@ class Controller(IController):
             caller_id (str): The unique identifier for the view initiating the command.
         """
         if caller_id in self._undo_redo_models:
-
             model = self._undo_redo_models[caller_id]
             model.execute_command(command)
             command.execute()
@@ -989,15 +988,6 @@ class Controller(IController):
             raise RuntimeError("No search model is currently active.")
         # If caller_id is None, the controller initiated the call (e.g., after a tag insertion)
         # If caller_id is provided, it must match the active search model's caller_id, since a view element tries to access the model
-        print(f"DEBUG {self._current_search_model=}")
-        print(
-            f"DEBUG caller_id")
-        print(
-            f"DEBUG {caller_id},")
-        print(
-            f"DEBUG caller_id stored in model: ")
-        print(
-            f"DEBUG {self._current_search_model.get_caller_id()}")
         if caller_id is None or caller_id == self._current_search_model.get_caller_id():
             self._current_search_model.next_result()
             self._current_search_to_selection()
@@ -1015,16 +1005,6 @@ class Controller(IController):
         """
         if not self._current_search_model:
             raise RuntimeError("No search model is currently active.")
-        print(f"DEBUG {self._current_search_model=}")
-
-        print(
-            f"DEBUG caller_id")
-        print(
-            f"DEBUG {caller_id},")
-        print(
-            f"DEBUG caller_id stored in model: ")
-        print(
-            f"DEBUG {self._current_search_model.get_caller_id()}")
         if caller_id is None or caller_id == self._current_search_model.get_caller_id():
             self._current_search_model.previous_result()
             self._current_search_to_selection()
@@ -1138,7 +1118,6 @@ class Controller(IController):
         command = AddTagCommand(
             self._tag_manager, tag_data, target_model=target_model, caller_id=caller_id)
         self._execute_command(command=command, caller_id=caller_id)
-        print("DEBUG: perform_add_tag - calling perform_next_suggestion")
         self.perform_next_suggestion()
 
     @with_highlight_update

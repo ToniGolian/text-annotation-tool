@@ -25,14 +25,17 @@ class AnnotationTextDisplayFrame(TextDisplayFrame):
         super().update(publisher)
         if isinstance(publisher, HighlightModel):
             highlight_data = self._controller.get_observer_state(
-                self, publisher).get("highlight_data", [])
-            # from pprint import pprint
-            # print("DEBUG Highlight data:")
-            # pprint(highlight_data)
+                self, publisher)
+            from pprint import pprint
+            print("DEBUG Highlight data:")
+            pprint(highlight_data)
             self.unhighlight_text()
-            self.highlight_text(highlight_data)
+            self._apply_highlights(
+                highlight_data.get("tag_highlight_data", []), prefix="tag")
+            self._apply_highlights(
+                highlight_data.get("search_highlight_data", []), prefix="search")
 
-    def highlight_text(self, highlight_data: List[Tuple[str, int, int]]) -> None:
+    def _apply_highlights(self, highlight_data: List[Tuple[str, int, int]], prefix: str) -> None:
         """
         Applies text highlighting based on the provided highlight data.
 
@@ -41,14 +44,20 @@ class AnnotationTextDisplayFrame(TextDisplayFrame):
                 - str: The highlight color.
                 - int: The start position of the highlight in the text.
                 - int: The end position of the highlight in the text.
+            prefix (str): A prefix to differentiate highlight types (e.g., "tag" or "search").
         """
         for (bg_color, font_color, start, end) in highlight_data:
-            tag_name = f"highlight_{bg_color}"
+            tag_name = f"highlight_{prefix}_{bg_color}"
             self.text_widget.tag_configure(
                 tag_name, background=bg_color, foreground=font_color)
             start_index = f"1.0+{start}c"
             end_index = f"1.0+{end}c"
             self.text_widget.tag_add(tag_name, start_index, end_index)
+            # Priority: search_highlights über tag_highlights
+            if prefix == "search":
+                self.text_widget.tag_raise(tag_name)
+            else:
+                self.text_widget.tag_lower(tag_name)
 
     def unhighlight_text(self) -> None:
         """

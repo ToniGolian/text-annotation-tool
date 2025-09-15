@@ -77,4 +77,7 @@ class HighlightModel(IPublisher):
         Returns:
             List[Tuple[str, int, int]]: A list of all current highlights.
         """
-        return {"highlight_data": self._tag_highlights + self._search_highlights}
+        return {
+            "tag_highlight_data": self._tag_highlights,
+            "search_highlight_data": self._search_highlights
+        }

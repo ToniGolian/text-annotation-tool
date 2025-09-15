@@ -41,7 +41,8 @@
             "needs_deregistration_on_reload": true,
             "source_keys": {
                 "highlight_model": [
-                    "highlight_data"
+                    "tag_highlight_data",
+                    "search_highlight_data"
                 ]
             }
         }

@@ -1,13 +1,22 @@
 # text-annotation-tool
-A lightweight text annotation tool for annotating spans of text with custom tags and attributes.
+A lightweight and flexible application for creating, editing, and managing text annotations.  
+It is designed for projects where spans of text need to be tagged with custom categories and enriched with additional attributes.  
+The annotations are intended to make texts machine-readable — for example, as training data for language models or other natural language processing tasks.  
+The tool is also suitable for any use case where text needs to be enriched with structured, automatically processable tags.
+
 Author: Toni Golian
 
 ## Features
-- Text extraction from PDF files
-- Easy-to-use interface for text annotation
-- Support for custom tags and attributes
-- Export and import annotations in various formats
-- Collaborative annotation support
+- **PDF text extraction**: Import text directly from PDF files and correct extraction errors before annotation.  
+- **Interactive annotation interface**: Select text spans and assign custom tags with user-defined attributes.  
+- **Custom tag management**: Define, group, and reuse tag types tailored to your project needs.  
+- **Database integration**: Link tags to external databases for assisted annotation with automatic suggestions.  
+- **Annotation comparison and merging**: Open multiple annotated documents side by side, compare annotations, and consolidate them into a single merged document.  
+- **Flexible project management**: Create, load, and manage annotation projects with structured tag groups.  
+- **Import and export**: Save annotations and comparison results in multiple formats for interoperability.  
+- **Collaboration-ready**: Supports workflows where annotations are created, reviewed, and combined by multiple users.  
+
+
 
 ## Installation
 ### Linux / MacOS

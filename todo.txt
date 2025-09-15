@@ -1,12 +1,15 @@
 ######################### Grundfunktionalität ####################
 ##### release 1.0 #####
-    -bug: Keine db config erzeugt nach erzeugung von project mit tags aus tagpool
 
     -gitignore anpassen für release
 
-    -readme tags vervollständigen
 
 ##### release 1.1 #####
+    -bug: Keine db config erzeugt nach erzeugung von project mit tags aus tagpool
+    -bug: absturz bei tag auf whitespace zwischen zeilen
+    -bug in archewiesen wird "fl" in Pflanzenarten zu einem char gepackt
+
+    -implement wrong suggestion
 
     -color settings und colorcreation
 
@@ -33,6 +36,7 @@
 ##############################################
 ##############################################
     DONE
+    -readme tags vervollständigen
     -test projects und test dokumente 
     -search color over tag highlightcolor
     -bug: wenn man bei doppelten tags das renaming abbricht, wird trotzdem neues projekt erstellt

@@ -120,19 +120,20 @@ class AnnotationTagFrame(tk.Frame):
                 f"Next {self._name} suggestion."
             ))
 
-            wrong_suggestion_button = ttk.Button(
-                self,
-                text="Mark wrong suggestion",
-                command=self._on_button_pressed_mark_wrong_db_suggestion
-            )
-            wrong_suggestion_button.grid(
-                row=3, column=1, sticky="ew", padx=5, pady=5)
-            self._tooltips.append(ToolTip(
-                wrong_suggestion_button,
-                f"Marks the current suggestion as incorrect so it will no longer be suggested in the future."
-            ))
+            # wrong_suggestion_button = ttk.Button(
+            #     self,
+            #     text="Mark wrong suggestion",
+            #     command=self._on_button_pressed_mark_wrong_db_suggestion
+            # )
+            # wrong_suggestion_button.grid(
+            #     row=3, column=1, sticky="ew", padx=5, pady=5)
+            # self._tooltips.append(ToolTip(
+            #     wrong_suggestion_button,
+            #     f"Marks the current suggestion as incorrect so it will no longer be suggested in the future."
+            # ))
 
-            row = 4
+            # row = 4
+            row = 3
 
         selected_text_label = tk.Label(self, text="Selected Text")
         selected_text_label.grid(

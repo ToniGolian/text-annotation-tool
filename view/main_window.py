@@ -67,36 +67,36 @@ class MainWindow(tk.Tk, IObserver):
         project_menu.add_command(label="Open Project",
                                  command=self._on_open_project)
 
-        project_menu.add_separator()
-        project_menu.add_command(label="Edit Project",
-                                 command=self._on_edit_project)
-        project_menu.add_command(label="Project Settings",
-                                 command=self._on_project_settings)
+        # project_menu.add_separator()
+        # project_menu.add_command(label="Edit Project",
+        #                          command=self._on_edit_project)
+        # project_menu.add_command(label="Project Settings",
+        #                          command=self._on_project_settings)
         menu_bar.add_cascade(label="Project", menu=project_menu)
 
-        # Tags menu
-        tags_menu = tk.Menu(menu_bar, tearoff=0)
-        tags_menu.add_command(label="New Tag type",
-                              command=self._on_new_tag_type)
-        tags_menu.add_command(label="Edit Tag type",
-                              command=self._on_edit_tag_type)
-        menu_bar.add_cascade(label="Tags", menu=tags_menu)
+        # # Tags menu
+        # tags_menu = tk.Menu(menu_bar, tearoff=0)
+        # tags_menu.add_command(label="New Tag type",
+        #                       command=self._on_new_tag_type)
+        # tags_menu.add_command(label="Edit Tag type",
+        #                       command=self._on_edit_tag_type)
+        # menu_bar.add_cascade(label="Tags", menu=tags_menu)
 
-        # Settings menu
-        settings_menu = tk.Menu(menu_bar, tearoff=0)
-        settings_menu.add_command(
-            label="Global Settings", command=self._on_settings)
-        settings_menu.add_command(label="Project Settings",
-                                  command=self._on_project_settings)
-        menu_bar.add_cascade(label="Settings", menu=settings_menu)
+        # # Settings menu
+        # settings_menu = tk.Menu(menu_bar, tearoff=0)
+        # settings_menu.add_command(
+        #     label="Global Settings", command=self._on_settings)
+        # settings_menu.add_command(label="Project Settings",
+        #                           command=self._on_project_settings)
+        # menu_bar.add_cascade(label="Settings", menu=settings_menu)
 
-        # Help menu
-        help_menu = tk.Menu(menu_bar, tearoff=0)
-        help_menu.add_command(
-            label="About", command=self._on_about)
-        help_menu.add_separator()
-        help_menu.add_command(label="Help", command=self._on_help)
-        menu_bar.add_cascade(label="Help", menu=help_menu)
+        # # Help menu
+        # help_menu = tk.Menu(menu_bar, tearoff=0)
+        # help_menu.add_command(
+        #     label="About", command=self._on_about)
+        # help_menu.add_separator()
+        # help_menu.add_command(label="Help", command=self._on_help)
+        # menu_bar.add_cascade(label="Help", menu=help_menu)
 
         self.config(menu=menu_bar)
 

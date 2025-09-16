@@ -163,10 +163,20 @@ cython_debug/
 #.idea/
 
 /.VSCodeCounter
-/test_data
-/test_img
-/scripts
 comparison_main.py
+/tests/ 
+/test_data/ 
+/tests/ 
+/test_img/ 
+/scripts/ 
+/mockclasses/ 
+/app_data/projects/mini_test_project/ 
+/app_data/projects/test_project/ 
+/app_data/projects/time_ml_template/ 
+/data/mini_test_project/ 
+/data/test_project/ 
+/data/time_ml_template/ 
+/app_data/app/databases/sources/mini_test/
 
 
 # xlsx

@@ -16,8 +16,6 @@ Author: Toni Golian
 - **Import and export**: Save annotations and comparison results in multiple formats for interoperability.  
 - **Collaboration-ready**: Supports workflows where annotations are created, reviewed, and combined by multiple users.  
 
-
-
 ## Installation
 ### Linux / MacOS
 1. Clone the repository:
